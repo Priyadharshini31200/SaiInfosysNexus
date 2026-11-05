@@ -1,0 +1,12 @@
+.note {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Customer List: the white panel stretches to the bottom of the page */
+.fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}

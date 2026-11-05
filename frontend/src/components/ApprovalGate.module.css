@@ -1,0 +1,79 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(1 38 65 / 55%);
+}
+
+.dialog {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 22px 24px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy-900);
+  text-align: center;
+}
+
+.more {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--navy-800);
+}
+
+.rows {
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row dt {
+  color: var(--navy-800);
+  font-weight: 600;
+}
+
+.row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.tba {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.error {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--danger, #b42318);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}

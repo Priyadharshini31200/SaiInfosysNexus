@@ -1,0 +1,27 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.alert svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.error {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: #8e1c1c;
+}
+
+.success {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: #135c38;
+}

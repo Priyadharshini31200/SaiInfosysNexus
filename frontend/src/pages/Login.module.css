@@ -1,0 +1,247 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background:
+    radial-gradient(900px 480px at 8% -8%, rgb(96 179 209 / 14%), transparent 60%),
+    radial-gradient(700px 420px at 100% 108%, rgb(1 38 65 / 8%), transparent 60%),
+    linear-gradient(rgb(1 38 65 / 4%) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, rgb(1 38 65 / 4%) 1px, transparent 1px) 0 0 / 44px 44px,
+    var(--bg);
+}
+
+.shell {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.brand {
+  --logo-h: 64px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgb(1 38 65 / 6%), 0 12px 32px rgb(1 38 65 / 9%), 0 28px 56px -12px rgb(1 38 65 / 12%);
+  overflow: hidden;
+  animation: rise 0.45s ease both;
+}
+
+.accent {
+  height: 4px;
+  background: linear-gradient(90deg, var(--navy-800) 0 72%, var(--slate-500) 72% 100%);
+}
+
+.cardBody {
+  padding: 28px 32px 28px;
+  text-align: center;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--navy-900);
+}
+
+.rule {
+  display: block;
+  width: 36px;
+  height: 3px;
+  margin: 10px auto 0;
+  border-radius: 3px;
+  background: var(--slate-500);
+}
+
+.subtitle {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.form {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+/* ---- Inputs: one border on the wrapper, nothing on the input itself ---- */
+.form div:has(> input) {
+  height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.form div:has(> input):hover {
+  border-color: var(--navy-700);
+}
+
+.form div:has(> input):focus-within {
+  border-color: var(--navy-600);
+  box-shadow: 0 0 0 3px rgb(1 38 65 / 14%);
+}
+
+.form div:has(> input[aria-invalid='true']) {
+  border-color: var(--danger);
+}
+
+.form div:has(> input[aria-invalid='true']):focus-within {
+  box-shadow: 0 0 0 3px rgb(198 40 40 / 14%);
+}
+
+.form input,
+.form input:hover,
+.form input:focus,
+.form input:focus-visible {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.form input:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Browser-injected extras that cause doubled icons / inner fills */
+.form input::-ms-reveal,
+.form input::-ms-clear {
+  display: none;
+}
+
+.form input:-webkit-autofill,
+.form input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 40px #fff inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+}
+
+/* Username icon and password eye share the same vertical centre and gutter */
+.form div:has(> input) > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 100%;
+  padding: 0 0 0 4px;
+  flex: none;
+}
+
+.form div:has(> input) > span + input {
+  padding-left: 4px;
+}
+
+.form div:has(> input) > button,
+.form div:has(> input) > button:focus-visible {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0 10px 10px 0;
+}
+
+.form div:has(> input) > button:focus-visible {
+  color: var(--navy-800);
+}
+
+.form button[type='submit'] {
+  margin-top: 6px;
+  height: 46px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--navy-800);
+  box-shadow: 0 6px 14px rgb(1 38 65 / 24%), inset 0 1px 0 rgb(255 255 255 / 12%);
+}
+
+.form button[type='submit']:hover:not(:disabled) {
+  background: var(--navy-600);
+  color: var(--navy-900);
+  box-shadow: 0 8px 18px rgb(1 38 65 / 30%), inset 0 1px 0 rgb(255 255 255 / 14%);
+}
+
+.form button[type='submit']:focus-visible {
+  box-shadow: 0 0 0 3px rgb(1 38 65 / 25%);
+}
+
+.secure {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.secure svg {
+  color: var(--success);
+}
+
+.footer {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--placeholder);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 20px 14px;
+    align-items: start;
+  }
+
+  .cardBody {
+    padding: 22px 20px 22px;
+  }
+
+  .brand {
+    --logo-h: 52px;
+    margin: 8px 0 16px;
+  }
+}
+
+/* Labels and leading icons */
+.form label {
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+
+.form div:has(> input):focus-within > span {
+  color: var(--slate-600);
+}

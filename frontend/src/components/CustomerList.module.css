@@ -1,0 +1,602 @@
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  /* The page never scrolls: the table area below scrolls inside the panel (header height + content padding). */
+  max-height: calc(100vh - var(--header-height) - 42px);
+  overflow: hidden;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 360px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--navy-800);
+}
+
+.search:focus-within {
+  border-color: var(--navy-700);
+  box-shadow: var(--focus-ring);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.search input::placeholder {
+  color: var(--placeholder);
+}
+
+.count {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  margin-left: auto;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background: var(--navy-800);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+}
+
+.addBtn:hover {
+  background: var(--navy-700);
+  color: var(--navy-900);
+}
+
+.addBtn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.table th,
+.table td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--navy-900);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+}
+
+.table td {
+  border-bottom: 1px solid var(--border);
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:focus-visible {
+  outline: none;
+}
+
+.row:focus-visible td {
+  background: var(--navy-50);
+}
+
+.table tbody tr:hover td {
+  background: var(--navy-50);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Name and Company share what the fixed columns leave over, so full values wrap instead of truncating. */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 56px;
+}
+
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 118px;
+  white-space: nowrap;
+}
+
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 132px;
+}
+
+.table th:nth-child(6),
+.table td:nth-child(6) {
+  width: 100px;
+  white-space: nowrap;
+}
+
+.table th:nth-child(7),
+.table td:nth-child(7) {
+  width: 100px;
+  white-space: nowrap;
+}
+
+.name {
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+.badge {
+  justify-self: start;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.active {
+  background: var(--navy-800);
+  color: #fff;
+}
+
+.warn {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.muted {
+  background: var(--navy-100);
+  color: var(--navy-800);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Only this part scrolls, and only when the details are taller than the screen; the action bar below stays put */
+.drawerScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 2px 20px 8px;
+}
+
+.group {
+  padding: 8px 0 2px;
+}
+
+.groupTitle {
+  margin-bottom: 2px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--navy-800);
+}
+
+.licenseBar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 -2px 8px rgb(1 38 65 / 6%);
+}
+
+.licenseBar:empty {
+  display: none;
+}
+
+.licenseBar > button,
+.actions button,
+.dialogActions button {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--navy-800);
+}
+
+.licenseBar > button:hover,
+.actions button:hover,
+.dialogActions button:hover:not(:disabled) {
+  background: var(--navy-50);
+}
+
+.licenseBar > button:focus-visible,
+.actions button:focus-visible,
+.dialogActions button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.licenseBar > .danger,
+.actions .danger {
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.licenseBar > .danger:hover,
+.actions .danger:hover {
+  background: var(--danger-bg);
+}
+
+.emptyError {
+  color: var(--danger);
+}
+
+.empty {
+  padding: 24px 18px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.details {
+  margin: 0;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  min-height: 26px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.detail:last-child {
+  border-bottom: 0;
+}
+
+.detail dt {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.detail dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.message {
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dialogActions button {
+  height: 36px;
+  min-width: 84px;
+  font-size: 13.5px;
+}
+
+.dialogActions .primary {
+  border-color: var(--navy-800);
+  background: var(--navy-800);
+  color: #fff;
+}
+
+.dialogActions .primary:hover:not(:disabled) {
+  background: var(--navy-700);
+  color: var(--navy-900);
+}
+
+.dialogActions .dangerSolid {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
+.dialogActions .dangerSolid:hover:not(:disabled) {
+  background: #a82020;
+}
+
+.dialogActions button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Narrow screens: each row becomes a labelled block so nothing scrolls sideways */
+@media (max-width: 720px) {
+  .panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .scroll {
+    overflow: visible;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: auto !important;
+  }
+
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .table tr {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .table td:nth-child(n) {
+    white-space: normal;
+  }
+
+  .table td {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 8px;
+    padding: 5px 16px;
+    border: 0;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+}
+
+/* List filters (dropdowns) and the export/add actions pushed to the right of the toolbar */
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.filter select {
+  height: 40px;
+  max-width: 180px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.filter select:focus-visible {
+  outline: none;
+  border-color: var(--navy-600);
+  box-shadow: var(--focus-ring);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.tools .addBtn {
+  margin-left: 0;
+}
+
+.expired {
+  background: var(--not-used-bg);
+  color: var(--not-used);
+}
+
+.upcoming {
+  background: var(--expiring-bg);
+  color: var(--expiring);
+}
+
+/* Report table (9 columns): the date and status columns keep a fixed width */
+.table th:nth-child(8),
+.table td:nth-child(8),
+.table th:nth-child(9),
+.table td:nth-child(9) {
+  width: 104px;
+  white-space: nowrap;
+}
+
+/* License Expiry Report toolbar: one compact row (search, filters, total, Export) that wraps on narrow screens */
+.headRow {
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 10px 14px;
+}
+
+.headRow .search {
+  flex: 1 1 200px;
+  max-width: 300px;
+}
+
+.headRow .search,
+.headRow .filter select {
+  height: 36px;
+}
+
+.headRow .filter select {
+  max-width: 140px;
+  padding-left: 8px;
+}
+
+.headRow .filter {
+  font-size: 12.5px;
+}
+
+.headRow .count {
+  margin-left: 0;
+  white-space: nowrap;
+}
+
+.headRow .tools {
+  flex: none;
+}
+
+.headRow .tools button {
+  height: 36px;
+}
+
+/* Long headings wrap instead of being clipped by the fixed-width columns */
+.table th:nth-child(n + 4) {
+  white-space: normal;
+}
+
+/* License Type: "1 Year" outlined tag, "Lifetime" plain text (the trial badge is .badge) */
+.term {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid var(--expiring);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--expiring);
+  white-space: nowrap;
+}
+
+.lifetime {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Usage Report (6 columns): Device / Serial Number wraps; date and status columns keep a fixed width */
+.table.usage th:nth-child(3),
+.table.usage td:nth-child(3) {
+  width: 150px;
+}
+
+.table.usage th:nth-child(4),
+.table.usage td:nth-child(4) {
+  width: auto;
+  white-space: normal;
+}
+
+.table.usage th:nth-child(5),
+.table.usage td:nth-child(5),
+.table.usage th:nth-child(6),
+.table.usage td:nth-child(6) {
+  width: 124px;
+  white-space: nowrap;
+}
+
+.statusUsed {
+  background: var(--used-bg);
+  color: var(--used);
+}
+
+.statusNotUsed {
+  background: var(--not-used-bg);
+  color: var(--not-used);
+}
+
+.notice {
+  padding: 8px 14px 0;
+}

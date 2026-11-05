@@ -1,0 +1,76 @@
+.details {
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.row dt {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.row dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.section {
+  padding: 16px 0;
+}
+
+.reset {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--navy-900);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.reset svg:first-child {
+  color: var(--navy-800);
+}
+
+.reset span {
+  flex: 1;
+}
+
+.reset:hover {
+  background: var(--navy-50);
+}
+
+.reset:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.chevron {
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+.reset[aria-expanded='true'] .chevron {
+  transform: rotate(180deg);
+}

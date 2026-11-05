@@ -1,0 +1,121 @@
+/* Design tokens and reset only. Component styling lives in each CSS Module. */
+:root {
+  /* Palette: deep blue #012641 (sidebar, table headers, primary buttons, headings), sky blue #60B3D1
+     (active menu, hover, secondary accents), ice #F4FBFD (working area), white (navbar, cards, forms).
+     Token names are kept from earlier themes so every component picks the palette up. */
+  --navy-950: #012641;
+  --navy-900: #012641;
+  --navy-800: #012641;
+  --navy-700: #60b3d1;
+  --navy-600: #60b3d1;
+  --navy-100: #e1f1f7;
+  --navy-50: #f4fbfd;
+  --royal: #012641;
+
+  --slate-600: #4f6b7d;
+  --slate-500: #60b3d1;
+  --slate-100: #e1f1f7;
+
+  /* Sidebar */
+  --sb-bg: #012641;
+  --sb-hover: rgb(96 179 209 / 22%);
+  --sb-active: #60b3d1;
+  --sb-active-text: #012641;
+  --sb-marker: #ffffff;
+
+  --bg: #f4fbfd;
+  --surface: #ffffff;
+  --navbar: #ffffff;
+  --border: #d6e9f1;
+  --border-strong: #9fd0e2;
+  --text: #012641;
+  --muted: #4f6b7d;
+  --placeholder: #7d97a6;
+
+  /* Status colors */
+  --used: #1b7a4b;
+  --used-bg: #e8f6ee;
+  --not-used: #c62828;
+  --not-used-bg: #fdecec;
+  --expiring: #1565c0;
+  --expiring-bg: #e6f0fb;
+
+  --danger: #c62828;
+  --danger-bg: #fdecec;
+  --danger-border: #f5c2c2; 
+  --success: #1b7a4b;
+  --success-bg: #e8f6ee;
+  --success-border: #b9e2c9;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgb(1 38 65 / 8%);
+  --shadow-md: 0 8px 24px rgb(1 38 65 / 10%);
+  --shadow-lg: 0 24px 60px rgb(1 38 65 / 16%);
+
+  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --focus-ring: 0 0 0 3px rgb(96 179 209 / 45%);
+
+  --sidebar-width: 264px;
+  --sidebar-collapsed-width: 76px;
+  --header-height: 68px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--navy-600);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

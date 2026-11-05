@@ -1,0 +1,44 @@
+.emblem {
+  display: block;
+  height: var(--logo-h, 40px);
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.solo {
+  display: block;
+  line-height: 0;
+}
+
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--logo-h, 40px) * 0.28);
+  user-select: none;
+}
+
+.name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+  text-align: left;
+}
+
+/* Deep navy name, slate-blue "Nexus" (approved palette) */
+.main {
+  font-size: calc(var(--logo-h, 40px) * 0.5);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #012641;
+}
+
+.accent {
+  font-size: calc(var(--logo-h, 40px) * 0.34);
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #4f6b7d;
+}

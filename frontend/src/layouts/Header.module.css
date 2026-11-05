@@ -1,0 +1,273 @@
+.header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+  background: var(--navbar);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgb(1 38 65 / 6%);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+  min-width: 0;
+} 
+ 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+/* Bordered container around the icon only; the name is a separate element */
+.iconBox {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  background: #fff;
+  border: 1px solid #d6e9f1;
+  border-radius: 10px;
+}
+
+.mark {
+  --logo-h: 32px;
+  flex: none;
+}
+
+.brandAccent {
+  font-weight: 600;
+  color: #4f6b7d;
+}
+
+.brandName {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  line-height: 1;
+  color: var(--navy-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuBtn {
+  display: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--navy-800);
+}
+
+.menuBtn:hover {
+  background: var(--navy-50);
+}
+
+.menuBtn:focus-visible,
+.trigger:focus-visible {
+  outline: 2px solid var(--navy-700);
+  outline-offset: 2px;
+}
+
+.profile {
+  position: relative;
+  flex: none;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.trigger:hover,
+.triggerOpen {
+  background: var(--navy-50);
+  border-color: var(--border);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--navy-800);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  border: 2px solid var(--navy-700);
+}
+
+.chevron {
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+.triggerOpen .chevron {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 200px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  animation: pop 0.14s ease both;
+  transform-origin: top right;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-decoration: none;
+  text-align: left;
+}
+
+.item svg {
+  color: var(--muted);
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--navy-50);
+  outline: none;
+}
+
+.danger,
+.danger svg {
+  color: var(--danger);
+}
+
+.danger:hover {
+  background: var(--danger-bg);
+}
+
+.divider {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--border);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Current page: separator, back arrow and name, beside the brand */
+.titleSep {
+  flex: none;
+  width: 1px;
+  height: 28px;
+  margin: 0 4px;
+  background: var(--border-strong);
+}
+
+.backBtn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--navy-800);
+}
+
+.backBtn:hover {
+  background: var(--navy-50);
+}
+
+.backBtn:focus-visible {
+  outline: 2px solid var(--navy-700);
+  outline-offset: 2px;
+}
+
+.pageName {
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 960px) {
+  .header {
+    padding: 0 16px;
+  }
+
+  .menuBtn {
+    display: grid;
+  }
+}
+
+@media (max-width: 640px) {
+  .brandName,
+  .titleSep {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .pageName {
+    font-size: 16px;
+  }
+
+  .chevron {
+    display: none;
+  }
+
+  .iconBox {
+    padding: 4px;
+  }
+
+  .brandName {
+    font-size: 15px;
+  }
+
+  .trigger {
+    padding: 4px;
+  }
+
+}
