@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.bak
+backend/staticfiles/
+backend/logs/

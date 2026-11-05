@@ -1,0 +1,100 @@
+.add {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--navy-800);
+  border-radius: var(--radius-sm);
+  background: var(--navy-800);
+  color: #fff;
+  transition: background 0.15s;
+}
+
+.add:hover:not(:disabled),
+.addActive {
+  background: var(--navy-700);
+  border-color: var(--navy-700);
+  color: var(--navy-900);
+}
+
+.add:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.note {
+  padding: 16px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.block {
+  padding-top: 16px;
+}
+
+.retry {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--navy-800);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* "+" selection panel */
+.picker {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--navy-50);
+}
+
+.pickActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pickActions > * {
+  height: 38px;
+  min-width: 84px;
+  font-size: 14px;
+}
+
+/* Saved permission entries: one flat global list */
+.rows {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.permRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+.permRow + .permRow {
+  border-top: 1px solid var(--border);
+}
+
+.off {
+  color: var(--muted);
+}
