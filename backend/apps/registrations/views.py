@@ -263,8 +263,11 @@ class CustomerDetailView(ProjectView):
 
     def delete(self, request, project, pk):
         customer = self.customer(pk)  # scoped to this project: another product's customer is a 404
+        expected = customer.serial_number or customer.user_id
+        if str(request.data.get("confirm_serial") or "").strip() != expected:
+            raise ValidationError({"confirm_serial": ["Type the customer's serial number to confirm."]})
         try:
-            services.delete_customer(customer, request.user)
+            services.delete_customer(customer, request.user, superadmin=get_role(request.user) == Role.SUPERADMIN)
         except services.RuleError as exc:
             return _rule_error(exc)
         return Response(status=status.HTTP_204_NO_CONTENT)
