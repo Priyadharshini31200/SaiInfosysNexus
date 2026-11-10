@@ -163,6 +163,7 @@ function Customers({ project }) {
         loading={state.loading}
         error={state.error}
         onChanged={replace}
+        onDeleted={(c) => setState((s) => ({ ...s, customers: s.customers.filter((x) => x.id !== c.id) }))}
         onEdit={(customer) => navigate(PROJECT_PAGES.edit.path(project.slug, customer.id))}
         onNotify={notify}
       />

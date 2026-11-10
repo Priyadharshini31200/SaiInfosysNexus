@@ -22,6 +22,7 @@ export const registrationsApi = {
   generateSerial: (project) => request(`/projects/${project}/serial-number/`, { method: 'POST' }),
   register: (project, body) => request(base(project), { method: 'POST', body }),
   update: (project, id, body) => request(`${base(project)}${id}/`, { method: 'PATCH', body }),
+  remove: (project, id) => request(`${base(project)}${id}/`, { method: 'DELETE' }),
   extendTrial: (project, id, days) => request(`${base(project)}${id}/extend-trial/`, { method: 'POST', body: { days } }),
   cancelTrial: (project, id) => request(`${base(project)}${id}/cancel-trial/`, { method: 'POST' }),
   inactivate: (project, id) => request(`${base(project)}${id}/inactivate/`, { method: 'POST' }),

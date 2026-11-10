@@ -198,6 +198,10 @@ export default function LicenseExpiryReportPage() {
           customer={viewing}
           onEdit={(c) => navigate(PROJECT_PAGES.edit.path(viewing.project, c.id))}
           onChanged={replace}
+          onDeleted={(c) => {
+            setState((s) => ({ ...s, rows: s.rows.filter((r) => r.id !== c.id) }));
+            setDirty(true);
+          }}
           onNotify={notify}
           onClose={closeDrawer}
         />

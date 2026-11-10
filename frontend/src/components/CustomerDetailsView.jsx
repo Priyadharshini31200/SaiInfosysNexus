@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import DeleteCustomer from './DeleteCustomer';
 import { formatDate, formatDateTime } from '../utils/date';
 import ActivityLog from './ActivityLog';
 import DeviceManagement from './DeviceManagement';
@@ -29,8 +31,26 @@ function Group({ title, rows }) {
  * Right-side "View More" drawer for one customer: grouped read-only details plus Edit and the license actions
  * the user may perform. Never shows the password; the activation key is only ever shown masked (the server keeps a hash).
  */
-export default function CustomerDetailsView({ project, customer: c, onEdit, onChanged, onNotify, onClose }) {
+export default function CustomerDetailsView({ project, customer: c, onEdit, onChanged, onDeleted, onNotify, onClose }) {
   const { can, user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const outside = (e) => !menuRef.current?.contains(e.target) && setMenuOpen(false);
+    const esc = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation(); // close the menu only, not the drawer
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', outside);
+    document.addEventListener('keydown', esc, true);
+    return () => {
+      document.removeEventListener('mousedown', outside);
+      document.removeEventListener('keydown', esc, true);
+    };
+  }, [menuOpen]);
   // The login User ID is the Serial Number; show the value once (both, only if a legacy record has them different).
   const loginId = !c ? '' : !c.serial_number || c.serial_number === c.user_id ? c.user_id : `${c.user_id} / ${c.serial_number}`;
   return (
@@ -89,12 +109,21 @@ export default function CustomerDetailsView({ project, customer: c, onEdit, onCh
                 Edit
               </button>
             )}
-            <LicenseActions project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
-            {can('entry') && c.state !== 'inactive' && !c.password_changed_at && (
-              <ResendCredentials project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
-            )}
-            {user?.role === 'SUPERADMIN' && <ResetCustomerPassword project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
-            {user?.role === 'SUPERADMIN' && c.state !== 'inactive' && <ReissueActivationKey project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
+            {can('delete') && onDeleted && <DeleteCustomer project={project} customer={c} onDeleted={onDeleted} onNotify={onNotify} onClose={onClose} />}
+            <div className={styles.menuWrap} ref={menuRef}>
+              <button type="button" className={styles.menuButton} aria-haspopup="menu" aria-expanded={menuOpen} aria-label="More actions" onClick={() => setMenuOpen((o) => !o)}>
+                ⋮
+              </button>
+              {/* Always mounted so each action's dialog survives the menu closing; closed, only the buttons are hidden. */}
+              <div className={menuOpen ? styles.menuPanel : styles.menuClosed} role="menu" onClick={() => setMenuOpen(false)}>
+                <LicenseActions project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
+                {can('entry') && c.state !== 'inactive' && !c.password_changed_at && (
+                  <ResendCredentials project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
+                )}
+                {user?.role === 'SUPERADMIN' && <ResetCustomerPassword project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
+                {user?.role === 'SUPERADMIN' && c.state !== 'inactive' && <ReissueActivationKey project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
+              </div>
+            </div>
           </div>
         </div>
       )}

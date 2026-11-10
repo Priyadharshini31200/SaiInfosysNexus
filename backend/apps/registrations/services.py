@@ -516,6 +516,50 @@ def cancel_trial(customer, user):
     return customer
 
 
+HISTORY_BLOCKED = (
+    "This customer has existing license, device or usage history and cannot be permanently deleted. "
+    "Revoke access or archive the customer instead."
+)
+# Records every brand-new customer already has: they do not count as history.
+_NEW_CUSTOMER_AUDIT = {"REGISTERED", "KEY_GENERATED", "EDITED", "REQUEST_PROCESSED", "REQUEST_RECEIVED"}
+
+
+def _has_history(customer):
+    """True when anything beyond the records created with a brand-new customer exists. Checked against stored rows only."""
+    from .models import DeviceRegistration, DeviceTransferRequest, EmailLog, LicenseAuditLog, LicenseRenewal
+
+    if customer.first_activated_at or customer.password_changed_at or customer.status != ProjectCustomer.ACTIVE:
+        return True
+    if customer.failed_logins or customer.locked_until or customer.device_blocked:
+        return True
+    if DeviceRegistration.objects.filter(customer=customer).exists() or LicenseRenewal.objects.filter(customer=customer).exists():
+        return True
+    if DeviceTransferRequest.objects.filter(Q(from_customer=customer) | Q(to_customer=customer)).exists():
+        return True
+    if EmailLog.objects.filter(customer=customer).exclude(kind="credentials").exists():
+        return True
+    return LicenseAuditLog.objects.filter(customer=customer).exclude(action__in=_NEW_CUSTOMER_AUDIT).exists()
+
+
+def delete_customer(customer, user):
+    """Permanently deletes a new, unused customer only. History check and delete share one transaction on a row lock, so a
+    device enrolling at the same moment cannot slip in. Audit, email and sign-up rows are kept (their link is cleared).
+    Anything with history raises RuleError and nothing is deleted. No constraint is disabled."""
+    from django.db.models import ProtectedError, RestrictedError
+
+    try:
+        with transaction.atomic():
+            customer = _locked(customer)
+            if _has_history(customer):
+                raise RuleError(HISTORY_BLOCKED)
+            label = f"{customer.name} / serial {customer.serial_number or customer.user_id} (id {customer.pk})"
+            audit.record(user, "CUSTOMER_DELETED", label, customer.project)
+            customer.delete()
+    except (ProtectedError, RestrictedError):
+        raise RuleError(HISTORY_BLOCKED)
+    return label
+
+
 def inactivate(customer, user):
     with transaction.atomic():
         customer = _locked(customer)

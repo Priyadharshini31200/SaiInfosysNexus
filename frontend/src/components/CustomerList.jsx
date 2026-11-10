@@ -37,7 +37,7 @@ function licenseTypeCell(customer) {
  * The one Customer List, used by every project: search, + Add Customer, and per-customer View / Edit /
  * license actions. `customers` is null while loading, or when the user may not view the list.
  */
-export default function CustomerList({ project, label, customers, loading, error, onChanged, onEdit, onNotify }) {
+export default function CustomerList({ project, label, customers, loading, error, onChanged, onDeleted, onEdit, onNotify }) {
   const { can } = useAuth();
   const [search, setSearch] = useState('');
   const [type, setType] = useState('all');
@@ -142,7 +142,7 @@ export default function CustomerList({ project, label, customers, loading, error
       )}
       {empty && <p className={`${styles.empty} ${error && canView ? styles.emptyError : ''}`}>{empty}</p>}
 
-      {viewing && <CustomerDetailsView project={project} customer={viewing} onEdit={onEdit} onChanged={onChanged} onNotify={onNotify} onClose={() => setViewingId(null)} />}
+      {viewing && <CustomerDetailsView project={project} customer={viewing} onEdit={onEdit} onChanged={onChanged} onDeleted={onDeleted} onNotify={onNotify} onClose={() => setViewingId(null)} />}
     </section>
   );
 }

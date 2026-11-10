@@ -259,7 +259,15 @@ class SerialNumberView(ProjectView):
 
 
 class CustomerDetailView(ProjectView):
-    required_actions = {"GET": (Action.VIEW, Action.EDIT), "PATCH": Action.EDIT}  # Edit needs to load the record
+    required_actions = {"GET": (Action.VIEW, Action.EDIT), "PATCH": Action.EDIT, "DELETE": Action.DELETE}  # Edit needs to load the record
+
+    def delete(self, request, project, pk):
+        customer = self.customer(pk)  # scoped to this project: another product's customer is a 404
+        try:
+            services.delete_customer(customer, request.user)
+        except services.RuleError as exc:
+            return _rule_error(exc)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get(self, request, project, pk):
         return Response(customer_data(self.customer(pk)))
