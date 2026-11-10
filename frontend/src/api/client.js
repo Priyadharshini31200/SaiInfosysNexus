@@ -49,11 +49,14 @@ async function getCsrfToken() {
  * - throws ApiError with the server's {message, errors}
  * - a 401 on an authenticated call broadcasts a session-expired event
  */
-export async function request(path, { method = 'GET', body, skipExpiry = false } = {}) {
+export async function request(path, { method = 'GET', body, skipExpiry = false, timeoutMs, timeoutMessage } = {}) {
   const headers = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (method !== 'GET') headers['X-CSRFToken'] = await getCsrfToken();
 
+  // Optional upper bound, so a slow mail server can never leave a "Sending…" button spinning indefinitely.
+  const controller = timeoutMs ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   let res;
   try {
     res = await fetch(`${API_BASE}${path}`, {
@@ -62,9 +65,15 @@ export async function request(path, { method = 'GET', body, skipExpiry = false }
       credentials: 'same-origin',
       cache: 'no-store',
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller?.signal,
     });
   } catch {
+    if (controller?.signal.aborted) {
+      throw new ApiError(timeoutMessage || 'The server is taking too long to respond. Please try again.', { status: 0 });
+    }
     throw new ApiError('Unable to reach the server. Check your connection and try again.', { status: 0 });
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 
   let data = null;

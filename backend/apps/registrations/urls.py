@@ -26,6 +26,7 @@ urlpatterns = [
     path("projects/<str:project>/customers/<int:pk>/inactivate/", views.InactivateView.as_view()),
     path("projects/<str:project>/customers/<int:pk>/reset-password/", views.ResetPasswordView.as_view()),
     path("projects/<str:project>/customers/<int:pk>/retry-credentials-email/", views.RetryCredentialsEmailView.as_view()),
+    path("projects/<str:project>/customers/<int:pk>/resend-credentials/", views.ResendCredentialsView.as_view()),
     path("projects/<str:project>/customers/<int:pk>/reissue-activation-key/", views.ReissueActivationKeyView.as_view()),
     path("projects/<str:project>/customers/<int:pk>/device/", dv.CustomerDeviceView.as_view()),
     path("projects/<str:project>/customers/<int:pk>/device/revoke/", dv.RevokeDeviceView.as_view()),

@@ -29,6 +29,34 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
+# LAN TEST mode: lets Barcode Auto Print on another PC reach a development server over plain HTTP.
+# Development only (refused unless DJANGO_DEBUG=True). This PC's private-range (RFC1918) addresses are added to
+# ALLOWED_HOSTS automatically, so a DHCP address change (e.g. .15 -> .13) does not break it. Nothing else is opened up:
+# no wildcard host, and `runserver` binds 0.0.0.0 only in this mode (see apps/core/management/commands/runserver.py).
+NEXUS_LAN_TEST_MODE = env_bool("NEXUS_LAN_TEST_MODE", False)
+if NEXUS_LAN_TEST_MODE:
+    if not DEBUG:
+        raise ImproperlyConfigured("NEXUS_LAN_TEST_MODE requires DJANGO_DEBUG=True; production must use HTTPS only.")
+    import ipaddress
+    import socket
+
+    def _local_private_ips():
+        found = set()
+        try:
+            for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+                found.add(info[4][0])
+        except OSError:
+            pass
+        try:  # the interface used for the default route (no packet is actually sent)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.connect(("10.255.255.255", 1))
+                found.add(s.getsockname()[0])
+        except OSError:
+            pass
+        return sorted(ip for ip in found if ipaddress.ip_address(ip).is_private and not ip.startswith(("127.", "169.254.")))
+
+    ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS + _local_private_ips()))
+
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -138,17 +166,26 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------- Email (credentials, recovery, reset links)
-EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = env("EMAIL_HOST", "")
+EMAIL_HOST = env("EMAIL_HOST", "").strip()
+# A configured EMAIL_HOST means real SMTP, in DEBUG too; without one, DEBUG prints mail to the console
+# (reported as "not delivered - no mail server configured"). EMAIL_BACKEND in the environment always wins.
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend" if (EMAIL_HOST or not DEBUG) else "django.core.mail.backends.console.EmailBackend",
+)
 EMAIL_PORT = int(env("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", "").strip()
+# Gmail shows App Passwords in groups of four ("abcd efgh ijkl mnop"); the spaces are not part of it.
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "").replace(" ", "")
 EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)  # port 465; mutually exclusive with STARTTLS (port 587)
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True) and not EMAIL_USE_SSL
 EMAIL_TIMEOUT = int(env("EMAIL_TIMEOUT", "15"))
 MAIL_SEND_ATTEMPTS = int(env("MAIL_SEND_ATTEMPTS", "3"))  # credential emails are tried this many times before being reported as failed
 MAIL_RETRY_DELAY_SECONDS = float(env("MAIL_RETRY_DELAY_SECONDS", "2"))  # waits 1x, 2x ... this long between attempts
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "Sai Infosys Nexus <no-reply@saiinfosys.example>")
+# Gmail only sends as the signed-in account (or a verified alias), so the sender account is the sensible default.
+DEFAULT_FROM_EMAIL = (env("DEFAULT_FROM_EMAIL") or "").strip() or (
+    f"Sai Infosys Nexus <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "Sai Infosys Nexus <no-reply@saiinfosys.example>"
+)
 
 # ---------------------------------------------------------------- Customer portal (connected projects)
 CUSTOMER_TOKEN_MAX_AGE = int(env("CUSTOMER_TOKEN_MAX_AGE", "86400"))  # seconds a customer sign-in token stays valid

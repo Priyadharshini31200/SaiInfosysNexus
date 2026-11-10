@@ -221,9 +221,17 @@
 }
 
 @media (max-width: 480px) {
+  /* An auto grid column can't shrink below its content's min-content width, and text inputs
+     have a ~20-character intrinsic width, so the card used to push past narrow screens.
+     minmax(0, 1fr) + min-width: 0 lets the card fit the viewport; the inputs then shrink. */
   .page {
     padding: 20px 14px;
     align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shell {
+    min-width: 0;
   }
 
   .cardBody {

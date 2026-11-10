@@ -1,5 +1,6 @@
 import re
 
+from django.utils import timezone
 from rest_framework import serializers
 
 from . import services
@@ -12,6 +13,21 @@ CONTACT = PHONE
 SERIAL = re.compile(r"^7[0-9]{8}$")
 SERIAL_MESSAGE = "Serial Number must contain exactly 9 digits and start with 7."
 USER_ID = re.compile(r"^[A-Za-z0-9._@-]{3,60}$")
+
+
+def expiry_label(customer):
+    """What the Expiry column shows. A device product's Trial / 1 Year has no real end date until the customer first
+    activates a computer (its clock starts then), so that case is described rather than shown as a blank or a guessed date."""
+    expiry = services.effective_expiry(customer)
+    if expiry:
+        return timezone.localtime(expiry).strftime("%d/%m/%Y")
+    if customer.license_type == ProjectCustomer.LICENSED:
+        return "Lifetime"
+    if customer.license_type == ProjectCustomer.TRIAL and customer.trial_days:
+        return f"{customer.trial_days} day{'s' if customer.trial_days != 1 else ''} from first activation"
+    if customer.license_type == ProjectCustomer.ONE_YEAR:
+        return "1 year from first activation"
+    return "—"
 
 
 def _display(customer):
@@ -56,6 +72,7 @@ def customer_data(customer):
         "activated_at": customer.activated_at,
         "expires_at": customer.expires_at,
         "effective_expires_at": services.effective_expiry(customer),
+        "expiry_label": expiry_label(customer),
         "created_by": customer.created_by.username if customer.created_by else "",
         "updated_by": customer.updated_by.username if customer.updated_by else "",
         "created_at": customer.created_at,
@@ -65,11 +82,11 @@ def customer_data(customer):
 
 class _ProfileFields(serializers.Serializer):
     name = serializers.CharField(max_length=100)
-    company_name = serializers.CharField(max_length=150)
+    company_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")  # optional
     contact_number = serializers.CharField(max_length=20)
     email = serializers.EmailField(max_length=254)
-    address = serializers.CharField(max_length=500)
-    gstin = serializers.CharField(max_length=15)
+    address = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")  # optional
+    gstin = serializers.CharField(max_length=15, required=False, allow_blank=True, default="")  # optional; checked when given
     serial_number = serializers.CharField(max_length=30)
 
     def validate_contact_number(self, value):
@@ -89,7 +106,7 @@ class _ProfileFields(serializers.Serializer):
 
     def validate_gstin(self, value):
         value = value.strip().upper()
-        if not GSTIN.match(value):
+        if value and not GSTIN.match(value):
             raise serializers.ValidationError("Enter a valid 15-character GSTIN.")
         return value
 
@@ -119,7 +136,10 @@ class CustomerEditSerializer(_ProfileFields):
 
 
 class CustomerRegisterSerializer(_ProfileFields):
-    license_type = serializers.ChoiceField(choices=[ProjectCustomer.TRIAL, ProjectCustomer.ONE_YEAR, ProjectCustomer.LICENSED])
+    # Optional: a customer saved without choosing a package gets a Trial.
+    license_type = serializers.ChoiceField(
+        choices=[ProjectCustomer.TRIAL, ProjectCustomer.ONE_YEAR, ProjectCustomer.LICENSED], required=False, default=ProjectCustomer.TRIAL
+    )
     activation_key = serializers.CharField(max_length=40)
     user_id = serializers.CharField(max_length=60, required=False)  # always the serial number; any value sent is ignored
     password = serializers.CharField(max_length=128, write_only=True, trim_whitespace=False)
@@ -138,6 +158,10 @@ class CustomerRegisterSerializer(_ProfileFields):
         return attrs
 
     def validate_activation_key(self, value):
+        # New customers get the current format only (exactly 9 characters). Existing customers' longer keys stay valid:
+        # activation matches by hash and never looks at the length.
+        if len(services.normalize_key(value)) != services.ACTIVATION_KEY_LENGTH:
+            raise serializers.ValidationError(f"The activation key must be exactly {services.ACTIVATION_KEY_LENGTH} characters. Click Generate.")
         if not services.key_is_available(self.context["project"], value):
             raise serializers.ValidationError("This activation key is not valid. Generate a new one.")
         return value
@@ -158,7 +182,9 @@ class RejectRequestSerializer(serializers.Serializer):
 class ApproveRequestSerializer(serializers.Serializer):
     """Everything beyond what the customer typed at sign-up. Serial number and temporary password are generated when omitted."""
 
-    license_type = serializers.ChoiceField(choices=[ProjectCustomer.TRIAL, ProjectCustomer.ONE_YEAR, ProjectCustomer.LICENSED])
+    license_type = serializers.ChoiceField(
+        choices=[ProjectCustomer.TRIAL, ProjectCustomer.ONE_YEAR, ProjectCustomer.LICENSED], required=False, default=ProjectCustomer.TRIAL
+    )
     trial_days = serializers.IntegerField(min_value=1, max_value=365, required=False)
     serial_number = serializers.CharField(max_length=30, required=False)
     temporary_password = serializers.CharField(max_length=128, required=False, trim_whitespace=False)

@@ -19,7 +19,7 @@ const TYPES = [
 ];
 
 /** The real end of the licence: none for Lifetime, and a device trial has none until a computer activates it. */
-const expiryText = (c) => (c.effective_expires_at ? formatDate(c.effective_expires_at) : c.license_type === 'LICENSED' ? 'Lifetime' : '—');
+const expiryText = (c) => c.expiry_label || (c.effective_expires_at ? formatDate(c.effective_expires_at) : c.license_type === 'LICENSED' ? 'Lifetime' : '—');
 
 const BADGES = { active: styles.active, expired: styles.warn, cancelled: styles.muted, inactive: styles.muted };
 

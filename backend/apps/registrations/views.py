@@ -374,10 +374,29 @@ class RetryCredentialsEmailView(ProjectView):
     def post(self, request, project, pk):
         customer = self.customer(pk)
         try:
-            customer, password, key = services.reissue_unsent_credentials(customer, request.user)
+            customer, password, key, event_id = services.reissue_unsent_credentials(customer, request.user)
         except services.RuleError as exc:
             return _rule_error(exc)
-        email_sent = portal.send_credentials(customer, password, key)
+        email_sent = portal.send_credentials(customer, password, key, event_id=event_id)
+        customer.refresh_from_db()
+        return Response({**customer_data(customer), "email_sent": email_sent})
+
+
+class ResendCredentialsView(ProjectView):
+    """Resend Credentials: the deliberate staff action when a customer never received (or lost) the credentials email.
+    Same customer, serial number / User ID and licence; a fresh temporary password and Activation Key are issued (the
+    saved password is a hash and is never read back) and emailed, and neither is ever returned. Refused once the customer
+    has used the account (Reset Password is the Super Admin action then). Same permission as Add Customer (Entry)."""
+
+    required_actions = {"POST": Action.ENTRY}
+
+    def post(self, request, project, pk):
+        customer = self.customer(pk)
+        try:
+            customer, password, key, event_id = services.reissue_unsent_credentials(customer, request.user, resend=True)
+        except services.RuleError as exc:
+            return _rule_error(exc)
+        email_sent = portal.send_credentials(customer, password, key, event_id=event_id)
         customer.refresh_from_db()
         return Response({**customer_data(customer), "email_sent": email_sent})
 
