@@ -39,12 +39,12 @@ At least one valid 64-hex hash is required (other keys, e.g. `macs`, are ignored
 ## 2a. First-run activation — `POST /activate/` (Serial Number + Activation Key; no password, no project key)
 The flow for a newly approved customer: the approval email carries User ID (= Serial Number), a temporary password and the Activation Key.
 ```json
-{ "serial_number": "712345678", "activation_key": "ABCD-EFGH-JKLM-NPQR",
+{ "serial_number": "712345678", "activation_key": "A7K9P2X4M",
   "device_public_key": "<b64>", "fingerprint": {"smbios","machine","v3"}, "device_name": "…", "app_version": "1.0.0" }
 ```
 `200`: `{device_id, account: {user_id, serial_number, must_change_password}, license, entitlement, server_time}` — **no customer token**: activation proves the
 licence, not the person. Then the app calls signed `login/` with User ID + password; if `must_change_password` is true it must call signed `change-password/`
-and sign in again. The key is case/dash-insensitive and is stored only as a hash. A wrong serial or a wrong key both answer `401 invalid_activation`
+and sign in again. The key is case/dash-insensitive and is stored only as a hash. New keys are exactly 9 uppercase letters/digits (e.g. `A7K9P2X4M`, always at least one letter and one digit, so never shaped like a Serial Number); keys issued earlier (16 characters, `ABCD-EFGH-JKLM-NPQR`) stay valid. A wrong serial or a wrong key both answer `401 invalid_activation`
 (indistinguishable). Same limits as enroll: another computer already active → `409 device_limit`; expired / cancelled / inactive → `403`; same computer again → same registration.
 Activation is not required again while the stored entitlement is valid; the hourly signed `entitlement/` refresh keeps it current.
 

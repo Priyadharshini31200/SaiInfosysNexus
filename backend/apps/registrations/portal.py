@@ -38,23 +38,29 @@ def _send(subject, body, to, kind="notice", customer=None, project=""):
     return _send_status(subject, body, to, kind=kind, customer=customer, project=project, attempts=1) != "failed"
 
 
-def _send_status(subject, body, to, html=None, kind="notice", customer=None, project="", attempts=None):
+def _send_status(subject, body, to, html=None, kind="notice", customer=None, project="", attempts=None, event_id=""):
     """accepted | not_delivered | failed - see mailer.deliver (retries + delivery log). Logs never contain the body."""
     return mailer.deliver(
-        subject, body, to, html=html, kind=kind, customer=customer, project=project or getattr(customer, "project", ""), attempts=attempts
+        subject, body, to, html=html, kind=kind, customer=customer, project=project or getattr(customer, "project", ""),
+        attempts=attempts, event_id=event_id,
     )
 
 
 EMAIL_STATUS_LABELS = {
-    "": "Not sent",
-    "accepted": "Accepted by the mail server",
-    "not_delivered": "Not delivered (no mail server configured)",
-    "failed": "Failed to send",
+    "": "Pending",
+    "sending": "Sending",
+    "accepted": "Submitted",  # handed to the SMTP server; SMTP gives no delivery receipt, so inbox delivery is never claimed
+    "not_delivered": "Failed (no mail server configured)",
+    "failed": "Failed",
 }
 
 
 def format_activation_key(raw):
+    """How a key is shown to people: the current 9-character keys as they are (A7K9P2X4M); older 16-character keys in
+    groups of four (ABCD-EFGH-JKLM-NPQR), as their customers already know them. Matching ignores dashes either way."""
     key = services.normalize_key(raw)
+    if len(key) == services.ACTIVATION_KEY_LENGTH:
+        return key
     return "-".join(key[i : i + 4] for i in range(0, len(key), 4))
 
 
@@ -81,17 +87,31 @@ def _record_email(customer, status):
     )
 
 
-def send_credentials(customer, raw_password, activation_key):
+def send_credentials(customer, raw_password, activation_key, event_id=None):
     """Emails the new customer everything needed to start: project, User ID, the one-time temporary password, Serial
     Number, Activation Key, licence plan and dates. The password and key are never stored in readable form or logged.
-    The delivery status is recorded on the customer and in EmailLog; returns True only when a real mail server accepted it."""
+    The delivery status is recorded on the customer and in EmailLog; returns True only when a real mail server accepted it.
+    The one place a credentials email is sent from. Pass the `event_id` from claim_credentials_email when the caller already
+    claimed the send (Retry / Resend claim it inside their locked transaction); otherwise it is claimed here. If another
+    request is already sending, nothing is sent and False is returned."""
+    if event_id is None:
+        event_id = services.claim_credentials_email(customer)
+    if not event_id:
+        logger.info("Credentials email for customer %s is already being sent; not sending a second copy", customer.pk)
+        return False
     label = PROJECTS[customer.project]
     rows = [
-        ("Project", label),
+        ("Customer Name", customer.name),
+        ("Product Name", label),
         ("User ID", customer.user_id),
         ("Temporary Password", raw_password),
         ("Serial Number", customer.serial_number or customer.user_id),
-        ("Activation Key", format_activation_key(activation_key)),
+        (
+            "Activation Key",
+            format_activation_key(activation_key)
+            if activation_key
+            else f"Unchanged - use the key from your first email (ending {customer.activation_key_suffix})",
+        ),
     ] + license_rows(customer)
     steps = [
         f"Install and open {label}.",
@@ -109,6 +129,7 @@ def send_credentials(customer, raw_password, activation_key):
         html=mailer.render_html("Welcome to " + label, intro, rows, steps, notes),
         kind="credentials",
         customer=customer,
+        event_id=event_id,
     )
     _record_email(customer, status)
     return status == "accepted"

@@ -112,7 +112,7 @@ class PrnFlowTests(TestCase):
         rid = self.signup().json()["id"]
         self.login("Superadmin")
         self.assertEqual(self.approve(rid, {"license_type": "TRIAL", "serial_number": "123"}).status_code, 400)
-        self.assertEqual(self.approve(rid, {}).status_code, 400)
+        self.assertEqual(self.approve(rid, {"license_type": "WEEKLY"}).status_code, 400)  # license_type is optional (default Trial) but must be a real package
         ok = self.approve(rid, {"license_type": "TRIAL", "serial_number": "712345678", "temporary_password": "Chosen#Pw1"})
         self.assertEqual((ok.status_code, ok.json()["user_id"]), (201, "712345678"))
         self.assertEqual(self.portal("login/", {"username": "712345678", "password": "Chosen#Pw1"}).status_code, 200)

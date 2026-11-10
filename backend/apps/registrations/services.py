@@ -17,6 +17,8 @@ from .models import DEVICE_PROJECTS, IssuedActivationKey, LicenseRenewal, Projec
 logger = logging.getLogger(__name__)
 
 _ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I
+# New activation keys are exactly this long (e.g. A7K9P2X4M). Keys issued earlier (16 characters) stay valid.
+ACTIVATION_KEY_LENGTH = 9
 
 
 class RuleError(Exception):
@@ -46,17 +48,30 @@ def normalize_key(key):
     return "".join(ch for ch in key.upper() if ch.isalnum())
 
 
+def _new_key():
+    """9 random characters from _ALPHABET (cryptographically secure), with at least one letter and one digit - so a key can
+    never look like a Serial Number (7 + 8 digits), which client apps tell apart by that pattern."""
+    while True:
+        raw = "".join(secrets.choice(_ALPHABET) for _ in range(ACTIVATION_KEY_LENGTH))
+        if any(c.isalpha() for c in raw) and any(c.isdigit() for c in raw):
+            return raw
+
+
 def generate_activation_key(project, user):
-    """Returns a new unique key like ABCD-EFGH-JKLM-NPQR. Stored only as a hash."""
+    """Returns a new unique key like A7K9P2X4M (exactly 9 characters). Stored only as a hash. Unique across every key ever
+    issued (the hash is a unique column) and every customer's current key, including older 16-character ones."""
     for _ in range(5):
-        raw = "".join(secrets.choice(_ALPHABET) for _ in range(16))
+        raw = _new_key()
+        key_hash = _hash(raw)
+        if ProjectCustomer.objects.filter(activation_key_hash=key_hash).exists():
+            continue
         try:
             with transaction.atomic():
-                IssuedActivationKey.objects.create(project=project, key_hash=_hash(raw), key_suffix=raw[-4:], created_by=user)
+                IssuedActivationKey.objects.create(project=project, key_hash=key_hash, key_suffix=raw[-4:], created_by=user)
         except IntegrityError:
             continue
         audit.record(user, "KEY_GENERATED", f"Activation key ending {raw[-4:]}", project)
-        return "-".join(raw[i : i + 4] for i in range(0, 16, 4))
+        return raw
     raise RuleError("Could not generate a unique key. Try again.")
 
 
@@ -238,14 +253,14 @@ def register(project, data, user):
         customer = ProjectCustomer.objects.create(
             project=project,
             name=data["name"],
-            company_name=data["company_name"],
+            company_name=data.get("company_name", ""),
             license_type=data["license_type"],
             user_id=data["user_id"],
             password_hash=hash_password(data["password"]),
             contact_number=data["contact_number"],
             email=data["email"],
             must_change_password=True,  # the password set here is temporary
-            address=data["address"],
+            address=data.get("address", ""),
             gstin=data.get("gstin", ""),
             serial_number=data.get("serial_number", ""),
             trial_days=days if is_trial else None,
@@ -397,23 +412,58 @@ def reissue_activation_key(customer, user):
     return customer, raw
 
 
-def reissue_unsent_credentials(customer, user):
-    """Retry Email. A saved password is only a hash and cannot be emailed again, so a retry issues a fresh temporary
-    password and Activation Key (neither ever reached the customer) and the caller emails them. Refused once the mail
-    server has accepted the credentials (no accidental duplicate) or the customer has already used the account.
-    Returns (customer, password, raw key)."""
+SENDING_STALE_AFTER = timedelta(minutes=10)  # a "Sending" left behind by a crashed request may be claimed again after this
+
+
+def claim_credentials_email(customer):
+    """Database-backed idempotency for the credentials email: one conditional UPDATE marks the customer "sending" (and when).
+    Exactly one of any number of concurrent requests wins; the others send nothing. Returns the event id, or "" if another
+    request is already sending. The caller must already hold the row lock when used inside a transaction."""
+    now = timezone.now()
+    won = (
+        ProjectCustomer.objects.filter(pk=customer.pk)
+        .filter(~Q(credentials_email_status="sending") | Q(credentials_emailed_at__lt=now - SENDING_STALE_AFTER))
+        .update(credentials_email_status="sending", credentials_emailed_at=now)
+    )
+    if not won:
+        return ""
+    customer.credentials_email_status, customer.credentials_emailed_at = "sending", now
+    return f"nexus-cred-{customer.pk}-{int(now.timestamp() * 1000)}"
+
+
+def reissue_unsent_credentials(customer, user, resend=False):
+    """Retry Email / Resend Credentials. A saved password is only a hash and cannot be emailed again, so this issues a
+    fresh temporary password and Activation Key for the SAME customer (same serial number / User ID and licence; nothing
+    new is created) and the caller emails them. The earlier password and key stop working.
+    Retry (resend=False) is refused once the mail server has accepted the credentials, so a double click never sends a
+    duplicate; Resend (resend=True) is the deliberate staff action for "the customer never got / lost the email".
+    Both are refused once the customer has used the account (use Reset Password then), and while a send is in progress.
+    Returns (customer, password, raw key or None, email event id)."""
     with transaction.atomic():
         locked = _locked(customer)
-        if locked.credentials_email_status == "accepted":
+        if locked.credentials_email_status == "accepted" and not resend:
             raise RuleError("The credentials email was already sent to this customer.")
         if locked.first_activated_at or locked.password_changed_at or locked.devices.exists():
             raise RuleError("This customer has already started using the account. Use Reset Password instead.")
         if not locked.email:
             raise RuleError("This customer has no email address.")
+        # The Activation Key is only a hash too. If no credentials email ever reached the mail server, nobody holds the key,
+        # so a fresh one is issued with the email. Once one was submitted, the key is kept (raw=None): only the password resets.
+        if locked.credentials_email_status == "sending" and locked.credentials_emailed_at and (
+            timezone.now() - locked.credentials_emailed_at < SENDING_STALE_AFTER
+        ):
+            raise RuleError("The credentials email is already being sent. Check the status in a moment.")
+        key_was_sent = locked.credentials_email_status == "accepted"
         locked, password = reset_password(locked, user)
-        locked, raw = reissue_activation_key(locked, user)
-        audit.record(user, "CREDENTIALS_EMAIL_RETRY", locked.user_id, locked.project, locked)
-    return locked, password, raw
+        raw = None
+        if not key_was_sent:
+            locked, raw = reissue_activation_key(locked, user)
+        # Claimed in the same locked transaction as the new password: a second click waits for this row, then sees "sending".
+        event_id = claim_credentials_email(locked)
+        if not event_id:
+            raise RuleError("The credentials email is already being sent. Check the status in a moment.")
+        audit.record(user, "CREDENTIALS_RESENT" if resend else "CREDENTIALS_EMAIL_RETRY", locked.user_id, locked.project, locked)
+    return locked, password, raw, event_id
 
 
 def _locked(customer):

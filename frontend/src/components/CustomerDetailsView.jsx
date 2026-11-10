@@ -5,6 +5,7 @@ import DeviceManagement from './DeviceManagement';
 import Drawer from './Drawer';
 import LicenseActions from './LicenseActions';
 import ReissueActivationKey from './ReissueActivationKey';
+import ResendCredentials from './ResendCredentials';
 import ResetCustomerPassword from './ResetCustomerPassword';
 import styles from './CustomerList.module.css';
 
@@ -63,7 +64,7 @@ export default function CustomerDetailsView({ project, customer: c, onEdit, onCh
                 ['Activation Key', c.activation_key_hint],
                 ['Trial Days', c.trial_days ?? '—'],
                 ['Activated', formatDate(c.activated_at)],
-                ['Expiry Date', c.effective_expires_at ? formatDate(c.effective_expires_at) : c.license_type === 'LICENSED' ? 'Lifetime' : '—'],
+                ['Expiry Date', c.expiry_label || (c.effective_expires_at ? formatDate(c.effective_expires_at) : c.license_type === 'LICENSED' ? 'Lifetime' : '—')],
                 ['Status', c.status_label],
               ]}
             />
@@ -89,6 +90,9 @@ export default function CustomerDetailsView({ project, customer: c, onEdit, onCh
               </button>
             )}
             <LicenseActions project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
+            {can('entry') && c.state !== 'inactive' && !c.password_changed_at && (
+              <ResendCredentials project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
+            )}
             {user?.role === 'SUPERADMIN' && <ResetCustomerPassword project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
             {user?.role === 'SUPERADMIN' && c.state !== 'inactive' && <ReissueActivationKey project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
           </div>

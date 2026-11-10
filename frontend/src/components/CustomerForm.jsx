@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { registrationsApi } from '../api/registrations';
 import { projectBySlug } from '../layouts/navigation';
 import Alert from './Alert';
@@ -21,6 +21,8 @@ const EMPTY = {
   trial_days: '3',
 };
 const PROFILE = ['name', 'company_name', 'contact_number', 'email', 'address', 'gstin', 'serial_number'];
+// Company Name, Address and GSTIN are optional; every other profile field is mandatory.
+const OPTIONAL = ['company_name', 'address', 'gstin'];
 const GSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const GSTIN_MESSAGE = 'Enter a valid 15-character GSTIN';
 const REQUIRED_MESSAGE = 'This field is required.';
@@ -52,6 +54,9 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  // Synchronous guards: state updates are not instant, so two fast clicks could both pass a `saving` check.
+  const submittingRef = useRef(false);
+  const issuedRef = useRef(false);
 
   const set = (field) => (e) => {
     setValues((v) => ({ ...v, [field]: e.target.value }));
@@ -78,7 +83,8 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
 
   // A new customer opens with a serial number, activation key and temporary password already issued by the server.
   useEffect(() => {
-    if (editing) return;
+    if (editing || issuedRef.current) return; // once, even when React (StrictMode) runs effects twice
+    issuedRef.current = true;
     issueSerial();
     generate();
     generatePassword();
@@ -112,21 +118,23 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
 
   // Mandatory fields are checked here first so the user sees every gap at once; the server re-validates everything.
   function missing() {
-    const need = editing ? [...PROFILE] : [...PROFILE, 'user_id', 'password', 'activation_key'];
+    const required = PROFILE.filter((f) => !OPTIONAL.includes(f));
+    const need = editing ? required : [...required, 'user_id', 'password', 'activation_key'];
     if (!editing && isTrial) need.push('trial_days');
     const gaps = Object.fromEntries(need.filter((f) => !String(values[f]).trim()).map((f) => [f, [f === 'activation_key' ? 'Click Generate to create an activation key.' : REQUIRED_MESSAGE]]));
     if (!gaps.contact_number && !CONTACT.test(values.contact_number)) gaps.contact_number = [CONTACT_MESSAGE];
     if (!gaps.serial_number && !SERIAL.test(values.serial_number.trim())) gaps.serial_number = [SERIAL_MESSAGE];
     if (!gaps.email && !EMAIL.test(values.email.trim())) gaps.email = [EMAIL_MESSAGE];
-    if (!gaps.gstin && !GSTIN.test(values.gstin.trim().toUpperCase())) gaps.gstin = [GSTIN_MESSAGE];
+    if (values.gstin.trim() && !GSTIN.test(values.gstin.trim().toUpperCase())) gaps.gstin = [GSTIN_MESSAGE]; // optional, but must be valid when given
     return gaps;
   }
 
   async function submit(event) {
     event.preventDefault();
-    if (saving) return;
+    if (submittingRef.current) return; // a second click while the first Save / Approve is still running
     const gaps = missing();
     if (Object.keys(gaps).length) return setErrors(gaps);
+    submittingRef.current = true;
     setSaving(true);
     setFormError('');
     setErrors({});
@@ -141,6 +149,7 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
       } else if (e.status === 400 && Object.keys(e.errors || {}).length) setErrors(e.errors);
       else setFormError(e.message);
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   }
@@ -157,11 +166,11 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
       <Section title="Customer Details">
         <TextField compact label="Project" value={projectBySlug(project)?.label ?? project} readOnly />
         {text('name', 'Name', { maxLength: 100, required: true })}
-        {text('company_name', 'Company Name', { maxLength: 150, required: true })}
+        {text('company_name', 'Company Name', { maxLength: 150 })}
         {text('contact_number', 'Contact Number', { maxLength: 10, inputMode: 'numeric', autoComplete: 'tel-national', onChange: setContact, required: true })}
         {text('email', 'Email ID', { maxLength: 254, type: 'email', inputMode: 'email', required: true })}
-        {text('gstin', 'GST Details / GSTIN', { maxLength: 15, required: true, style: { textTransform: 'uppercase' } })}
-        {text('address', 'Address', { maxLength: 500, required: true })}
+        {text('gstin', 'GST Details / GSTIN', { maxLength: 15, style: { textTransform: 'uppercase' } })}
+        {text('address', 'Address', { maxLength: 500 })}
       </Section>
 
       <Section title="Login Details">
@@ -189,7 +198,7 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
       <Section title="License Details">
         {!editing && (
           <>
-            <SelectField compact required label="License Type" value={values.license_type} onChange={set('license_type')} error={err('license_type')}>
+            <SelectField compact label="License Type" value={values.license_type} onChange={set('license_type')} error={err('license_type')}>
               <option value="TRIAL">Trial</option>
               <option value="ONE_YEAR">1 Year</option>
               <option value="LICENSED">Lifetime</option>

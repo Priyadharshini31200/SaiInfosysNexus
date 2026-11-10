@@ -96,7 +96,7 @@ class CredentialsEmailTests(CredentialsBase):
         self.assertEqual((r["email_sent"], r["credentials_email_status"]), (False, "failed"))
         self.assertTrue(r["temporary_password"] and r["activation_key"])
         self.assertTrue(ProjectCustomer.objects.filter(pk=r["id"]).exists())
-        self.assertEqual(self.s.get(f"/api/projects/{PRN}/customers/{r['id']}/").json()["credentials_email_status_label"], "Failed to send")
+        self.assertEqual(self.s.get(f"/api/projects/{PRN}/customers/{r['id']}/").json()["credentials_email_status_label"], "Failed")
 
     def test_add_customer_form_emails_the_generated_key_and_password_too(self):
         key = self.s.post(f"/api/projects/{PRN}/activation-key/").json()["activation_key"]

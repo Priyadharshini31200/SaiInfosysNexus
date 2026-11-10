@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { registrationsApi } from '../api/registrations';
 import Alert from '../components/Alert';
 import Button from '../components/Button';
 import CustomerList from '../components/CustomerList';
+import DeviceTransferRequests from '../components/DeviceTransferRequests';
 import RegistrationRequests from '../components/RegistrationRequests';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +21,8 @@ export default function ProjectCustomersPage() {
 }
 
 function Customers({ project }) {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const isSuperAdmin = user?.role === 'SUPERADMIN';
   const navigate = useNavigate();
   const location = useLocation();
   const canView = can('view');
@@ -44,18 +46,29 @@ function Customers({ project }) {
   // The customer was saved but the credentials email was not delivered: keep the record, offer Retry Email.
   const [emailFailed, setEmailFailed] = useState(null);
   const [retrying, setRetrying] = useState(false);
+  const retryingRef = useRef(false); // one explicit Retry at a time, however fast the clicks
   const retryEmail = async () => {
+    if (retryingRef.current) return;
+    retryingRef.current = true;
     setRetrying(true);
     try {
       const updated = await registrationsApi.retryEmail(project.slug, emailFailed.id);
       if (updated.email_sent) {
         setEmailFailed(null);
         notify('success', `Customer Saved & Email Sent: ${emailFailed.name}.`);
-      } else setEmailFailed((f) => ({ ...f, notConfigured: updated.credentials_email_status === 'not_delivered' }));
+      } else {
+        setEmailFailed((f) => ({
+          ...f,
+          notConfigured: updated.credentials_email_status === 'not_delivered',
+          lastResult: `Retry result: ${updated.credentials_email_status_label}. Check the mail settings, then try again.`,
+        }));
+      }
       setState((s) => (s.customers ? { ...s, customers: s.customers.map((c) => (c.id === updated.id ? updated : c)) } : s));
     } catch (e) {
+      setEmailFailed((f) => (f ? { ...f, lastResult: `Retry result: ${e.message}` } : f));
       notify('error', e.message);
     } finally {
+      retryingRef.current = false;
       setRetrying(false);
     }
   };
@@ -85,6 +98,36 @@ function Customers({ project }) {
     };
   }, [project.slug, canEntry, synced]);
 
+  // Pending device transfers: Super Admin only (the server enforces it; a project without device licensing answers 404 = none).
+  const [transfers, setTransfers] = useState([]);
+  useEffect(() => {
+    if (!isSuperAdmin) return undefined;
+    let current = true;
+    registrationsApi
+      .deviceTransfers(project.slug)
+      .then(({ results }) => current && setTransfers(results))
+      .catch(() => current && setTransfers([]));
+    return () => {
+      current = false;
+    };
+  }, [project.slug, isSuperAdmin, synced]);
+
+  const decideTransfer = async (req, decision) => {
+    try {
+      await registrationsApi.decideDeviceTransfer(project.slug, req.id, decision);
+      setTransfers((list) => list.filter((t) => t.id !== req.id));
+      notify(
+        'success',
+        decision === 'approve'
+          ? `Transfer approved: ${req.device_name || 'the computer'} is released from ${req.from_user_id}; ${req.to_user_id} can now sign in on it.`
+          : `Transfer request rejected for ${req.to_user_id}.`,
+      );
+    } catch (e) {
+      notify('error', e.message);
+      registrationsApi.deviceTransfers(project.slug).then(({ results }) => setTransfers(results)).catch(() => {}); // already decided elsewhere: refresh
+    }
+  };
+
   const rejectRequest = async (req) => {
     if (!window.confirm(`Reject the registration request from ${req.name} (${req.email})? No license will be created.`)) return;
     try {
@@ -105,12 +148,14 @@ function Customers({ project }) {
         <Alert type="error">
           <strong>Email Delivery Failed.</strong> {emailFailed.name} was saved, but the credentials email was not delivered
           {emailFailed.notConfigured ? ' (no mail server is configured)' : ''}.{' '}
+          {emailFailed.lastResult && <>{emailFailed.lastResult} </>}
           <Button variant="secondary" onClick={retryEmail} loading={retrying} loadingLabel="Sending…">
             Retry Email
           </Button>
         </Alert>
       )}
       <RegistrationRequests project={project.slug} requests={requests} onReject={rejectRequest} />
+      {isSuperAdmin && <DeviceTransferRequests requests={transfers} onDecide={decideTransfer} />}
       <CustomerList
         project={project.slug}
         label={project.label}

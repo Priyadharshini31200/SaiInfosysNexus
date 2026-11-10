@@ -207,7 +207,7 @@ class RegistrationTests(TestCase):
 
     def test_validation(self):
         self.login("Superadmin")
-        for field, bad in (("contact_number", "abc"), ("gstin", "123"), ("gstin", ""), ("serial_number", ""), ("serial_number", "635149529"), ("serial_number", "73514952"), ("serial_number", "7351495291"), ("serial_number", "73514952a"), ("password", ""), ("name", ""), ("trial_days", 0)):
+        for field, bad in (("contact_number", "abc"), ("gstin", "123"), ("serial_number", ""), ("serial_number", "635149529"), ("serial_number", "73514952"), ("serial_number", "7351495291"), ("serial_number", "73514952a"), ("password", ""), ("name", ""), ("trial_days", 0)):
             r = self.register(**{field: bad})
             self.assertEqual(r.status_code, 400, field)
             self.assertIn(field, r.json()["errors"])

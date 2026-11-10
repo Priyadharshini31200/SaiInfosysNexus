@@ -40,7 +40,7 @@ class CredentialEmailContentTests(CredentialsBase):
     def test_trial_email_lists_every_field_but_never_the_trial_length(self):
         r = self.approve("TRIAL", trial_days=9).json()
         msg = mail.outbox[-1]
-        for label in ("Project: Barcode Auto Print", f"User ID: {r['user_id']}", "Temporary Password: ", f"Serial Number: {r['serial_number']}",
+        for label in ("Product Name: Barcode Auto Print", "Customer Name: Meena", f"User ID: {r['user_id']}", "Temporary Password: ", f"Serial Number: {r['serial_number']}",
                       "Activation Key: ", "License Plan: Trial", "Activation Date: "):
             self.assertIn(label, msg.body)
         self.assertNotIn("Expiry Date", msg.body)
@@ -88,28 +88,29 @@ class CredentialEmailContentTests(CredentialsBase):
         self.assertEqual((log.recipient, log.status, log.attempts, log.error, log.customer_id), ("new.customer@example.com", "accepted", 1, "", r["id"]))
         self.assertFalse(hasattr(log, "body"))
 
-    def test_a_temporary_failure_is_retried_and_then_succeeds(self):
-        from django.core.mail.message import EmailMessage
+    def test_a_connection_failure_is_retried_and_sends_exactly_one_email(self):
+        from django.core.mail.backends.locmem import EmailBackend
 
-        real, calls = EmailMessage.send, {"n": 0}
+        calls = {"n": 0}
 
-        def flaky(self_, fail_silently=False):
+        def flaky_connect(self_):  # connecting fails twice (nothing sent yet), then works
             calls["n"] += 1
             if calls["n"] < 3:
                 raise OSError("temporary smtp outage")
-            return real(self_, fail_silently)
+            return False
 
-        with patch("apps.registrations.mailer.EmailMultiAlternatives.send", flaky):
+        with patch.object(EmailBackend, "open", flaky_connect):
             r = self.approve("TRIAL").json()
         self.assertEqual(calls["n"], 3)
         self.assertEqual(EmailLog.objects.get(kind="credentials").attempts, 3)
         self.assertEqual(r["credentials_email_status"], "accepted")
+        self.assertEqual(len([m for m in mail.outbox if "Temporary Password" in m.body]), 1)  # one email, not three
 
-    def test_a_permanent_failure_is_retried_logged_and_reported_without_a_secret_in_the_log(self):
+    def test_a_send_failure_is_not_resent_but_logged_and_reported_without_a_secret_in_the_log(self):
         with patch("apps.registrations.mailer.EmailMultiAlternatives.send", side_effect=OSError("smtp down")):
             r = self.approve("TRIAL").json()
         log = EmailLog.objects.get(kind="credentials")
-        self.assertEqual((log.status, log.attempts), ("failed", 3))
+        self.assertEqual((log.status, log.attempts), ("failed", 1))  # an error while sending is never resent automatically
         self.assertIn("OSError", log.error)
         self.assertFalse(r["email_sent"])
         self.assertNotIn(r["temporary_password"], log.error + log.subject)
