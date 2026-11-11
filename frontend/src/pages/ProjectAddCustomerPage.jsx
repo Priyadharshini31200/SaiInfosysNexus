@@ -21,7 +21,7 @@ function AddOrEdit({ project, id }) {
   const [search] = useSearchParams();
   const requestId = search.get('request');
   const editing = Boolean(id);
-  const allowed = editing ? can('edit') : can('entry');
+  const allowed = editing ? can('edit') : requestId ? can('approve') : can('entry');
   const [state, setState] = useState({ loading: (editing || Boolean(requestId)) && allowed, error: '', customer: null, prefill: null });
   const listPath = PROJECT_PAGES.list.path(project.slug);
 

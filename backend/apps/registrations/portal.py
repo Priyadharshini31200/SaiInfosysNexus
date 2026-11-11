@@ -35,7 +35,7 @@ class PortalError(Exception):
 def _send(subject, body, to, kind="notice", customer=None, project=""):
     """Best-effort notice: one attempt, so a mail outage never stalls the request that triggered it. True when the
     message was handed to the mail server."""
-    return _send_status(subject, body, to, kind=kind, customer=customer, project=project, attempts=1) != "failed"
+    return _send_status(subject, body, to, kind=kind, customer=customer, project=project, attempts=1) == "accepted"
 
 
 def _send_status(subject, body, to, html=None, kind="notice", customer=None, project="", attempts=None, event_id=""):
@@ -94,6 +94,11 @@ def send_credentials(customer, raw_password, activation_key, event_id=None):
     The one place a credentials email is sent from. Pass the `event_id` from claim_credentials_email when the caller already
     claimed the send (Retry / Resend claim it inside their locked transaction); otherwise it is claimed here. If another
     request is already sending, nothing is sent and False is returned."""
+    current = ProjectCustomer.objects.filter(pk=customer.pk).values("password_changed_at", "password_hash").first()
+    if current is None or current["password_changed_at"] or not services.verify_password(customer, raw_password):
+        return False
+    if current["password_hash"] != customer.password_hash:
+        return False
     if event_id is None:
         event_id = services.claim_credentials_email(customer)
     if not event_id:
@@ -335,7 +340,7 @@ def session_data(customer, device_id=None):
 
 def check_new_password(customer, raw):
     """Same rule as the staff accounts: any non-empty password is accepted (no length or complexity rules); case-insensitive."""
-    if not raw:
+    if not isinstance(raw, str) or not raw.strip() or len(raw) > 128:
         raise PortalError("Password is required.", 400, "weak_password")
 
 
@@ -352,7 +357,7 @@ def _set_password(customer, raw):
 
 
 def change_password(customer, current, new):
-    """The customer picks a new password (from Barcode Auto Print). It replaces the one Nexus holds at once, so the next
+    """The customer picks a new password (from Barcode AutoPrint). It replaces the one Nexus holds at once, so the next
     login, here or anywhere else, uses it; tokens issued for the old password stop working."""
     if not services.verify_password(customer, current or ""):
         raise PortalError("Current password is incorrect.", 400, "wrong_password")
@@ -360,6 +365,7 @@ def change_password(customer, current, new):
         raise PortalError("Choose a password different from the current one.", 400, "same_password")
     _set_password(customer, new)
     audit.record(None, "CUSTOMER_PASSWORD_CHANGED", customer.user_id, customer.project, customer)
+    send_password_changed(customer)
 
 
 # ---------------------------------------------------------------- recovery
@@ -400,3 +406,16 @@ def reset_password(project, token, new):
     customer = _load(token, RESET_SALT, project, settings.PASSWORD_RESET_MAX_AGE)
     _set_password(customer, new)  # changes the fingerprint, so the link cannot be used twice
     audit.record(None, "CUSTOMER_PASSWORD_RESET", customer.user_id, project, customer)
+    send_password_changed(customer)
+
+
+def send_password_changed(customer):
+    """No passwords in notices. Failure is logged by the existing mailer and cannot undo a password change."""
+    if not customer.email:
+        return False
+    return _send_status(
+        f"{PROJECTS[customer.project]} Password Changed",
+        f"Hello {customer.name},\n\nYour password has been changed. Sign in using your new password. "
+        "If you did not make this change, use Forgot Password in your application and contact support.\n\nSai Infosys Nexus",
+        customer.email, kind="password_changed", customer=customer, attempts=1,
+    ) == "accepted"

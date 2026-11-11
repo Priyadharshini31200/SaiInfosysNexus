@@ -18,7 +18,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
       >
         <nav className={styles.nav}>
           <ul className={styles.list}>
-            {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+            {NAV_ITEMS.filter(() => can('view', 'gstr2tally:dashboard') || can('view', 'prn-auto-print:dashboard')).map(({ to, label, icon: Icon }) => (
               <li key={to}>
                 <NavLink
                   to={to}
@@ -36,7 +36,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
           <p className={`${styles.sectionLabel} ${styles.projectsLabel}`}>Projects</p>
           <ProjectSidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} />
 
-          {can('reports') && (
+          {can('reports', null) && (
             <>
               <p className={`${styles.sectionLabel} ${styles.projectsLabel}`}>Reports</p>
               <ReportsSidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} />

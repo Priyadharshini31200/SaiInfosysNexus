@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { authApi } from '../api/auth';
 import { SESSION_EXPIRED_EVENT } from '../api/client';
 
@@ -6,6 +7,8 @@ const AuthContext = createContext(null);
 
 // status: 'loading' | 'authenticated' | 'anonymous'
 export function AuthProvider({ children }) {
+  const location = useLocation();
+  const activeProject = location.pathname.match(/^\/projects\/([^/]+)/)?.[1];
   const [status, setStatus] = useState('loading');
   const [user, setUser] = useState(null);
   const [notice, setNotice] = useState('');
@@ -35,6 +38,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     refresh();
+    const timer = setInterval(() => { if (document.visibilityState === 'visible' && wasAuthenticated.current) refresh(); }, 10000);
+    return () => clearInterval(timer);
   }, [refresh]);
 
   // Session expiry on any API call, tab re-focus, or Back/Forward cache restore.
@@ -75,14 +80,14 @@ export function AuthProvider({ children }) {
   }, [clear]);
 
   // UI-only convenience; the API enforces the same permissions. Super Admin may do everything.
-  // Permissions are global: `can('edit')` holds in every project.
+  // Explicit modules scope shared components; project routes infer their own module.
   const can = useCallback(
-    (action) => user?.role === 'SUPERADMIN' || Boolean(user?.permissions?.[action]),
-    [user],
+    (action, module = activeProject) => user?.role === 'SUPERADMIN' || (module ? Boolean(user?.project_permissions?.[module]?.[action]) : Boolean(user?.permissions?.[action])),
+    [user, activeProject],
   );
 
   const value = useMemo(
-    () => ({ status, user, notice, login, logout, clear, setNotice, can }),
+    () => ({ status, user, notice, login, logout, clear, setNotice, can, refresh }),
     [status, user, notice, login, logout, clear, can],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

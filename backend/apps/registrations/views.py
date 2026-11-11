@@ -1,6 +1,6 @@
 from django.db import IntegrityError
 from rest_framework import serializers, status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,6 +31,8 @@ class ProjectAccess(BasePermission):
         if get_role(request.user) not in (Role.SUPERADMIN, Role.ADMIN):
             return False
         required = view.required_actions.get(request.method)
+        if getattr(view, "approval_registration", False) and request.method == "POST" and request.data.get("request_id"):
+            required = Action.APPROVE
         if required is None:
             return False
         actions = required if isinstance(required, tuple) else (required,)  # a tuple means "any of these"
@@ -58,12 +60,15 @@ def _rule_error(exc):
 
 
 class CustomerListView(ProjectView):
+    approval_registration = True
     required_actions = {"GET": Action.VIEW, "POST": Action.ENTRY}
 
     def get(self, request, project):
         return Response({"results": [customer_data(c) for c in ProjectCustomer.objects.filter(project=project).select_related("created_by", "updated_by")]})
 
     def post(self, request, project):
+        if request.data.get("request_id") and not user_can(request.user, project, Action.APPROVE):
+            raise PermissionDenied("Approval permission is required.")
         serializer = CustomerRegisterSerializer(data=request.data, context={"project": project})
         if not serializer.is_valid():
             # The very same Save sent again (double click, timeout and retry): the key is spent but everything else is valid and
@@ -96,7 +101,7 @@ class CustomerListView(ProjectView):
 class RegistrationRequestListView(ProjectView):
     """Pending sign-ups from this project: the Super Admin / Admin notification. Needs Entry, as processing one is an Add Customer."""
 
-    required_actions = {"GET": Action.ENTRY}
+    required_actions = {"GET": (Action.ENTRY, Action.APPROVE)}
 
     def get(self, request, project):
         pending = RegistrationRequest.objects.filter(project=project, status=RegistrationRequest.PENDING)
@@ -125,7 +130,7 @@ def _request_data(r):
 class RegistrationRequestDetailView(ProjectView):
     """Open one request (pending or processed). Needs Entry, like the list."""
 
-    required_actions = {"GET": Action.ENTRY}
+    required_actions = {"GET": (Action.ENTRY, Action.APPROVE)}
 
     def get(self, request, project, pk):
         try:
@@ -138,7 +143,7 @@ class ApproveRegistrationRequestView(ProjectView):
     """Create the account and issue the license for a pending request in one step, then email the credentials.
     Username = Serial Number. Same permission as Add Customer (Entry); Super Admin always."""
 
-    required_actions = {"POST": Action.ENTRY}
+    required_actions = {"POST": Action.APPROVE}
 
     def post(self, request, project, pk):
         try:
@@ -166,7 +171,7 @@ class ApproveRegistrationRequestView(ProjectView):
 class RejectRegistrationRequestView(ProjectView):
     """Decline a pending request: nothing is created and nothing is emailed. Same permission as approving (Entry)."""
 
-    required_actions = {"POST": Action.ENTRY}
+    required_actions = {"POST": Action.APPROVE}
 
     def post(self, request, project, pk):
         try:
@@ -228,7 +233,7 @@ class ActivityView(ProjectView):
 
 
 class ActivationKeyView(ProjectView):
-    required_actions = {"POST": Action.ENTRY}
+    required_actions = {"POST": (Action.ENTRY, Action.APPROVE)}
 
     def post(self, request, project):
         try:
@@ -241,14 +246,14 @@ class ActivationKeyView(ProjectView):
 class TemporaryPasswordView(ProjectView):
     """A fresh random temporary password for the Add Customer form (nothing is stored until the customer is saved)."""
 
-    required_actions = {"POST": Action.ENTRY}
+    required_actions = {"POST": (Action.ENTRY, Action.APPROVE)}
 
     def post(self, request, project):
         return Response({"temporary_password": services.generate_temporary_password()}, status=status.HTTP_201_CREATED)
 
 
 class SerialNumberView(ProjectView):
-    required_actions = {"POST": Action.ENTRY}
+    required_actions = {"POST": (Action.ENTRY, Action.APPROVE)}
 
     def post(self, request, project):
         try:
@@ -277,6 +282,8 @@ class CustomerDetailView(ProjectView):
 
     def patch(self, request, project, pk):
         customer = self.customer(pk)
+        if request.data.get("password") and get_role(request.user) != Role.SUPERADMIN:
+            raise PermissionDenied("Only Superadmin may reset customer passwords.")
         serializer = CustomerEditSerializer(customer, data=request.data, partial=True, context={"project": project})
         serializer.is_valid(raise_exception=True)
         try:
@@ -297,7 +304,7 @@ class _LicenseActionView(ProjectView):
 
 
 class ExtendTrialView(_LicenseActionView):
-    required_actions = {"POST": Action.EDIT}
+    required_actions = {"POST": Action.EXTEND_TRIAL}
 
     def perform(self, request, customer):
         serializer = ExtendTrialSerializer(data=request.data)
@@ -312,7 +319,7 @@ class RenewLicenseSerializer(serializers.Serializer):
 class RenewLicenseView(_LicenseActionView):
     """Renews a 1-Year licence by one year. Needs the Edit permission, like extending a trial."""
 
-    required_actions = {"POST": Action.EDIT}
+    required_actions = {"POST": Action.RENEW}
 
     def perform(self, request, customer):
         serializer = RenewLicenseSerializer(data=request.data)
@@ -344,14 +351,14 @@ class RenewalHistoryView(ProjectView):
 
 # Cancelling a trial and inactivating a license revoke access, so they need the Delete permission.
 class CancelTrialView(_LicenseActionView):
-    required_actions = {"POST": Action.DELETE}
+    required_actions = {"POST": Action.CANCEL_TRIAL}
 
     def perform(self, request, customer):
         return services.cancel_trial(customer, request.user)
 
 
 class InactivateView(_LicenseActionView):
-    required_actions = {"POST": Action.DELETE}
+    required_actions = {"POST": Action.INACTIVATE}
 
     def perform(self, request, customer):
         return services.inactivate(customer, request.user)

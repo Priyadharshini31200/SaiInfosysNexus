@@ -38,7 +38,8 @@ class _All(BasePermission):
     actions = ()
 
     def has_permission(self, request, view):
-        return all(user_can(request.user, None, a) for a in self.actions)
+        return any(all(user_can(request.user, f"{code}:{kind}", a) for a in self.actions)
+                   for code in PROJECTS for kind in (getattr(view, "report_kind", "expiry"),))
 
 
 class CanViewReports(_All):
@@ -49,10 +50,10 @@ class CanExportReports(_All):
     actions = (Action.REPORTS, Action.EXPORT_PRINT)
 
 
-def expiry_customers():
+def expiry_customers(user=None, export=False):
     """Every project's active licenses with an effective expiry date (not Lifetime), soonest first: expired and upcoming."""
     return services.with_expiry(
-        ProjectCustomer.objects.filter(project__in=list(PROJECTS), status=ProjectCustomer.ACTIVE)
+        ProjectCustomer.objects.filter(project__in=[code for code in PROJECTS if user is None or (user_can(user, f"{code}:expiry", Action.REPORTS) and (not export or user_can(user, f"{code}:expiry", Action.EXPORT_PRINT)))], status=ProjectCustomer.ACTIVE)
     ).select_related("created_by", "updated_by").order_by("expires_at", "id")
 
 
@@ -65,7 +66,7 @@ class LicenseExpiryReportView(APIView):
             {
                 "results": [
                     {**customer_data(c), "project": c.project, "product": PROJECTS[c.project], "expiry_status": exports.expiry_status(c, now)}
-                    for c in expiry_customers()
+                    for c in expiry_customers(request.user)
                 ]
             }
         )
@@ -118,13 +119,13 @@ class LicenseExpiryExportView(APIView):
 
     def post(self, request):
         fmt, ids, filters = _export_request(request)
-        return _deliver(exports.expiry_table(_in_order(expiry_customers(), ids), filters), fmt)
+        return _deliver(exports.expiry_table(_in_order(expiry_customers(request.user, export=True), ids), filters), fmt)
 
 
 STATUSES = {"all": "All", "used": "Used", "not-used": "Not Used"}
 
 
-def _usage_rows(params):
+def _usage_rows(params, user, export=False):
     """(rows, unavailable project labels, filter text) for ?project=&status=&search=, read from each project's own database."""
     from apps.dashboard import usage
 
@@ -136,6 +137,13 @@ def _usage_rows(params):
         raise ValidationError({"status": ["Choose all, used or not-used."]})
     search = " ".join(str(params.get("search") or "").split())[:100]
     codes = list(usage.PROJECTS) if project == "all" else [project]
+    allowed = [code for code in codes if user_can(user, f"{code}:usage", Action.REPORTS)
+               and (not export or user_can(user, f"{code}:usage", Action.EXPORT_PRINT))]
+    if project != "all" and not allowed:
+        raise PermissionDenied("You do not have access to this project report.")
+    codes = allowed
+    if not codes:
+        raise PermissionDenied("You do not have access to usage reports.")
     rows, unavailable = [], []
     for code in codes:
         try:
@@ -158,21 +166,23 @@ def _usage_rows(params):
 
 
 class UsageReportView(APIView):
+    report_kind = "usage"
     """Used / Not Used units of every project (or one), filtered on the server."""
 
     permission_classes = [CanViewReports]
 
     def get(self, request):
-        rows, unavailable, _ = _usage_rows(request.query_params)
+        rows, unavailable, _ = _usage_rows(request.query_params, request.user)
         return Response({"results": rows, "unavailable": unavailable})
 
 
 class UsageReportExportView(APIView):
+    report_kind = "usage"
     permission_classes = [CanExportReports]
 
     def post(self, request):
         fmt = request.data.get("fmt")
         if fmt not in (*FORMATS, "print"):
             raise ValidationError({"fmt": ["Choose xlsx, pdf or print."]})
-        rows, _, filters = _usage_rows(request.data)
+        rows, _, filters = _usage_rows(request.data, request.user, export=True)
         return _deliver(exports.usage_table(rows, filters), fmt)

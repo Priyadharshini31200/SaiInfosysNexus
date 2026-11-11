@@ -8,6 +8,8 @@ import { SearchIcon } from '../components/Icons';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { PROJECT_ITEMS, USAGE_STATUSES } from '../layouts/navigation';
+import useSyncChanges from '../utils/useSyncChanges';
+import { dashboardApi } from '../api/dashboard';
 import { formatDate } from '../utils/date';
 import styles from '../components/CustomerList.module.css';
 
@@ -32,7 +34,8 @@ export default function UsageReportPage() {
   const [state, setState] = useState({ loading: true, error: '', rows: [], unavailable: [] });
   const [toast, setToast] = useState(null);
   const clearToast = useCallback(() => setToast(null), []);
-  const canView = can('reports');
+  const canView = PROJECT_ITEMS.some(({slug}) => can('reports', `${slug}:usage`));
+  const synced = useSyncChanges(dashboardApi.sync, canView);
 
   const setFilter = useCallback(
     (key, value) =>
@@ -68,10 +71,11 @@ export default function UsageReportPage() {
     return () => {
       current = false;
     };
-  }, [canView, project, status, q]);
+  }, [canView, project, status, q, can, synced]);
 
   const filters = useMemo(() => ({ project, status, search: q }), [project, status, q]);
-  const { loading, error, rows, unavailable } = state;
+  const { loading, error, unavailable } = state;
+  const rows = state.rows.filter((row) => PROJECT_ITEMS.some(({slug, label}) => label === row.product && can('reports', `${slug}:usage`)));
   let empty = '';
   if (!canView) empty = 'You do not have permission to view reports.';
   else if (error) empty = error;
@@ -96,7 +100,7 @@ export default function UsageReportPage() {
         <FilterSelect label="Project" value={project} onChange={(v) => setFilter('project', v)} options={PROJECT_OPTIONS} disabled={!canView} />
         <FilterSelect label="Status" value={status} onChange={(v) => setFilter('status', v)} options={STATUS_OPTIONS} disabled={!canView} />
         <span className={styles.count}>{canView && !error && !(loading && rows.length === 0) ? `Total: ${rows.length}` : ''}</span>
-        {can('export_print') && canView && (
+        {canView && (project === ALL ? PROJECT_ITEMS.filter(({slug}) => can('reports', `${slug}:usage`)).every(({slug}) => can('export_print', `${slug}:usage`)) : can('export_print', `${project}:usage`)) && (
           <div className={styles.tools}>
             <ExportButtons
               menu

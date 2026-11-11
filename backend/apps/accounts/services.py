@@ -20,7 +20,7 @@ def authenticate_user(request, username, password):
 
 def validate_new_password(user, current_password, new_password):
     """Returns a list of error messages (empty when acceptable)."""
-    if not new_password:
+    if not new_password or not new_password.strip():
         return ["Password is required."]
     if normalize(new_password) == normalize(current_password):
         return ["New password must be different from the current password."]

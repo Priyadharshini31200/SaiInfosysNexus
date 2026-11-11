@@ -88,7 +88,7 @@ export default function CustomerDetailsView({ project, customer: c, onEdit, onCh
                 ['Status', c.status_label],
               ]}
             />
-            {user?.role === 'SUPERADMIN' && <DeviceManagement project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
+            {can('device_transfer', project) && <DeviceManagement project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}
             <Group
               title="Record History"
               rows={[
@@ -104,12 +104,12 @@ export default function CustomerDetailsView({ project, customer: c, onEdit, onCh
             )}
           </div>
           <div className={styles.licenseBar}>
-            {can('edit') && (
+            {can('edit', project) && (
               <button type="button" onClick={() => onEdit(c)}>
                 Edit
               </button>
             )}
-            {can('delete') && onDeleted && <DeleteCustomer project={project} customer={c} onDeleted={onDeleted} onNotify={onNotify} onClose={onClose} />}
+            {can('delete', project) && onDeleted && <DeleteCustomer project={project} customer={c} onDeleted={onDeleted} onNotify={onNotify} onClose={onClose} />}
             <div className={styles.menuWrap} ref={menuRef}>
               <button type="button" className={styles.menuButton} aria-haspopup="menu" aria-expanded={menuOpen} aria-label="More actions" onClick={() => setMenuOpen((o) => !o)}>
                 ⋮
@@ -117,7 +117,7 @@ export default function CustomerDetailsView({ project, customer: c, onEdit, onCh
               {/* Always mounted so each action's dialog survives the menu closing; closed, only the buttons are hidden. */}
               <div className={menuOpen ? styles.menuPanel : styles.menuClosed} role="menu" onClick={() => setMenuOpen(false)}>
                 <LicenseActions project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
-                {can('entry') && c.state !== 'inactive' && !c.password_changed_at && (
+                {can('entry', project) && c.state !== 'inactive' && !c.password_changed_at && (
                   <ResendCredentials project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />
                 )}
                 {user?.role === 'SUPERADMIN' && <ResetCustomerPassword project={project} customer={c} onChanged={onChanged} onNotify={onNotify} />}

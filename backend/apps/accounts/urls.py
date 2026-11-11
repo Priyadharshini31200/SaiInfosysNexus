@@ -3,6 +3,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("config/project-permissions/", views.ProjectPermissionsView.as_view()),
+    path("config/admins/<int:pk>/reset-password/", views.AdminPasswordResetView.as_view()),
     path("auth/csrf/", views.CsrfView.as_view(), name="auth-csrf"),
     path("auth/login/", views.LoginView.as_view(), name="auth-login"),
     path("auth/logout/", views.LogoutView.as_view(), name="auth-logout"),

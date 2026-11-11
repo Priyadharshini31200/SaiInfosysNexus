@@ -1,3 +1,4 @@
+import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDownIcon } from '../components/Icons';
@@ -10,12 +11,14 @@ import styles from './Sidebar.module.css';
  * link to its Customer List.
  */
 export default function ProjectSidebarMenu({ collapsed, onNavigate }) {
+  const { can } = useAuth();
   const { pathname } = useLocation();
   const [toggled, setToggled] = useState({}); // slug -> user's explicit open/closed choice
 
   return (
     <ul className={styles.list}>
       {PROJECT_ITEMS.map(({ slug, label, icon: Icon }) => {
+        if (!can('entry', slug) && !can('view', slug) && !can('approve', slug) && !can('device_transfer', slug)) return null;
         const inProject = pathname.startsWith(`/projects/${slug}/`);
         const open = toggled[slug] ?? inProject;
 
@@ -23,7 +26,7 @@ export default function ProjectSidebarMenu({ collapsed, onNavigate }) {
           return (
             <li key={slug}>
               <NavLink
-                to={PROJECT_PAGES.list.path(slug)}
+                to={((can('view', slug) || can('approve', slug) || can('device_transfer', slug)) ? PROJECT_PAGES.list : PROJECT_PAGES.add).path(slug)}
                 onClick={onNavigate}
                 title={label}
                 className={() => `${styles.link} ${inProject ? styles.active : ''}`}
@@ -50,7 +53,7 @@ export default function ProjectSidebarMenu({ collapsed, onNavigate }) {
             </button>
             {open && (
               <ul id={`submenu-${slug}`} className={styles.sub}>
-                {PROJECT_MENU.map((page) => (
+                {PROJECT_MENU.filter((page) => can(page === PROJECT_PAGES.add ? 'entry' : 'view', slug) || (page === PROJECT_PAGES.list && (can('approve', slug) || can('device_transfer', slug)))).map((page) => (
                   <li key={page.label}>
                     <NavLink
                       to={page.path(slug)}

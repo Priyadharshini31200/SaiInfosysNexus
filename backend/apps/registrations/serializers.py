@@ -128,6 +128,11 @@ class CustomerEditSerializer(_ProfileFields):
 
     password = serializers.CharField(max_length=128, write_only=True, required=False, trim_whitespace=False)
 
+    def validate_password(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Password is required.")
+        return value
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():

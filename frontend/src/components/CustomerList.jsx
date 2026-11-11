@@ -40,6 +40,9 @@ function licenseTypeCell(customer) {
 export default function CustomerList({ project, label, customers, loading, error, onChanged, onDeleted, onEdit, onNotify }) {
   const { can } = useAuth();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [status, setStatus] = useState('all');
   const [type, setType] = useState('all');
   const [viewingId, setViewingId] = useState(null);
   const viewing = customers?.find((c) => c.id === viewingId) ?? null; // follows license actions done in the panel
@@ -48,21 +51,24 @@ export default function CustomerList({ project, label, customers, loading, error
     const term = search.trim().toLowerCase();
     return (customers ?? []).filter(
       (c) =>
+        (status === 'all' || c.state === status) &&
         (type === 'all' || c.license_type === type) &&
-        (!term || [c.name, c.company_name, c.user_id, c.contact_number, c.gstin, c.serial_number].some((v) => (v || '').toLowerCase().includes(term))),
+        (!term || [c.name, c.company_name, c.user_id, c.contact_number, c.email, c.gstin, c.serial_number].some((v) => (v || '').toLowerCase().includes(term))),
     );
-  }, [customers, search, type]);
+  }, [customers, search, type, status]);
 
-  const filterText = [type !== 'all' && `License Type: ${TYPES.find((t) => t.value === type).label}`, search.trim() && `Search: ${search.trim()}`]
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(visible.length / pageSize)));
+  const pageRows = visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const filterText = [status !== 'all' && `Status: ${status}`,type !== 'all' && `License Type: ${TYPES.find((t) => t.value === type).label}`, search.trim() && `Search: ${search.trim()}`]
     .filter(Boolean)
     .join('; ');
 
-  const canView = can('view');
+  const canView = can('view', project);
   let empty = '';
   if (!canView) empty = 'You do not have permission to view the customer list.';
   else if (loading) empty = 'Loading…';
   else if (error) empty = error;
-  else if (customers.length === 0) empty = `No customers registered for ${label} yet.`;
+  else if (!customers || customers.length === 0) empty = `No customers registered for ${label} yet.`;
   else if (visible.length === 0) empty = 'No customers match your search or filter.';
 
   return (
@@ -73,24 +79,28 @@ export default function CustomerList({ project, label, customers, loading, error
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search name, company, user ID, phone or serial"
             aria-label="Search customers"
             disabled={!canView}
             maxLength={100}
           />
         </label>
-        <FilterSelect label="License Type" value={type} onChange={setType} options={TYPES} disabled={!canView} />
+        <FilterSelect label="License Type" value={type} onChange={(value) => { setType(value); setPage(1); }} options={TYPES} disabled={!canView} />
+        <FilterSelect label="Status" value={status} onChange={(value) => { setStatus(value); setPage(1); }} options={[
+          {value: 'all', label: 'All'}, {value: 'active', label: 'Active'}, {value: 'expired', label: 'Expired'},
+          {value: 'cancelled', label: 'Cancelled'}, {value: 'inactive', label: 'Inactive'},
+        ]} disabled={!canView} />
         <span className={styles.count}>{canView && customers ? `Total: ${visible.length}` : ''}</span>
         <div className={styles.tools}>
-          {can('export_print') && canView && (
+          {can('export_print', project) && canView && (
             <ExportButtons
               disabled={!customers || visible.length === 0}
               run={(fmt) => reportsApi.exportCustomers(project, fmt, visible.map((c) => c.id), filterText)}
               onError={(text) => onNotify('error', text)}
             />
           )}
-          {can('entry') && (
+          {can('entry', project) && (
             <Link to={PROJECT_PAGES.add.path(project)} className={styles.addBtn}>
               <PlusIcon size={17} /> Add Customer
             </Link>
@@ -113,7 +123,7 @@ export default function CustomerList({ project, label, customers, loading, error
             </tr>
           </thead>
           <tbody>
-            {visible.map((customer, index) => (
+            {pageRows.map((customer, index) => (
               <tr
                 key={customer.id}
                 className={styles.row}
@@ -127,7 +137,7 @@ export default function CustomerList({ project, label, customers, loading, error
                 }}
                 aria-label={`View details of ${customer.name}`}
               >
-                <td data-label="S.No">{index + 1}</td>
+                <td data-label="S.No">{(currentPage - 1) * pageSize + index + 1}</td>
                 <td data-label="Name" className={styles.name}>{customer.name}</td>
                 <td data-label="Company Name">{customer.company_name}</td>
                 <td data-label="Contact No.">{customer.contact_number}</td>
@@ -140,9 +150,17 @@ export default function CustomerList({ project, label, customers, loading, error
         </table>
         </div>
       )}
+      {canView && visible.length > 0 && <div className={styles.tools}>
+        <label>Rows <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
+          {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+        </select></label>
+        <button type="button" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</button>
+        <span>Page {currentPage} of {Math.max(1, Math.ceil(visible.length / pageSize))}</span>
+        <button type="button" disabled={currentPage * pageSize >= visible.length} onClick={() => setPage(currentPage + 1)}>Next</button>
+      </div>}
       {empty && <p className={`${styles.empty} ${error && canView ? styles.emptyError : ''}`}>{empty}</p>}
 
-      {viewing && <CustomerDetailsView project={project} customer={viewing} onEdit={onEdit} onChanged={onChanged} onDeleted={onDeleted} onNotify={onNotify} onClose={() => setViewingId(null)} />}
+      {canView && viewing && <CustomerDetailsView project={project} customer={viewing} onEdit={onEdit} onChanged={onChanged} onDeleted={onDeleted} onNotify={onNotify} onClose={() => setViewingId(null)} />}
     </section>
   );
 }

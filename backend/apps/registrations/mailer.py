@@ -65,7 +65,8 @@ def deliver(subject, text, to, *, html=None, kind="", customer=None, project="",
     attempts_allowed = max(1, int(attempts or getattr(settings, "MAIL_SEND_ATTEMPTS", 3)))
     delay = float(getattr(settings, "MAIL_RETRY_DELAY_SECONDS", 2))
     error, attempts = "", 0
-    for attempts in range(1, attempts_allowed + 1):
+    local_output = any(name in settings.EMAIL_BACKEND for name in _LOCAL_MAIL_BACKENDS)
+    for attempts in ([] if local_output else range(1, attempts_allowed + 1)):
         connection = get_connection(fail_silently=False)
         try:
             connection.open()  # connect + TLS + sign in: nothing is sent yet, so a failure here is safe to retry

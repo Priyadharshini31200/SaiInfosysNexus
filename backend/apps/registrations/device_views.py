@@ -21,7 +21,7 @@ from rest_framework.permissions import AllowAny, BasePermission
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
-from apps.accounts.permissions import IsSuperAdmin
+from apps.accounts.constants import Action
 
 from . import device, device_crypto as dc, portal, portal_views as pv, services
 from .models import DeviceNonce, DeviceRegistration, ProjectClient
@@ -362,7 +362,7 @@ class PublicKeysView(_Open):
 
 # ---------------------------------------------------------------- staff: view and transfer (Super Admin only)
 class _StaffDeviceView(ProjectView):
-    permission_classes = [IsSuperAdmin]
+    required_actions = {"GET": Action.DEVICE_TRANSFER, "POST": Action.DEVICE_TRANSFER}
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)

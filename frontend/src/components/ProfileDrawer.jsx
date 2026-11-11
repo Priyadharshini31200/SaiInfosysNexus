@@ -27,7 +27,7 @@ function ProfileContent() {
           aria-controls="reset-password"
         >
           <KeyIcon size={18} />
-          <span>Reset Password</span>
+          <span>Change Password</span>
           <ChevronDownIcon size={16} className={styles.chevron} />
         </button>
         {showReset && <ResetPasswordForm onCancel={() => setShowReset(false)} />}

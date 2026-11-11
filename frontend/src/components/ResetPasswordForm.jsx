@@ -10,7 +10,8 @@ import styles from './ResetPasswordForm.module.css';
 const EMPTY = { current_password: '', new_password: '', confirm_password: '' };
 
 export default function ResetPasswordForm({ onCancel }) {
-  const { clear } = useAuth();
+  const { clear, user } = useAuth();
+  const [reauthenticate, setReauthenticate] = useState(user?.role !== 'SUPERADMIN');
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
@@ -32,7 +33,7 @@ export default function ResetPasswordForm({ onCancel }) {
     if (submitting) return;
 
     const local = {};
-    if (!form.current_password) local.current_password = 'Current password is required.';
+    if (reauthenticate && !form.current_password) local.current_password = 'Current password is required.';
     if (!form.new_password) local.new_password = 'New password is required.';
     if (!form.confirm_password) local.confirm_password = 'Please confirm the new password.';
     else if (form.new_password && form.new_password !== form.confirm_password) local.confirm_password = 'New password and confirmation do not match.';
@@ -52,6 +53,7 @@ export default function ResetPasswordForm({ onCancel }) {
       Object.entries(err.errors || {}).forEach(([k, v]) => {
         fieldErrors[k] = first(v);
       });
+      if (fieldErrors.current_password) setReauthenticate(true);
       setErrors(fieldErrors);
       setFormError(Object.keys(fieldErrors).length ? '' : err.message);
       setForm((f) => ({ ...f, current_password: fieldErrors.current_password ? '' : f.current_password }));
@@ -66,7 +68,7 @@ export default function ResetPasswordForm({ onCancel }) {
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <Alert type="error">{formError}</Alert>
 
-        <PasswordField
+        {reauthenticate && <PasswordField
           label="Current Password"
           autoFocus
           autoComplete="current-password"
@@ -74,7 +76,7 @@ export default function ResetPasswordForm({ onCancel }) {
           onChange={update('current_password')}
           error={errors.current_password}
           disabled={submitting}
-        />
+        />}
         <PasswordField
           label="New Password"
           autoComplete="new-password"
