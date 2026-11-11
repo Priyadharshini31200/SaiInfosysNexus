@@ -8,7 +8,7 @@ import styles from './RegistrationRequests.module.css';
  * Sign-ups Pending Approval, sent from the connected project. Nothing is activated until someone opens one in
  * Add Customer (prefilled) and saves it (= approve), or rejects it. Renders nothing when there are none.
  */
-export default function RegistrationRequests({ project, requests, onReject }) {
+export default function RegistrationRequests({ project, requests, onReject, canApprove = false }) {
   const [open, setOpen] = useState(false);
   if (!requests?.length) return null;
   const addPath = (id) => `${PROJECT_PAGES.add.path(project)}?request=${id}`;
@@ -33,11 +33,11 @@ export default function RegistrationRequests({ project, requests, onReject }) {
                 </span>
               </span>
               <span className={styles.actions}>
-                <Link to={addPath(r.id)} className={styles.add}>
+                {canApprove && <Link to={addPath(r.id)} className={styles.add}>
                   Approve
-                </Link>
+                </Link>}
                 {onReject && (
-                  <button type="button" className={styles.reject} onClick={() => onReject(r)}>
+                  <button type="button" className={styles.reject} disabled={!canApprove} onClick={() => onReject(r)}>
                     Reject
                   </button>
                 )}

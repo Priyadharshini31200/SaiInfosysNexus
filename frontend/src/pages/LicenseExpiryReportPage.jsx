@@ -8,6 +8,8 @@ import { SearchIcon } from '../components/Icons';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { PROJECT_ITEMS, PROJECT_PAGES } from '../layouts/navigation';
+import useSyncChanges from '../utils/useSyncChanges';
+import { dashboardApi } from '../api/dashboard';
 import { formatDate, formatMonth, monthKey } from '../utils/date';
 import styles from '../components/CustomerList.module.css';
 
@@ -49,7 +51,8 @@ export default function LicenseExpiryReportPage() {
       { replace: true },
     );
 
-  const canView = can('reports');
+  const canView = PROJECT_ITEMS.some(({slug}) => can('reports', `${slug}:expiry`));
+  const synced = useSyncChanges(dashboardApi.sync, canView);
   useEffect(() => {
     if (!canView) return undefined;
     let current = true;
@@ -60,7 +63,7 @@ export default function LicenseExpiryReportPage() {
     return () => {
       current = false;
     };
-  }, [canView, reload]);
+  }, [canView, reload, synced, can]);
 
   const months = useMemo(() => {
     const keys = new Set(state.rows.map((r) => monthKey(r.expires_at)));
@@ -72,14 +75,17 @@ export default function LicenseExpiryReportPage() {
     const term = search.trim().toLowerCase();
     return state.rows.filter(
       (r) =>
+        can('reports', `${r.project}:expiry`) &&
+        (params.get('state') !== 'expired' || r.expiry_status?.toLowerCase() === 'expired') &&
         (product === ALL || r.project === product) &&
         (type === ALL || r.license_type === type) &&
         (month === ALL || monthKey(r.expires_at) === month) &&
         (!term || [r.name, r.company_name, r.product, r.serial_number, r.user_id].some((v) => (v || '').toLowerCase().includes(term))),
     );
-  }, [state.rows, search, product, type, month]);
+  }, [state.rows, search, product, type, month, params, can]);
 
   const filterText = [
+    params.get('state') === 'expired' && 'Status: Expired',
     product !== ALL && `Product: ${PROJECT_ITEMS.find((p) => p.slug === product)?.label ?? product}`,
     type !== ALL && `License Type: ${TYPES.find((t) => t.value === type)?.label ?? type}`,
     month !== ALL && `Expiry Month: ${formatMonth(month)}`,
@@ -130,7 +136,7 @@ export default function LicenseExpiryReportPage() {
         <FilterSelect label="License Type" value={type} onChange={(v) => setFilter('type', v)} options={TYPES} disabled={!canView} />
         <FilterSelect label="Expiry Month" value={month} onChange={(v) => setFilter('month', v)} options={[{ value: ALL, label: 'All' }, ...months]} disabled={!canView} />
         <span className={styles.count}>{canView && !loading && !error ? `Total: ${visible.length}` : ''}</span>
-        {can('export_print') && canView && (
+        {canView && visible.every((r) => can('export_print', `${r.project}:expiry`)) && (
           <div className={styles.tools}>
             <ExportButtons
               menu
@@ -192,7 +198,7 @@ export default function LicenseExpiryReportPage() {
       )}
       {empty && <p className={`${styles.empty} ${error && canView ? styles.emptyError : ''}`}>{empty}</p>}
 
-      {viewing && (
+      {viewing && can('reports', `${viewing.project}:expiry`) && (
         <CustomerDetailsView
           project={viewing.project}
           customer={viewing}

@@ -8,7 +8,7 @@ export const NAV_ITEMS = [{ to: '/dashboard', label: 'Dashboard', icon: Dashboar
 // here automatically gets the same Add Customer / Customer List submenu, pages and API client.
 export const PROJECT_ITEMS = [
   { slug: 'gstr2tally', label: 'GSTR2Tally', icon: FolderIcon },
-  { slug: 'prn-auto-print', label: 'Barcode Auto Print', icon: PrinterIcon },
+  { slug: 'prn-auto-print', label: 'Barcode AutoPrint', icon: PrinterIcon },
 ];
 
 // The Reports menu (shown to users who may view reports): one expandable item with a page per report.

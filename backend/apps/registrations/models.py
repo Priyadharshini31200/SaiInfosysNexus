@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
-PROJECTS = {"gstr2tally": "GSTR2Tally", "prn-auto-print": "Barcode Auto Print"}
+PROJECTS = {"gstr2tally": "GSTR2Tally", "prn-auto-print": "Barcode AutoPrint"}
 # Projects whose licence is enforced on the customer's computer through signed device entitlements.
 DEVICE_PROJECTS = ("prn-auto-print",)
 

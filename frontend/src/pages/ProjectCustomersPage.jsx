@@ -23,6 +23,7 @@ export default function ProjectCustomersPage() {
 function Customers({ project }) {
   const { can, user } = useAuth();
   const isSuperAdmin = user?.role === 'SUPERADMIN';
+  const canManageDevices = can('device_transfer', project.slug);
   const navigate = useNavigate();
   const location = useLocation();
   const canView = can('view');
@@ -30,6 +31,7 @@ function Customers({ project }) {
   const [requests, setRequests] = useState([]);
   const synced = useSyncChanges(() => registrationsApi.sync(project.slug), canView); // other sessions' changes
   const canEntry = can('entry');
+  const canApprove = can('approve');
   const [toast, setToast] = useState(null);
   const clearToast = useCallback(() => setToast(null), []);
   const notify = useCallback((type, text) => setToast({ id: Date.now(), type, text }), []);
@@ -87,7 +89,7 @@ function Customers({ project }) {
 
   // Pending sign-ups from the connected project: the notification for whoever may add customers.
   useEffect(() => {
-    if (!canEntry) return undefined;
+    if (!canEntry && !canApprove) return undefined;
     let current = true;
     registrationsApi
       .requests(project.slug)
@@ -96,12 +98,12 @@ function Customers({ project }) {
     return () => {
       current = false;
     };
-  }, [project.slug, canEntry, synced]);
+  }, [project.slug, canEntry, canApprove, synced]);
 
   // Pending device transfers: Super Admin only (the server enforces it; a project without device licensing answers 404 = none).
   const [transfers, setTransfers] = useState([]);
   useEffect(() => {
-    if (!isSuperAdmin) return undefined;
+    if (!canManageDevices) return undefined;
     let current = true;
     registrationsApi
       .deviceTransfers(project.slug)
@@ -110,7 +112,7 @@ function Customers({ project }) {
     return () => {
       current = false;
     };
-  }, [project.slug, isSuperAdmin, synced]);
+  }, [project.slug, canManageDevices, synced]);
 
   const decideTransfer = async (req, decision) => {
     try {
@@ -154,8 +156,8 @@ function Customers({ project }) {
           </Button>
         </Alert>
       )}
-      <RegistrationRequests project={project.slug} requests={requests} onReject={rejectRequest} />
-      {isSuperAdmin && <DeviceTransferRequests requests={transfers} onDecide={decideTransfer} />}
+      <RegistrationRequests canApprove={canApprove} project={project.slug} requests={requests} onReject={rejectRequest} />
+      {canManageDevices && <DeviceTransferRequests requests={transfers} onDecide={decideTransfer} />}
       <CustomerList
         project={project.slug}
         label={project.label}

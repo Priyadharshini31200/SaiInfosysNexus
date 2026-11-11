@@ -3,7 +3,7 @@
 Each project keeps its own database on the same SQL Server instance. This module reads them
 (read-only, through the default connection and three-part names) and reduces both projects to one
 shape: a `base` set with exactly ONE row per registered customer/device and the time of its latest
-successful usage event (NULL when it never succeeded). All three counts and all three lists are
+successful usage event (NULL when it never succeeded). Used and Not Used counts/lists are
 filters over that one set, so the summary always matches the lists and nothing is counted twice:
 
     Used        last_used IS NOT NULL
@@ -13,18 +13,18 @@ Expiring This Month is separate: ProjectCustomer.expires_at (Nexus's own records
 Asia/Kolkata, for ACTIVE-status Trial and 1-Year customers of the project (Lifetime excluded; see _expiring).
 
 GSTR2Tally (database Gstr_db)
-    registered   ACTIVE rows of licensed_device_tbl (one per device)
+    registered   ACTIVE rows of licensed_device_tbl (one per device), plus unmatched ACTIVE Nexus registrations
     usage event  tally_import_job_tbl.status = 'COMPLETED', attributed to a device through the job's
                  local agent (or, for a job with no agent, through its batch's license when that license
                  has exactly one device)
     customer     superadmin_customerprofile.business_name, else the company registered for the
                  license's GSTIN, else the customer's username
 
-Barcode Auto Print (database PRNPRINT + Nexus)
+Barcode AutoPrint (database PRNPRINT + Nexus)
     registered   Customers with their non-revoked Licenses (one per license; a customer with none is
                  one row), merged by serial number with the ACTIVE-status customers Nexus holds
     usage event  the license was activated, validated, or seen by a device activation, or (in Nexus) the enrolled
-                 device reported real use (DeviceRegistration.last_used_at)
+                 device was activated/enrolled or reported real use (never merely record creation)
 """
 import logging
 import re
@@ -35,6 +35,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import DatabaseError, connection
 from django.db.models import Q
+from django.utils import timezone
 
 from apps.registrations import services
 from apps.registrations.models import ProjectCustomer
@@ -43,7 +44,7 @@ from apps.registrations.serializers import customer_data
 logger = logging.getLogger(__name__)
 
 IST = ZoneInfo("Asia/Kolkata")
-CATEGORIES = ("used", "not-used", "expiring")
+CATEGORIES = ("used", "not-used", "expiring", "expired")
 PAGE_SIZES = (10, 25, 50, 100)
 
 _DB_NAME = re.compile(r"[A-Za-z0-9_]{1,128}")
@@ -71,7 +72,7 @@ def _gstr_base(db):
     device_use AS (
         SELECT device_id, MAX(used_at) AS last_used FROM job_use GROUP BY device_id
     ),
-    base AS (
+    runtime AS (
         SELECT d.id AS unit_id,
                COALESCE(NULLIF(cp.business_name, ''), NULLIF(co.company_name, ''), NULLIF(u.username, ''), '') AS customer_name,
                COALESCE(NULLIF(d.device_name, ''), LEFT(d.device_fingerprint, 12)) AS device_name,
@@ -86,6 +87,14 @@ def _gstr_base(db):
                      WHERE pl.licensed_gstin <> '' AND c.gstin = pl.licensed_gstin ORDER BY c.id) co
         LEFT JOIN device_use du ON du.device_id = d.id
         WHERE d.status = 'ACTIVE'
+    ),
+    {_nexus_units("gstr2tally")},
+    base AS (
+        SELECT r.unit_id, r.customer_name, r.device_name, r.serial, r.last_used
+        FROM runtime r
+        UNION ALL
+        SELECT -n.unit_id, n.customer_name, n.device_name, n.serial, n.last_used
+        FROM nexus n WHERE n.serial = '' OR NOT EXISTS (SELECT 1 FROM runtime r WHERE r.serial = n.serial)
     )"""
 
 
@@ -93,13 +102,14 @@ def _nexus_units(code):
     """CTE `nexus`: one row per ACTIVE-status customer registered in Nexus for a project, with the last time its
     enrolled device really used the app (device usage reports). Cancelled and inactive licences are not units.
     `code` is one of our own project codes, never user input."""
+    last_used = "COALESCE(d.last_used_at, c.first_activated_at, d.enrolled_at)" if code == "prn-auto-print" else "d.last_used_at"
     return f"""
     nexus AS (
         SELECT c.id AS unit_id,
                COALESCE(NULLIF(c.company_name, ''), c.name) AS customer_name,
                COALESCE(d.device_name, '') AS device_name,
                c.serial_number AS serial,
-               d.last_used_at AS last_used
+               {last_used} AS last_used
         FROM registrations_projectcustomer c
         LEFT JOIN registrations_deviceregistration d ON d.customer_id = c.id AND d.revoked_at IS NULL
         WHERE c.project = '{code}' AND c.status = 'ACTIVE'
@@ -140,7 +150,7 @@ def _prn_base(db):
 
 PROJECTS = {
     "gstr2tally": {"label": "GSTR2Tally", "db_setting": "GSTR_DB_NAME", "base": _gstr_base},
-    "prn-auto-print": {"label": "Barcode Auto Print", "db_setting": "PRN_DB_NAME", "base": _prn_base},
+    "prn-auto-print": {"label": "Barcode AutoPrint", "db_setting": "PRN_DB_NAME", "base": _prn_base},
 }
 
 
@@ -170,6 +180,11 @@ def _expiring(code, now=None):
     )
 
 
+def _expired(code, now=None):
+    return services.with_expiry(ProjectCustomer.objects.filter(project=code, status=ProjectCustomer.ACTIVE)).filter(
+        expires_at__lte=now or timezone.now())
+
+
 def _like(term):
     escaped = re.sub(r"([\\%_\[])", r"\\\1", term)
     return f"%{escaped}%"
@@ -196,11 +211,11 @@ def summary(code, now=None):
     sql = _base_sql(code) + """
     SELECT COUNT(*), COALESCE(SUM(CASE WHEN last_used IS NOT NULL THEN 1 ELSE 0 END), 0) FROM base"""
     total, used = _run(sql, [])[0]
-    return {"total": total, "used": used, "not_used": total - used, "expiring": _expiring(code, now).count()}
+    return {"total": total, "used": used, "not_used": total - used, "expiring": _expiring(code, now).count(), "expired": _expired(code, now).count()}
 
 
-def _expiring_listing(code, search, page, page_size, now):
-    customers = _expiring(code, now)
+def _expiring_listing(code, search, page, page_size, now, category="expiring"):
+    customers = _expired(code, now) if category == "expired" else _expiring(code, now)
     if search:
         customers = customers.filter(
             Q(name__icontains=search) | Q(company_name__icontains=search) | Q(serial_number__icontains=search) | Q(user_id__icontains=search)
@@ -219,8 +234,8 @@ def _expiring_listing(code, search, page, page_size, now):
 
 def listing(code, category, search="", page=1, page_size=10, now=None):
     """One page of the units behind a count, plus the filtered total. Raises ProjectUnavailable."""
-    if category == "expiring":
-        return _expiring_listing(code, search, page, page_size, now)
+    if category in ("expiring", "expired"):
+        return _expiring_listing(code, search, page, page_size, now, category)
     where, params = _category_filter(category)
     if search:
         like = _like(search)

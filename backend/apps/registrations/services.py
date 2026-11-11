@@ -247,6 +247,11 @@ def register(project, data, user):
     key = normalize_key(data["activation_key"])
     key_hash = _hash(key)
     with transaction.atomic():
+        request_id = data.get("request_id")
+        if request_id:
+            pending = RegistrationRequest.objects.select_for_update().filter(pk=request_id, project=project).first()
+            if pending is None or pending.status != RegistrationRequest.PENDING:
+                raise RuleError("This request has already been processed.")
         updated = IssuedActivationKey.objects.filter(project=project, key_hash=key_hash, used=False).update(used=True)
         if not updated:
             raise RuleError("This activation key is not valid. Generate a new one.")
@@ -353,6 +358,7 @@ def reject_request(req, reason, user):
 
 def edit(customer, data, user):
     with transaction.atomic():
+        customer = _locked(customer)
         data = dict(data)
         password = data.pop("password", None)
         changed = [f for f, v in data.items() if getattr(customer, f) != v]
@@ -360,11 +366,16 @@ def edit(customer, data, user):
             setattr(customer, field, value)
         if password:
             customer.password_hash = hash_password(password)
-            customer.must_change_password = True
+            customer.must_change_password = False
+            customer.password_changed_at = timezone.now()
+            customer.failed_logins, customer.locked_until = 0, None
             changed.append("password")
         customer.updated_by = user
         customer.save()
         audit.record(user, "EDITED", "Changed: " + (", ".join(changed) or "nothing"), customer.project, customer)
+        if password:
+            from .portal import send_password_changed
+            transaction.on_commit(lambda: send_password_changed(customer))
     return customer
 
 

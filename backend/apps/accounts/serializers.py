@@ -2,7 +2,9 @@ from rest_framework import serializers
 
 from . import services
 from .passwords import check_user_password
-from .permissions import permission_map
+from .permissions import permission_map, scoped_permission_map, get_role
+from .constants import Role
+from django.utils import timezone
 
 
 class LoginSerializer(serializers.Serializer):
@@ -11,19 +13,25 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    current_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128, required=False, allow_blank=True)
     new_password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
     confirm_password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
 
     def validate(self, attrs):
         user = self.context["request"].user
         errors = {}
-        if not check_user_password(user, attrs["current_password"]):
+        if not attrs["new_password"].strip():
+            errors["new_password"] = ["Password is required."]
+        request = self.context["request"]
+        authenticated_at = request.session.get("authenticated_at", 0)
+        recent = get_role(user) == Role.SUPERADMIN and 0 <= timezone.now().timestamp() - authenticated_at <= 300
+        current = attrs.get("current_password", "")
+        if not recent and not check_user_password(user, current):
             errors["current_password"] = ["Current password is incorrect."]
         if attrs["new_password"] != attrs["confirm_password"]:
             errors["confirm_password"] = ["New password and confirmation do not match."]
         if "current_password" not in errors and "confirm_password" not in errors:
-            problems = services.validate_new_password(user, attrs["current_password"], attrs["new_password"])
+            problems = services.validate_new_password(user, current, attrs["new_password"])
             if problems:
                 errors["new_password"] = problems
         if errors:
@@ -39,6 +47,10 @@ class CurrentUserSerializer(serializers.Serializer):
     role = serializers.SerializerMethodField()
     role_label = serializers.SerializerMethodField()
     permissions = serializers.SerializerMethodField()
+    project_permissions = serializers.SerializerMethodField()
+
+    def get_project_permissions(self, user):
+        return scoped_permission_map(user)
 
     def get_role(self, user):
         return user.profile.role

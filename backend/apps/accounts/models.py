@@ -15,16 +15,21 @@ class UserProfile(models.Model):
 
 
 class UserModulePermission(models.Model):
-    """Per-user, per-module action grants. Written by the future Configuration page and
-    enforced by apps.accounts.permissions.HasModulePermission. `module` is a free-form
-    code (e.g. "projects") so new modules need no schema change."""
+    """Per-account, per-project/menu grants. Unassigned actions are denied.
+    Legacy global AdminPermission rows remain intact but no longer authorize requests."""
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="module_permissions")
     module = models.CharField(max_length=50)
-    can_entry = models.BooleanField(default=True)
+    can_entry = models.BooleanField(default=False)
     can_view = models.BooleanField(default=False)
     can_edit = models.BooleanField(default=False)
     can_delete = models.BooleanField(default=False)
+    can_extend_trial = models.BooleanField(default=False)
+    can_cancel_trial = models.BooleanField(default=False)
+    can_inactivate = models.BooleanField(default=False)
+    can_approve = models.BooleanField(default=False)
+    can_device_transfer = models.BooleanField(default=False)
+    can_renew = models.BooleanField(default=False)
     can_reports = models.BooleanField(default=False)
     can_export_print = models.BooleanField(default=False)
 

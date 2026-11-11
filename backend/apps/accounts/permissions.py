@@ -1,8 +1,8 @@
 """Reusable DRF permissions. All authorization is enforced here, never only in the UI."""
 from rest_framework.permissions import BasePermission
 
-from .constants import DEFAULT_ADMIN_ACTIONS, Action, Role
-from .models import AdminPermission, UserModulePermission
+from .constants import Action, Role
+from .models import UserModulePermission
 
 
 def get_role(user):
@@ -23,20 +23,23 @@ class IsAdminOrSuperAdmin(BasePermission):
 
 
 def user_can(user, module, action):
-    """SUPERADMIN: everything. ADMIN: the global Admin Permissions entry for the action
-    (Configuration; same in every project), else per-user grants, else the default actions."""
+    """Superadmin has full access; Admin needs an explicit per-account module grant."""
     role = get_role(user)
     if role == Role.SUPERADMIN:
         return True
     if role != Role.ADMIN:
         return False
-    entry = AdminPermission.objects.filter(action=Action(action).value).first()
-    if entry is not None:
-        return entry.enabled
+    if module is None:
+        # Aggregate only for navigation; data endpoints always pass a concrete module.
+        return any(user_can(user, code, action) for code in permission_modules())
     grant = UserModulePermission.objects.filter(user=user, module=module).first()
-    if grant is not None:
-        return grant.allows(action)
-    return Action(action) in DEFAULT_ADMIN_ACTIONS
+    return grant.allows(action) if grant is not None else False
+
+
+def permission_modules():
+    from apps.registrations.models import PROJECTS
+    return [module for code in PROJECTS for module in (code, f"{code}:dashboard", f"{code}:usage", f"{code}:expiry")]
+
 
 
 def HasModulePermission(module, action):
@@ -53,6 +56,13 @@ def HasModulePermission(module, action):
 
 
 def permission_map(user):
-    """{action: bool} for every action; sent with /auth/me/ so the UI can hide actions the user
-    may not perform (the API enforces them regardless). Global: the same in every project."""
-    return {Action(a).value: user_can(user, None, a) for a in Action}
+    """Aggregate navigation hints. Never use these aggregates to authorize a data query."""
+    scoped = scoped_permission_map(user)
+    return {a.value: any(grants[a.value] for grants in scoped.values()) for a in Action}
+
+
+def scoped_permission_map(user):
+    role = get_role(user)
+    grants = {row.module: row for row in UserModulePermission.objects.filter(user=user)} if role == Role.ADMIN else {}
+    return {module: {a.value: role == Role.SUPERADMIN or bool(grants.get(module) and grants[module].allows(a))
+                     for a in Action} for module in permission_modules()}

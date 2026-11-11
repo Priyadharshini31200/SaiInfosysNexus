@@ -41,10 +41,10 @@ export default function LicenseActions({ project, customer: c, onChanged, onNoti
   }
 
   const isTrial = c.license_type === 'TRIAL';
-  const canExtend = can('edit') && isTrial && (c.state === 'active' || c.state === 'expired');
-  const canRenew = can('edit') && c.license_type === 'ONE_YEAR' && Boolean(c.expires_at) && (c.state === 'active' || c.state === 'expired');
-  const canCancel = can('delete') && isTrial && c.state === 'active';
-  const canInactivate = can('delete') && c.state !== 'inactive';
+  const canExtend = can('extend_trial', project) && isTrial && (c.state === 'active' || c.state === 'expired');
+  const canRenew = can('renew', project) && c.license_type === 'ONE_YEAR' && Boolean(c.expires_at) && (c.state === 'active' || c.state === 'expired');
+  const canCancel = can('cancel_trial', project) && isTrial && c.state === 'active';
+  const canInactivate = can('inactivate', project) && c.state !== 'inactive';
 
   return (
     <>

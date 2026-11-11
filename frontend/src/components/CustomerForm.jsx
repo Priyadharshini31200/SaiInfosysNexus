@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { registrationsApi } from '../api/registrations';
 import { projectBySlug } from '../layouts/navigation';
 import Alert from './Alert';
@@ -47,6 +48,7 @@ function Section({ title, children }) {
  * With `customer` it edits the profile fields; license type, key, User ID and password are fixed after registration.
  */
 export default function CustomerForm({ project, customer, prefill, onSaved, onCancel }) {
+  const { user } = useAuth();
   const editing = Boolean(customer);
   const approving = !editing && Boolean(prefill);
   const [values, setValues] = useState(() => (customer ? { ...Object.fromEntries(PROFILE.map((f) => [f, customer[f] ?? ''])), user_id: customer.user_id ?? '', password: '' } : { ...EMPTY, ...(prefill ? { name: prefill.name, contact_number: prefill.contact_number, email: prefill.email } : {}) }));
@@ -175,7 +177,7 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
 
       <Section title="Login Details">
         {text('user_id', 'User ID', { maxLength: 60, required: !editing, readOnly: true, placeholder: editing ? undefined : 'Same as Serial Number' })}
-        <div>
+        {(!editing || user?.role === 'SUPERADMIN') && <div>
         <PasswordField
           compact
           required={!editing}
@@ -192,7 +194,7 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
             Generate temporary password
           </button>
         )}
-        </div>
+        </div>}
       </Section>
 
       <Section title="License Details">
