@@ -351,26 +351,40 @@ def _requester(project, data):
     return customer
 
 
+def own_other_device(customer, fingerprint):
+    """The customer's OWN active registration when the presenting computer is a different one (licence already on another PC), else None."""
+    current = active_device(customer)
+    if current is not None and not dc.matches_stored(current.fingerprint_hashes, fingerprint):
+        return current
+    return None
+
+
 def request_transfer(project, data):
-    """A refused customer asks to use this computer. Idempotent: asking again returns the same pending request."""
+    """A refused customer asks to use this computer: either it belongs to ANOTHER customer's licence, or the customer's OWN licence is
+    active on a different computer (moving the licence to a new PC). Both need the customer's password and a Super Admin decision.
+    Idempotent: asking again returns the same pending request."""
     customer = _requester(project, data)
     for _ in range(2):
         try:
             with transaction.atomic():
                 locked = ProjectCustomer.objects.select_for_update().get(pk=customer.pk)
                 other = conflicting_device(project, locked, data["fingerprint"])
+                own = other is None
+                if own:
+                    other = own_other_device(locked, data["fingerprint"])
                 if other is None:
-                    raise PortalError("This computer is not registered to another customer, so no transfer is needed. Sign in again.", 409, "no_transfer_needed")
+                    raise PortalError("This computer does not need a transfer. Sign in again.", 409, "no_transfer_needed")
                 if locked.device_blocked:
                     raise PortalError("This licence's device was revoked. Contact Sai Infosys.", 403, "device_blocked")
-                if active_device(locked) is not None:
+                if not own and active_device(locked) is not None:
                     raise PortalError("This licence is already registered on another computer. Contact Sai Infosys to move your licence.", 409, "device_limit")
                 req = DeviceTransferRequest.objects.filter(device=other, to_customer=locked, status=DeviceTransferRequest.PENDING).first()
                 if req is None:
                     req = DeviceTransferRequest.objects.create(project=project, device=other, from_customer=other.customer, to_customer=locked,
                                                                requesting_device_name=data.get("device_name", "")[:100])
                     audit.record(None, "DEVICE_TRANSFER_REQUESTED",
-                                 f"{other.device_name}: {other.customer.user_id} -> {locked.user_id} (request #{req.pk})", project, locked)
+                                 f"{other.device_name}: {other.customer.user_id} -> {locked.user_id} (request #{req.pk})"
+                                 + (" [own licence, new computer]" if own else ""), project, locked)
                 return transfer_summary(req)
         except IntegrityError:        # two identical requests at the same moment: the second finds the first
             continue
@@ -380,7 +394,7 @@ def request_transfer(project, data):
 def transfer_status(project, data):
     """Where this customer's request for this computer stands. Needs the customer's credentials, so it tells nobody else anything."""
     customer = _requester(project, data)
-    other = conflicting_device(project, customer, data["fingerprint"])
+    other = conflicting_device(project, customer, data["fingerprint"]) or own_other_device(customer, data["fingerprint"])
     if other is None:
         return {"needed": False, "state": "none"}
     req = DeviceTransferRequest.objects.filter(device=other, to_customer=customer).order_by("-id").first()
@@ -412,7 +426,8 @@ def decide_transfer(project, pk, user, approve, reason=""):
         if approve:
             if to.device_blocked:
                 raise services.RuleError("The requesting customer's device is blocked. Authorise a transfer for that customer first.")
-            if active_device(to) is not None:
+            own = req.from_customer_id == req.to_customer_id        # the customer moves their OWN licence to a new computer
+            if not own and active_device(to) is not None:
                 raise services.RuleError("The requesting customer already has a registered computer.")
             if registration.revoked_at is None:
                 registration.revoked_at = now
