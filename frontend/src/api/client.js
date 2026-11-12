@@ -1,5 +1,5 @@
-// Single configured API base path. Vite proxies it to Django in development.
-export const API_BASE = '/api';
+// Follow the app mount path: /api locally, /nexus/api behind the live proxy.
+export const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/api`;
 
 const CSRF_COOKIE = 'nexus_csrftoken';
 export const SESSION_EXPIRED_EVENT = 'nexus:session-expired';

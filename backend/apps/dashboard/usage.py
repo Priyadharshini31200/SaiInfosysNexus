@@ -28,6 +28,7 @@ Barcode AutoPrint (database PRNPRINT + Nexus)
 """
 import logging
 import re
+from functools import wraps
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -52,6 +53,17 @@ _DB_NAME = re.compile(r"[A-Za-z0-9_]{1,128}")
 
 class ProjectUnavailable(Exception):
     """The project's database cannot be read right now."""
+
+
+def _source_errors(function):
+    """Keep configuration, runtime SQL and Nexus expiry failures in the same error contract."""
+    @wraps(function)
+    def guarded(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except (DatabaseError, ImproperlyConfigured) as exc:
+            raise ProjectUnavailable(str(exc)) from exc
+    return guarded
 
 
 def _gstr_base(db):
@@ -205,6 +217,7 @@ def _run(sql, params):
         raise ProjectUnavailable(str(exc)) from exc
 
 
+@_source_errors
 def summary(code, now=None):
     """{used, not_used, expiring, total} for one project. Used / Not Used come from the project's own database;
     Expiring This Month from the license expiry dates Nexus holds. Raises ProjectUnavailable."""
@@ -232,6 +245,7 @@ def _expiring_listing(code, search, page, page_size, now, category="expiring"):
     }
 
 
+@_source_errors
 def listing(code, category, search="", page=1, page_size=10, now=None):
     """One page of the units behind a count, plus the filtered total. Raises ProjectUnavailable."""
     if category in ("expiring", "expired"):
@@ -264,6 +278,7 @@ def listing(code, category, search="", page=1, page_size=10, now=None):
     return {"total": total, "results": results}
 
 
+@_source_errors
 def report_rows(code, status="all", search=""):
     """Every unit of one project (optionally only Used or Not Used, and matching a search), newest use first. Same base set as
     the counts and lists above, so the Usage Report always agrees with the Dashboard. Raises ProjectUnavailable."""
