@@ -25,7 +25,7 @@ export default function Dashboard() {
     return () => {
       current = false;
     };
-  }, [isSuperAdmin, synced, can]);
+  }, [isSuperAdmin, synced]);
 
   if (!isSuperAdmin) return <section className={styles.canvas} aria-label="Dashboard"><p className={styles.note}>No Dashboard access is assigned. Choose an authorized menu or contact your Superadmin.</p></section>;
 

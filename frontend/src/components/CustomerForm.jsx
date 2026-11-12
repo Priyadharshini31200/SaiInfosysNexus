@@ -172,12 +172,12 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
         {text('contact_number', 'Contact Number', { maxLength: 10, inputMode: 'numeric', autoComplete: 'tel-national', onChange: setContact, required: true })}
         {text('email', 'Email ID', { maxLength: 254, type: 'email', inputMode: 'email', required: true })}
         {text('gstin', 'GST Details / GSTIN', { maxLength: 15, style: { textTransform: 'uppercase' } })}
-        {text('address', 'Address', { maxLength: 500 })}
+        <div className={styles.full}>{text('address', 'Address', { maxLength: 500 })}</div>
       </Section>
 
       <Section title="Login Details">
         {text('user_id', 'User ID', { maxLength: 60, required: !editing, readOnly: true, placeholder: editing ? undefined : 'Same as Serial Number' })}
-        {(!editing || user?.role === 'SUPERADMIN') && <div>
+        {(!editing || user?.role === 'SUPERADMIN') && <div className={!editing ? styles.passwordRow : undefined}>
         <PasswordField
           compact
           required={!editing}
@@ -190,8 +190,8 @@ export default function CustomerForm({ project, customer, prefill, onSaved, onCa
           maxLength={128}
         />
         {!editing && (
-          <button type="button" className={styles.generate} onClick={generatePassword} disabled={generating}>
-            Generate temporary password
+          <button type="button" className={styles.passwordGenerate} onClick={generatePassword} disabled={generating} aria-label="Generate temporary password" title="Generate temporary password">
+            Generate
           </button>
         )}
         </div>}

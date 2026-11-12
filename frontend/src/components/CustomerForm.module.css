@@ -1,6 +1,7 @@
 .form {
-  --field-height: 38px;
-  padding: 10px 16px 12px;
+  --field-height: 36px;
+  min-width: 0;
+  padding: 10px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -37,7 +38,7 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
+  gap: 6px 16px;
 }
 
 .full {
@@ -53,18 +54,19 @@
 
 .actions {
   display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
-  padding-top: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--border);
 }
 
 .actions > button {
-  height: 38px;
-  width: 120px;
-  padding: 0;
-  font-size: 14px;
+  min-height: 36px;
+  width: auto;
+  padding: 0 18px;
+  font-size: 13px;
 }
 
 .actions > button:first-child,
@@ -90,34 +92,65 @@
   background: var(--navy-50);
 }
 
+.passwordRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.passwordGenerate {
+  height: var(--field-height);
+  /* Align with the control after its label, leaving errors free to grow below. */
+  margin-top: calc(12.5px * 1.5 + 4px);
+  padding: 0 10px;
+  border: 1px solid var(--navy-800);
+  border-radius: var(--radius-sm);
+}
+
+.generate,
+.passwordGenerate {
+  flex-shrink: 0;
+  background: var(--navy-800);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
 .generate {
   align-self: stretch;
-  padding: 0 14px;
+  padding: 0 10px;
   border: 0;
   border-left: 1px solid var(--border-strong);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--navy-800);
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
 }
 
-.generate:hover:not(:disabled) {
+.generate:hover:not(:disabled),
+.passwordGenerate:hover:not(:disabled) {
   background: var(--navy-700);
   color: var(--navy-900);
 }
 
-.generate:disabled {
+.generate:disabled,
+.passwordGenerate:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 
-.generate:focus-visible {
-  outline: none;
+.generate:focus-visible,
+.passwordGenerate:focus-visible {
+  outline: 2px solid var(--navy-600);
+  outline-offset: 2px;
   box-shadow: inset 0 0 0 2px var(--navy-100);
 }
 
 @media (max-width: 640px) {
+  .form {
+    padding: 10px;
+  }
+
   .grid {
     grid-template-columns: 1fr;
   }
