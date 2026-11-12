@@ -4,10 +4,9 @@ export const COUNTS = [
   { category: 'used', field: 'used', label: 'Used', fullLabel: 'Used Count', tone: 'used' },
   { category: 'not-used', field: 'not_used', label: 'Not Used', fullLabel: 'Not Used Count', tone: 'notUsed' },
   { category: 'expired', field: 'expired', label: 'Expire', fullLabel: 'Expired Count', tone: 'expiring' },
-  { category: 'expiring', field: 'expiring', label: 'Expiring This Month', fullLabel: 'Expiring This Month Count', tone: 'expiring' },
 ];
 
-/** One project as a compact table: name on top, then Used / Not Used / Expiring This Month as three equal clickable columns. */
+/** Compact project panel with Used / Not Used / Expire drilldowns. */
 export default function ProjectUsageCard({ project, selected, onSelect, canOpen = () => true }) {
   return (
     <section className={styles.card} aria-labelledby={`usage-${project.code}`}>

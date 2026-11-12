@@ -2,6 +2,9 @@
 .card {
   display: flex;
   flex-direction: column;
+  flex: none;
+  width: 350px;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--border-strong);
@@ -22,11 +25,10 @@
 }
 
 .counts {
-  flex: 1;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  padding: 8px;
+  padding: 7px;
 }
 
 /* Three equal small cards; only the count numbers are coloured */
