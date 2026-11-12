@@ -163,6 +163,9 @@ class TransferRequestSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=128, trim_whitespace=False)
     fingerprint = serializers.DictField()
     device_name = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
+    # Optional: when the app also sends this computer's PUBLIC key, approval binds it in one step (older apps simply sign in afterwards).
+    device_public_key = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")
+    app_version = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
 
     def validate_fingerprint(self, value):
         if not dc.has_identity(value):
@@ -378,6 +381,7 @@ class CustomerDeviceView(_StaffDeviceView):
 class RevokeDeviceSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
     block = serializers.BooleanField(required=False, default=False)  # also stop any new computer until a transfer
+    confirm = serializers.BooleanField(required=False, default=False)  # Revoke Device is only carried out when explicitly confirmed
 
 
 class RevokeDeviceView(_StaffDeviceView):
@@ -388,6 +392,8 @@ class RevokeDeviceView(_StaffDeviceView):
         customer = self.customer(pk)
         serializer = RevokeDeviceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if not serializer.validated_data["confirm"]:
+            return Response({"message": "Revoke Device must be confirmed explicitly.", "errors": {"confirm": ["Confirm the revoke."]}}, status=400)
         try:
             device.revoke(customer, request.user, serializer.validated_data["reason"].strip(), serializer.validated_data["block"])
         except services.RuleError as exc:
@@ -400,7 +406,7 @@ class TransferRequestListView(_StaffDeviceView):
     """Super Admin: the device transfer requests of this project (?status=pending|approved|rejected)."""
 
     def get(self, request, project):
-        return Response({"results": device.list_transfers(project, request.query_params.get("status"))})
+        return Response({"results": device.list_transfers(project, request.query_params.get("status"), request.query_params.get("kind"))})
 
 
 class DecideTransferSerializer(serializers.Serializer):

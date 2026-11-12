@@ -194,17 +194,31 @@ class DeviceRegistration(models.Model):
 
 
 class DeviceTransferRequest(models.Model):
-    """A customer asks to use a computer that is currently registered to ANOTHER customer's licence. Nothing changes until a Super
-    Admin approves: approval revokes the previous registration (kept as history) and the requester then registers normally.
+    """A device request that waits for (or records) a Super Admin decision. Three distinct kinds:
+
+    FIRST_ACTIVATION  a customer's first computer. Pending until approved; approval binds that computer to the licence and starts the
+                      validity period exactly as a direct activation always did. No existing device is involved (device/from_customer null).
+    TRANSFER          a customer asks to use a computer that is currently registered to ANOTHER licence (or their own licence is active on a
+                      different PC). Approval revokes the previous registration (kept as history); when the request carries the new computer's
+                      key it is bound in the same transaction, otherwise the requester registers by signing in.
+    REVOKE            a Super Admin revoked a registered device. Recorded already APPROVED so the history shows it; it never binds anything.
+
     Rows are never deleted by the application; every step is also written to LicenseAuditLog."""
 
     PENDING, APPROVED, REJECTED = "PENDING", "APPROVED", "REJECTED"
+    FIRST_ACTIVATION, TRANSFER, REVOKE = "FIRST_ACTIVATION", "TRANSFER", "REVOKE"
+    KINDS = [(FIRST_ACTIVATION, "First activation"), (TRANSFER, "Device transfer"), (REVOKE, "Device revoke")]
 
     project = models.CharField(max_length=40, db_index=True)
-    device = models.ForeignKey(DeviceRegistration, on_delete=models.CASCADE, related_name="transfer_requests")  # the registration in the way
-    from_customer = models.ForeignKey(ProjectCustomer, on_delete=models.CASCADE, related_name="transfers_out")
+    kind = models.CharField(max_length=20, choices=KINDS, default=TRANSFER, db_default=TRANSFER)
+    device = models.ForeignKey(DeviceRegistration, null=True, blank=True, on_delete=models.CASCADE, related_name="transfer_requests")  # the registration in the way
+    from_customer = models.ForeignKey(ProjectCustomer, null=True, blank=True, on_delete=models.CASCADE, related_name="transfers_out")
     to_customer = models.ForeignKey(ProjectCustomer, on_delete=models.CASCADE, related_name="transfers_in")
     requesting_device_name = models.CharField(max_length=100, blank=True, default="", db_default="")
+    # The requesting computer, kept ONLY as its public key and protected hashes (like DeviceRegistration), so approval can bind it.
+    device_public_key = models.CharField(max_length=64, blank=True, default="", db_default="")
+    fingerprint_hashes = models.TextField(blank=True, default="", db_default="")
+    app_version = models.CharField(max_length=30, blank=True, default="", db_default="")
     status = models.CharField(max_length=10, default=PENDING, db_default=PENDING)
     requested_at = models.DateTimeField(auto_now_add=True)
     decided_at = models.DateTimeField(null=True, blank=True)
@@ -215,6 +229,8 @@ class DeviceTransferRequest(models.Model):
         ordering = ["-id"]
         constraints = [
             models.UniqueConstraint(fields=["device", "to_customer"], condition=Q(status="PENDING"), name="uniq_pending_transfer_per_device_customer"),
+            # At most one waiting first-activation request per licence (no duplicates, however many times the customer signs in).
+            models.UniqueConstraint(fields=["to_customer"], condition=Q(status="PENDING", kind="FIRST_ACTIVATION"), name="uniq_pending_first_activation_per_customer"),
         ]
 
 

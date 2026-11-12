@@ -100,3 +100,32 @@
   text-align: center;
   color: var(--muted);
 }
+
+/* Small status icon beside the project name (information: partial data; warning: source unavailable) */
+.flag {
+  margin-left: 8px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: help;
+  color: #fff;
+}
+
+.warn {
+  color: #ffd166;
+}
+
+/* Unavailable: muted placeholders, not clickable, never confirmed counts */
+.placeholders .count {
+  opacity: 0.55;
+  background: var(--surface-muted, var(--surface));
+  cursor: not-allowed;
+}
+
+.placeholders .count:hover {
+  background: var(--surface-muted, var(--surface));
+  border-color: var(--border);
+}
+
+.placeholders .value {
+  color: var(--muted);
+}

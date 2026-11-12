@@ -160,6 +160,35 @@ def conflicting_device(project, customer, fingerprint):
     return None
 
 
+ACTIVATION_PENDING = ("Your first activation is waiting for Sai Infosys Super Admin approval. Sign in again after it has been approved.")
+ACTIVATION_REJECTED = "The activation request for this computer was rejected. Please contact Sai Infosys."
+
+
+def approval_required():
+    return bool(getattr(settings, "DEVICE_ACTIVATION_APPROVAL_REQUIRED", True))
+
+
+def _first_activation_request(project, locked, data, protected):
+    """The waiting FIRST_ACTIVATION request for this licence (created on the first attempt, refreshed with the newest key afterwards, never
+    duplicated) - or a PortalError when this very computer was already rejected."""
+    pending = DeviceTransferRequest.objects.select_for_update().filter(
+        to_customer=locked, kind=DeviceTransferRequest.FIRST_ACTIVATION, status=DeviceTransferRequest.PENDING).first()
+    if pending is not None:
+        pending.device_public_key, pending.fingerprint_hashes = data["device_public_key"], protected
+        pending.requesting_device_name, pending.app_version = data["device_name"][:100], data["app_version"][:30]
+        pending.save(update_fields=["device_public_key", "fingerprint_hashes", "requesting_device_name", "app_version"])
+        return pending
+    rejected = DeviceTransferRequest.objects.filter(to_customer=locked, kind=DeviceTransferRequest.FIRST_ACTIVATION,
+                                                    status=DeviceTransferRequest.REJECTED).order_by("-id").first()
+    if rejected is not None and dc.matches_stored(rejected.fingerprint_hashes, data["fingerprint"]):
+        return rejected
+    req = DeviceTransferRequest.objects.create(
+        project=project, kind=DeviceTransferRequest.FIRST_ACTIVATION, to_customer=locked, requesting_device_name=data["device_name"][:100],
+        device_public_key=data["device_public_key"], fingerprint_hashes=protected, app_version=data["app_version"][:30])
+    audit.record(None, "DEVICE_ACTIVATION_REQUESTED", f"{data['device_name']} (request #{req.pk})", project, locked)
+    return req
+
+
 BOUND_TO_OTHER = ("This computer is already registered to another customer account. Ask for a device transfer, which a Sai Infosys "
                   "Super Admin must approve.")
 
@@ -169,6 +198,7 @@ def _bind(project, customer, data, now):
     Returns the DeviceRegistration and the refreshed customer."""
     fingerprint = data["fingerprint"]
     protected = json.dumps(dc.protect_fp(fingerprint), sort_keys=True)
+    waiting = None                  # a first-activation request that must be answered after the transaction (so it is kept)
     try:
         with transaction.atomic():
             locked = ProjectCustomer.objects.select_for_update().get(pk=customer.pk)
@@ -192,6 +222,8 @@ def _bind(project, customer, data, now):
                 current.last_seen_at = now
                 current.save()
                 device, action = current, "DEVICE_REENROLLED"
+            elif approval_required() and not locked.devices.exists():
+                waiting = _first_activation_request(project, locked, data, protected)     # the licence's very first computer: Super Admin decides
             else:
                 generation = max(locked.devices.values_list("generation", flat=True), default=0) + 1
                 device = DeviceRegistration.objects.create(
@@ -205,13 +237,18 @@ def _bind(project, customer, data, now):
                     last_seen_at=now,
                 )
                 action = "DEVICE_ENROLLED"
-            # The validity period starts once. The conditional update cannot overwrite an existing value.
-            if ProjectCustomer.objects.filter(pk=locked.pk, first_activated_at__isnull=True).update(first_activated_at=now):
-                _start_clock(locked, now)
-            locked.refresh_from_db()
-            audit.record(None, action, f"{device.device_name} (generation {device.generation})", project, locked)
+            if waiting is None:
+                # The validity period starts once. The conditional update cannot overwrite an existing value.
+                if ProjectCustomer.objects.filter(pk=locked.pk, first_activated_at__isnull=True).update(first_activated_at=now):
+                    _start_clock(locked, now)
+                locked.refresh_from_db()
+                audit.record(None, action, f"{device.device_name} (generation {device.generation})", project, locked)
     except IntegrityError:  # lost a race with another enrollment of the same licence
         raise PortalError("This licence is already registered on another computer. Contact Sai Infosys to move your licence.", 409, "device_limit")
+    if waiting is not None:
+        if waiting.status == DeviceTransferRequest.REJECTED:
+            raise PortalError(ACTIVATION_REJECTED, 403, "activation_rejected")
+        raise PortalError(ACTIVATION_PENDING, 403, "activation_pending")
     return device, locked
 
 
@@ -304,6 +341,11 @@ def revoke(customer, user, reason="", block=False):
         if block:
             ProjectCustomer.objects.filter(pk=locked.pk).update(device_blocked=True)
         audit.record(user, "DEVICE_REVOKED", f"{current.device_name}: {reason}"[:300], locked.project, locked)
+        # The decision is its own request type in the history. It is created already APPROVED and never binds or approves anything.
+        DeviceTransferRequest.objects.create(
+            project=locked.project, kind=DeviceTransferRequest.REVOKE, device=current, from_customer=locked, to_customer=locked,
+            status=DeviceTransferRequest.APPROVED, decided_at=current.revoked_at, decided_by=getattr(user, "username", "")[:150],
+            decision_reason=reason[:200])
     return current
 
 
@@ -327,15 +369,17 @@ def transfer(customer, user, reason=""):
 # ---------------------------------------------------------------- device transfer between customers (Super Admin approval)
 def transfer_summary(r):
     """Safe description for the requester and the Nexus UI: ids, names, dates. No keys, no hashes."""
+    source = r.from_customer
     return {
         "id": r.pk,
+        "kind": r.kind.lower(),
         "status": r.status.lower(),
-        "from_user_id": r.from_customer.user_id,
-        "from_name": r.from_customer.name,
+        "from_user_id": source.user_id if source else "",
+        "from_name": source.name if source else "",
         "to_user_id": r.to_customer.user_id,
         "to_name": r.to_customer.name,
-        "device_id": str(r.device_id),
-        "device_name": r.device.device_name,
+        "device_id": str(r.device_id) if r.device_id else "",
+        "device_name": r.device.device_name if r.device_id else r.requesting_device_name,
         "requesting_device_name": r.requesting_device_name,
         "requested_at": r.requested_at,
         "decided_at": r.decided_at,
@@ -380,8 +424,14 @@ def request_transfer(project, data):
                     raise PortalError("This licence is already registered on another computer. Contact Sai Infosys to move your licence.", 409, "device_limit")
                 req = DeviceTransferRequest.objects.filter(device=other, to_customer=locked, status=DeviceTransferRequest.PENDING).first()
                 if req is None:
-                    req = DeviceTransferRequest.objects.create(project=project, device=other, from_customer=other.customer, to_customer=locked,
-                                                               requesting_device_name=data.get("device_name", "")[:100])
+                    key = data.get("device_public_key", "")
+                    keyed = bool(key) and dc.valid_public_key(key)
+                    req = DeviceTransferRequest.objects.create(
+                        project=project, kind=DeviceTransferRequest.TRANSFER, device=other, from_customer=other.customer, to_customer=locked,
+                        requesting_device_name=data.get("device_name", "")[:100],
+                        device_public_key=key if keyed else "",
+                        fingerprint_hashes=json.dumps(dc.protect_fp(data["fingerprint"]), sort_keys=True) if keyed else "",
+                        app_version=data.get("app_version", "")[:30])
                     audit.record(None, "DEVICE_TRANSFER_REQUESTED",
                                  f"{other.device_name}: {other.customer.user_id} -> {locked.user_id} (request #{req.pk})"
                                  + (" [own licence, new computer]" if own else ""), project, locked)
@@ -394,6 +444,10 @@ def request_transfer(project, data):
 def transfer_status(project, data):
     """Where this customer's request for this computer stands. Needs the customer's credentials, so it tells nobody else anything."""
     customer = _requester(project, data)
+    first = DeviceTransferRequest.objects.filter(to_customer=customer, kind=DeviceTransferRequest.FIRST_ACTIVATION).order_by("-id").first()
+    if first is not None and active_device(customer) is None and dc.matches_stored(first.fingerprint_hashes, data["fingerprint"]):
+        return {"needed": True, "kind": "first_activation", "state": first.status.lower(), "id": first.pk, "decided_at": first.decided_at,
+                "decision_reason": first.decision_reason}
     other = conflicting_device(project, customer, data["fingerprint"]) or own_other_device(customer, data["fingerprint"])
     if other is None:
         return {"needed": False, "state": "none"}
@@ -403,42 +457,80 @@ def transfer_status(project, data):
     return {"needed": True, "state": req.status.lower(), "id": req.pk, "decided_at": req.decided_at, "decision_reason": req.decision_reason}
 
 
-def list_transfers(project, status=None):
+def list_transfers(project, status=None, kind=None):
     qs = DeviceTransferRequest.objects.filter(project=project).select_related("from_customer", "to_customer", "device")
     if status:
         qs = qs.filter(status=status.upper())
+    if kind:
+        qs = qs.filter(kind=kind.upper())
     return [transfer_summary(r) for r in qs[:200]]
 
 
+def _bind_approved(req, to, now):
+    """Approval of a request that carries the requesting computer's key: bind it to the licence in the caller's transaction. The
+    registration gets generation + 1, the validity period starts once (existing rules), and the audit trail says who approved it."""
+    device = DeviceRegistration.objects.create(
+        customer=to, project=req.project, device_public_key=req.device_public_key, fingerprint_hashes=req.fingerprint_hashes,
+        device_name=req.requesting_device_name, app_version=req.app_version,
+        generation=max(to.devices.values_list("generation", flat=True), default=0) + 1, last_seen_at=now)
+    if ProjectCustomer.objects.filter(pk=to.pk, first_activated_at__isnull=True).update(first_activated_at=now):
+        _start_clock(to, now)
+    return device
+
+
 def decide_transfer(project, pk, user, approve, reason=""):
-    """Super Admin decision. Approval revokes the blocking registration (the row stays as history) so the requester can register this
-    computer by signing in; nothing is deleted, and nothing is created for the requester here (their own sign-in does that)."""
+    """Super Admin decision (only the Super Admin API reaches this).
+    FIRST_ACTIVATION: approval binds the requesting computer to the licence and starts the validity period; rejection binds nothing.
+    TRANSFER: approval revokes the blocking registration (kept as history) and, when the request carries the new computer's key,
+    binds it in the same transaction; otherwise the requester registers by signing in. Nothing is deleted."""
     with transaction.atomic():
         req = DeviceTransferRequest.objects.select_for_update().filter(pk=pk, project=project).first()
         if req is None:
             raise services.RuleError("Transfer request not found.")
+        if req.kind == DeviceTransferRequest.REVOKE:
+            raise services.RuleError("A revoke is recorded history, not a request that can be decided.")
         if req.status != DeviceTransferRequest.PENDING:
             raise services.RuleError("This request has already been decided.")
         to = ProjectCustomer.objects.select_for_update().get(pk=req.to_customer_id)
-        registration = DeviceRegistration.objects.select_for_update().get(pk=req.device_id)
         now = timezone.now()
         reason = (reason or "")[:200]
+        first = req.kind == DeviceTransferRequest.FIRST_ACTIVATION
+        registration = None if first else DeviceRegistration.objects.select_for_update().get(pk=req.device_id)
         if approve:
             if to.device_blocked:
                 raise services.RuleError("The requesting customer's device is blocked. Authorise a transfer for that customer first.")
-            own = req.from_customer_id == req.to_customer_id        # the customer moves their OWN licence to a new computer
-            if not own and active_device(to) is not None:
-                raise services.RuleError("The requesting customer already has a registered computer.")
-            if registration.revoked_at is None:
-                registration.revoked_at = now
-                registration.revoked_reason = (f"Transferred to {to.user_id} (request #{req.pk})")[:200]
-                registration.save(update_fields=["revoked_at", "revoked_reason"])
-                audit.record(user, "DEVICE_REVOKED", f"{registration.device_name}: transferred to {to.user_id} (request #{req.pk})", project, req.from_customer)
+            if first:
+                if to.devices.exists():
+                    raise services.RuleError("This customer already has a registered computer; this activation request is obsolete.")
+                try:
+                    ensure_active(to, now)
+                except PortalError as exc:
+                    raise services.RuleError(str(exc))
+                stored = json.loads(req.fingerprint_hashes or "{}")
+                for other in DeviceRegistration.objects.filter(project=project, revoked_at__isnull=True).exclude(customer_id=to.pk):
+                    if dc.fingerprints_match(json.loads(other.fingerprint_hashes), stored):
+                        raise services.RuleError("This computer is registered to another customer. Request a device transfer instead.")
+                bound = _bind_approved(req, to, now)
+                audit.record(user, "DEVICE_ENROLLED", f"{bound.device_name} (generation {bound.generation}) approved (request #{req.pk})", project, to)
+            else:
+                own = req.from_customer_id == req.to_customer_id        # the customer moves their OWN licence to a new computer
+                if not own and active_device(to) is not None:
+                    raise services.RuleError("The requesting customer already has a registered computer.")
+                if registration.revoked_at is None:
+                    registration.revoked_at = now
+                    registration.revoked_reason = (f"Transferred to {to.user_id} (request #{req.pk})")[:200]
+                    registration.save(update_fields=["revoked_at", "revoked_reason"])
+                    audit.record(user, "DEVICE_REVOKED", f"{registration.device_name}: transferred to {to.user_id} (request #{req.pk})", project, req.from_customer)
+                if req.device_public_key and req.fingerprint_hashes and active_device(to) is None:
+                    bound = _bind_approved(req, to, now)
+                    audit.record(user, "DEVICE_ENROLLED", f"{bound.device_name} (generation {bound.generation}) via transfer #{req.pk}", project, to)
         req.status = DeviceTransferRequest.APPROVED if approve else DeviceTransferRequest.REJECTED
         req.decided_at, req.decided_by, req.decision_reason = now, getattr(user, "username", "")[:150], reason
         req.save(update_fields=["status", "decided_at", "decided_by", "decision_reason"])
-        audit.record(user, "DEVICE_TRANSFER_APPROVED" if approve else "DEVICE_TRANSFER_REJECTED",
-                     f"{registration.device_name}: {req.from_customer.user_id} -> {to.user_id} (request #{req.pk}) {reason}", project, to)
+        what = "ACTIVATION" if first else "TRANSFER"
+        detail = (f"{req.requesting_device_name} for {to.user_id} (request #{req.pk}) {reason}" if first else
+                  f"{registration.device_name}: {req.from_customer.user_id} -> {to.user_id} (request #{req.pk}) {reason}")
+        audit.record(user, f"DEVICE_{what}_APPROVED" if approve else f"DEVICE_{what}_REJECTED", detail, project, to)
     return req
 
 
@@ -450,6 +542,8 @@ def device_status(customer, current):
         return "active", "Active"
     if customer.devices.exists():
         return "transfer_pending", "Awaiting new device"
+    if customer.transfers_in.filter(kind=DeviceTransferRequest.FIRST_ACTIVATION, status=DeviceTransferRequest.PENDING).exists():
+        return "activation_pending", "Awaiting activation approval"
     return "not_activated", "Not activated"
 
 
