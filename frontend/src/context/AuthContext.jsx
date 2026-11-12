@@ -25,7 +25,8 @@ export function AuthProvider({ children }) {
     try {
       const { user: me } = await authApi.me();
       wasAuthenticated.current = true;
-      setUser(me);
+      // Keep the same object when nothing changed, so the 10s session check does not re-render or refetch every page.
+      setUser((prev) => (prev && JSON.stringify(prev) === JSON.stringify(me) ? prev : me));
       setStatus('authenticated');
     } catch (err) {
       if (err.status === 401 && wasAuthenticated.current) {

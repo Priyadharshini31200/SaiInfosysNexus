@@ -19,7 +19,7 @@ const TYPES = [
 ];
 
 /** The real end of the licence: none for Lifetime, and a device trial has none until a computer activates it. */
-const expiryText = (c) => c.expiry_label || (c.effective_expires_at ? formatDate(c.effective_expires_at) : c.license_type === 'LICENSED' ? 'Lifetime' : '—');
+const expiryText = (c) => c.expiry_label || (c.effective_expires_at ? formatDate(c.effective_expires_at) : c.license_type === 'LICENSED' ? 'Lifetime' : '\u2014');
 
 const BADGES = { active: styles.active, expired: styles.warn, cancelled: styles.muted, inactive: styles.muted };
 
@@ -40,8 +40,6 @@ function licenseTypeCell(customer) {
 export default function CustomerList({ project, label, customers, loading, error, onChanged, onDeleted, onEdit, onNotify }) {
   const { can } = useAuth();
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
   const [status, setStatus] = useState('all');
   const [type, setType] = useState('all');
   const [viewingId, setViewingId] = useState(null);
@@ -57,8 +55,6 @@ export default function CustomerList({ project, label, customers, loading, error
     );
   }, [customers, search, type, status]);
 
-  const currentPage = Math.min(page, Math.max(1, Math.ceil(visible.length / pageSize)));
-  const pageRows = visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const filterText = [status !== 'all' && `Status: ${status}`,type !== 'all' && `License Type: ${TYPES.find((t) => t.value === type).label}`, search.trim() && `Search: ${search.trim()}`]
     .filter(Boolean)
     .join('; ');
@@ -66,28 +62,28 @@ export default function CustomerList({ project, label, customers, loading, error
   const canView = can('view', project);
   let empty = '';
   if (!canView) empty = 'You do not have permission to view the customer list.';
-  else if (loading) empty = 'Loading…';
+  else if (loading) empty = 'Loading...';
   else if (error) empty = error;
   else if (!customers || customers.length === 0) empty = `No customers registered for ${label} yet.`;
   else if (visible.length === 0) empty = 'No customers match your search or filter.';
 
   return (
-    <section className={styles.panel} aria-label={`${label} customers`}>
+    <section className={`${styles.panel} ${styles.compact}`} aria-label={`${label} customers`}>
       <header className={styles.head}>
         <label className={styles.search}>
           <SearchIcon size={17} />
           <input
             type="search"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => { setSearch(e.target.value); }}
             placeholder="Search name, company, user ID, phone or serial"
             aria-label="Search customers"
             disabled={!canView}
             maxLength={100}
           />
         </label>
-        <FilterSelect label="License Type" value={type} onChange={(value) => { setType(value); setPage(1); }} options={TYPES} disabled={!canView} />
-        <FilterSelect label="Status" value={status} onChange={(value) => { setStatus(value); setPage(1); }} options={[
+        <FilterSelect label="License Type" value={type} onChange={(value) => { setType(value); }} options={TYPES} disabled={!canView} />
+        <FilterSelect label="Status" value={status} onChange={(value) => { setStatus(value); }} options={[
           {value: 'all', label: 'All'}, {value: 'active', label: 'Active'}, {value: 'expired', label: 'Expired'},
           {value: 'cancelled', label: 'Cancelled'}, {value: 'inactive', label: 'Inactive'},
         ]} disabled={!canView} />
@@ -109,7 +105,7 @@ export default function CustomerList({ project, label, customers, loading, error
       </header>
 
       {!empty && (
-        <div className={styles.scroll}>
+        <div className={styles.scroll} tabIndex={0} role="region" aria-label={`${label} customer records`}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -123,7 +119,7 @@ export default function CustomerList({ project, label, customers, loading, error
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((customer, index) => (
+            {visible.map((customer, index) => (
               <tr
                 key={customer.id}
                 className={styles.row}
@@ -137,27 +133,19 @@ export default function CustomerList({ project, label, customers, loading, error
                 }}
                 aria-label={`View details of ${customer.name}`}
               >
-                <td data-label="S.No">{(currentPage - 1) * pageSize + index + 1}</td>
-                <td data-label="Name" className={styles.name}>{customer.name}</td>
-                <td data-label="Company Name">{customer.company_name}</td>
-                <td data-label="Contact No.">{customer.contact_number}</td>
-                <td data-label="License Type">{licenseTypeCell(customer)}</td>
-                <td data-label="Serial No.">{customer.serial_number || '—'}</td>
-                <td data-label="Expiry Date">{expiryText(customer)}</td>
+                <td data-label="S.No">{index + 1}</td>
+                <td data-label="Name" className={styles.name} title={customer.name}>{customer.name}</td>
+                <td data-label="Company Name" title={customer.company_name}>{customer.company_name}</td>
+                <td data-label="Contact No." title={customer.contact_number}>{customer.contact_number}</td>
+                <td data-label="License Type" title={customer.status_label}>{licenseTypeCell(customer)}</td>
+                <td data-label="Serial No." title={customer.serial_number}>{customer.serial_number || '\u2014'}</td>
+                <td data-label="Expiry Date" title={expiryText(customer)}>{expiryText(customer)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         </div>
       )}
-      {canView && visible.length > 0 && <div className={styles.tools}>
-        <label>Rows <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
-          {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
-        </select></label>
-        <button type="button" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</button>
-        <span>Page {currentPage} of {Math.max(1, Math.ceil(visible.length / pageSize))}</span>
-        <button type="button" disabled={currentPage * pageSize >= visible.length} onClick={() => setPage(currentPage + 1)}>Next</button>
-      </div>}
       {empty && <p className={`${styles.empty} ${error && canView ? styles.emptyError : ''}`}>{empty}</p>}
 
       {canView && viewing && <CustomerDetailsView project={project} customer={viewing} onEdit={onEdit} onChanged={onChanged} onDeleted={onDeleted} onNotify={onNotify} onClose={() => setViewingId(null)} />}
