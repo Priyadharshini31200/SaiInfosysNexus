@@ -14,10 +14,10 @@ export default function DeviceTransferRequests({ requests, onDecide }) {
   if (!requests?.length && !open) return null;
 
   return (
-    <section className={styles.box} aria-label="Pending device transfers">
+    <section className={styles.box} aria-label="Pending device requests">
       <div className={styles.bar}>
         <span className={styles.count}>{requests.length}</span>
-        <span>Pending Device Transfers</span>
+        <span>Pending Device Requests</span>
         <button type="button" className={styles.add} style={{ marginLeft: 'auto' }} onClick={() => setOpen(true)}>
           Review requests
         </button>

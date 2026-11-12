@@ -204,6 +204,8 @@ ENFORCE_FIRST_LOGIN_PASSWORD_CHANGE = env("ENFORCE_FIRST_LOGIN_PASSWORD_CHANGE",
 PRN_VALIDITY_DAYS = int(env("PRN_VALIDITY_DAYS", "7"))  # PRN trial length, counted from first device activation
 # Trial length per product that starts counting at first device activation (1 Year / Lifetime are never affected).
 TRIAL_DAYS_BY_PRODUCT = {"prn-auto-print": PRN_VALIDITY_DAYS}
+# A customer's very first computer waits for Super Admin approval (FIRST ACTIVATION request) before it is bound to the licence.
+DEVICE_ACTIVATION_APPROVAL_REQUIRED = env_bool("DEVICE_ACTIVATION_APPROVAL_REQUIRED", True)
 DEVICE_CLOCK_SKEW_SECONDS = int(env("DEVICE_CLOCK_SKEW_SECONDS", "300"))  # accepted +- on X-Device-Timestamp
 DEVICE_NONCE_TTL_SECONDS = int(env("DEVICE_NONCE_TTL_SECONDS", "600"))  # must exceed twice the skew
 DEVICE_EVIDENCE_KEY = env("DEVICE_EVIDENCE_KEY", "")  # HMAC key protecting stored hardware hashes; defaults to DJANGO_SECRET_KEY

@@ -12,7 +12,7 @@ const ACTIONS = {
     confirm: 'Yes, revoke device',
     message: (c) =>
       `Revoke the registered computer of ${c.name}? PRN stops working on it at its next check, and no other computer can be registered until you transfer the licence.`,
-    run: (project, id) => registrationsApi.revokeDevice(project, id, { block: true }),
+    run: (project, id) => registrationsApi.revokeDevice(project, id, { block: true, confirm: true }),
     done: (c) => `Device revoked for ${c.name}.`,
   },
   transfer: {
@@ -69,7 +69,9 @@ export default function DeviceManagement({ project, customer: c, onChanged, onNo
   // Called by the approval dialog after the Super Admin confirmed; errors are shown inside that dialog.
   async function decide(request, decision) {
     await registrationsApi.decideDeviceTransfer(project, request.id, decision);
-    onNotify('success', decision === 'approve'
+    onNotify('success', request.kind === 'first_activation'
+      ? decision === 'approve' ? `Activation approved: ${request.device_name || 'the computer'} is now registered to ${request.to_user_id}.` : `Activation request rejected for ${request.to_user_id}.`
+      : decision === 'approve'
       ? `Transfer approved: ${request.device_name || 'the computer'} is released from ${request.from_user_id}; ${request.to_user_id} can now sign in on it.`
       : `Transfer request rejected for ${request.to_user_id}.`);
     await load();
@@ -105,8 +107,8 @@ export default function DeviceManagement({ project, customer: c, onChanged, onNo
         ))}
       </dl>
       {requests.length > 0 && (
-        <div role="group" aria-label="Device transfer requests" className={styles.dialogActions} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>{requests.length} pending device transfer request{requests.length > 1 ? 's' : ''}</span>
+        <div role="group" aria-label="Device requests" className={styles.dialogActions} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{requests.length} pending device request{requests.length > 1 ? 's' : ''}</span>
           <button type="button" className={styles.primary} onClick={() => setReview(true)}>
             Review requests
           </button>

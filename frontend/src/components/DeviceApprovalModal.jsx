@@ -5,6 +5,7 @@ import Modal from './Modal';
 import styles from './DeviceApprovalModal.module.css';
 
 const KIND = {
+  activation: { label: 'First Activation', badge: styles.badgeActivation, card: styles.cardActivation },
   transfer: { label: 'Device Transfer', badge: styles.badgeTransfer, card: styles.cardTransfer },
   revoke: { label: 'Revoke Device', badge: styles.badgeRevoke, card: styles.cardRevoke },
 };
@@ -30,6 +31,8 @@ export function RequestCard({ kind, customer, device, requestedAt, status, child
  * Centred "Device Transfer Requests" dialog (Super Admin). Lists every pending transfer; nothing is approved or rejected until the
  * Super Admin confirms in a second dialog. The server still decides: this only asks (onDecide -> existing Nexus API).
  */
+const kindOf = (q) => (q.kind === 'first_activation' ? 'activation' : 'transfer');
+
 export default function DeviceApprovalModal({ requests, onDecide, onClose }) {
   const [pending, setPending] = useState(null); // { request, decision }
   const [busy, setBusy] = useState(false);
@@ -52,21 +55,24 @@ export default function DeviceApprovalModal({ requests, onDecide, onClose }) {
 
   const r = pending?.request;
   const approve = pending?.decision === 'approve';
+  const act = r?.kind === 'first_activation';
   const ask = (request, decision) => {
     setError('');
     setPending({ request, decision });
   };
   return (
     <>
-      <Modal title="Device Transfer Requests" onClose={onClose} tone="transfer" wide>
+      <Modal title="Device Requests" onClose={onClose} tone="transfer" wide>
         {requests.length === 0 && <p className={styles.empty}>No pending requests.</p>}
         <div className={styles.list}>
           {requests.map((q) => (
             <RequestCard
               key={q.id}
-              kind="transfer"
+              kind={kindOf(q)}
               customer={`${q.to_name} (${q.to_user_id})`}
-              device={`${q.device_name || 'Computer'} · registered to ${q.from_name} (${q.from_user_id})`}
+              device={kindOf(q) === 'activation'
+                ? `${q.device_name || 'New computer'} · first activation`
+                : `${q.device_name || 'Computer'} · registered to ${q.from_name} (${q.from_user_id})`}
               requestedAt={q.requested_at}
               status="Pending approval"
             >
@@ -83,16 +89,20 @@ export default function DeviceApprovalModal({ requests, onDecide, onClose }) {
         </div>
       </Modal>
       {pending && (
-        <Modal title={approve ? 'Confirm device transfer' : 'Reject transfer request'} onClose={busy ? ignore : closeConfirm} tone="transfer">
+        <Modal title={act ? (approve ? 'Approve first activation' : 'Reject activation request') : approve ? 'Confirm device transfer' : 'Reject transfer request'} onClose={busy ? ignore : closeConfirm} tone="transfer">
           <p className={styles.message}>
-            {approve
+            {act
+              ? approve
+                ? `Approve the first activation of ${r.device_name || 'this computer'} for ${r.to_user_id} (${r.to_name})? The computer is bound to the licence and the validity period starts now.`
+                : `Reject the activation request from ${r.to_user_id} (${r.to_name})? Nothing is bound.`
+              : approve
               ? `Approve: release ${r.device_name || 'this computer'} from ${r.from_user_id} (${r.from_name}) and let ${r.to_user_id} (${r.to_name}) register it? ${r.from_user_id} will no longer be able to use it.`
               : `Reject the transfer request from ${r.to_user_id} (${r.to_name})? Nothing is changed.`}
           </p>
           {error && <Alert type="error">{error}</Alert>}
           <div className={styles.actions}>
             <button type="button" className={approve ? styles.approve : styles.reject} disabled={busy} onClick={confirm}>
-              {busy ? 'Saving…' : approve ? 'Yes, approve transfer' : 'Yes, reject'}
+              {busy ? 'Saving…' : approve ? (act ? 'Yes, approve activation' : 'Yes, approve transfer') : 'Yes, reject'}
             </button>
             <button type="button" onClick={closeConfirm} disabled={busy}>Cancel</button>
           </div>

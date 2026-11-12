@@ -120,7 +120,11 @@ function Customers({ project }) {
       setTransfers((list) => list.filter((t) => t.id !== req.id));
       notify(
         'success',
-        decision === 'approve'
+        req.kind === 'first_activation'
+          ? decision === 'approve'
+            ? `Activation approved: ${req.device_name || 'the computer'} is now registered to ${req.to_user_id}.`
+            : `Activation request rejected for ${req.to_user_id}.`
+          : decision === 'approve'
           ? `Transfer approved: ${req.device_name || 'the computer'} is released from ${req.from_user_id}; ${req.to_user_id} can now sign in on it.`
           : `Transfer request rejected for ${req.to_user_id}.`,
       );
