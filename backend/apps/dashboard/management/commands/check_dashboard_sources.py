@@ -27,30 +27,34 @@ class Command(BaseCommand):
                 result['nexus_by_status'] = {status: ProjectCustomer.objects.filter(project=code, status=status).count() for status in (ProjectCustomer.ACTIVE, ProjectCustomer.INACTIVE, ProjectCustomer.TRIAL_CANCELLED)}
                 # Validate database identifiers with the same rule as the real queries.
                 usage._base_sql(code)
-                with connection.cursor() as cursor:
-                    cursor.execute('SELECT HAS_DBACCESS(%s)', [db])
-                    result['database_access'] = cursor.fetchone()[0]
-                    cursor.execute(f'SELECT s.name, t.name FROM [{db}].sys.tables t JOIN [{db}].sys.schemas s ON s.schema_id = t.schema_id')
-                    found = set(cursor.fetchall())
-                    result['tables'] = []
-                    for name in TABLES[code]:
-                        obj = f'[{db}].[dbo].[{name}]'
-                        cursor.execute("SELECT HAS_PERMS_BY_NAME(%s, 'OBJECT', 'SELECT')", [obj])
-                        result['tables'].append({'name': name, 'visible_in_dbo': ('dbo', name) in found, 'visible_schemas': [schema for schema, table in found if table == name], 'can_select': cursor.fetchone()[0]})
-                    if code == 'prn-auto-print':
-                        cursor.execute(f"""SELECT COUNT(*) FROM [{db}].dbo.Licenses l
-                            WHERE l.status <> 'REVOKED' AND (COALESCE(l.serial_number, '') = '' OR NOT EXISTS (
-                                SELECT 1 FROM registrations_projectcustomer n
-                                WHERE n.project = 'prn-auto-print' AND n.serial_number = l.serial_number))""")
-                        result['legacy_nonrevoked_licenses_missing_from_nexus'] = cursor.fetchone()[0]
-                        cursor.execute(f"""SELECT COUNT(*) FROM [{db}].dbo.Customers c WHERE NOT EXISTS (
-                            SELECT 1 FROM [{db}].dbo.Licenses l WHERE l.customer_id = c.id AND l.status <> 'REVOKED')""")
-                        result['legacy_customers_without_nonrevoked_license'] = cursor.fetchone()[0]
-                        cursor.execute("SELECT HAS_PERMS_BY_NAME(%s, 'OBJECT', 'SELECT')", [f'[{db}].[dbo].[django_migrations]'])
-                        if cursor.fetchone()[0] == 1:
-                            cursor.execute(f"SELECT name FROM [{db}].dbo.django_migrations WHERE app = %s ORDER BY name", ['licensing'])
-                            result['legacy_licensing_migrations'] = [row[0] for row in cursor.fetchall()]
-                        result['migration_note'] = 'Migration names are schema evidence only; they do not prove customer migration completeness. Missing serial coverage or unlinked legacy customers blocks removing legacy counting.'
+                legacy = usage.legacy_state(code) if code == 'prn-auto-print' else {'included': True, 'reason': ''}
+                if not legacy['included']:
+                    result['legacy'] = legacy   # Nexus-only counts; the legacy database is not configured or not readable
+                else:
+                    with connection.cursor() as cursor:
+                        cursor.execute('SELECT HAS_DBACCESS(%s)', [db])
+                        result['database_access'] = cursor.fetchone()[0]
+                        cursor.execute(f'SELECT s.name, t.name FROM [{db}].sys.tables t JOIN [{db}].sys.schemas s ON s.schema_id = t.schema_id')
+                        found = set(cursor.fetchall())
+                        result['tables'] = []
+                        for name in TABLES[code]:
+                            obj = f'[{db}].[dbo].[{name}]'
+                            cursor.execute("SELECT HAS_PERMS_BY_NAME(%s, 'OBJECT', 'SELECT')", [obj])
+                            result['tables'].append({'name': name, 'visible_in_dbo': ('dbo', name) in found, 'visible_schemas': [schema for schema, table in found if table == name], 'can_select': cursor.fetchone()[0]})
+                        if code == 'prn-auto-print':
+                            cursor.execute(f"""SELECT COUNT(*) FROM [{db}].dbo.Licenses l
+                                WHERE l.status <> 'REVOKED' AND (COALESCE(l.serial_number, '') = '' OR NOT EXISTS (
+                                    SELECT 1 FROM registrations_projectcustomer n
+                                    WHERE n.project = 'prn-auto-print' AND n.serial_number = l.serial_number))""")
+                            result['legacy_nonrevoked_licenses_missing_from_nexus'] = cursor.fetchone()[0]
+                            cursor.execute(f"""SELECT COUNT(*) FROM [{db}].dbo.Customers c WHERE NOT EXISTS (
+                                SELECT 1 FROM [{db}].dbo.Licenses l WHERE l.customer_id = c.id AND l.status <> 'REVOKED')""")
+                            result['legacy_customers_without_nonrevoked_license'] = cursor.fetchone()[0]
+                            cursor.execute("SELECT HAS_PERMS_BY_NAME(%s, 'OBJECT', 'SELECT')", [f'[{db}].[dbo].[django_migrations]'])
+                            if cursor.fetchone()[0] == 1:
+                                cursor.execute(f"SELECT name FROM [{db}].dbo.django_migrations WHERE app = %s ORDER BY name", ['licensing'])
+                                result['legacy_licensing_migrations'] = [row[0] for row in cursor.fetchall()]
+                            result['migration_note'] = 'Migration names are schema evidence only; they do not prove customer migration completeness. Missing serial coverage or unlinked legacy customers blocks removing legacy counting.'
                 result['summary'] = usage.summary(code)
                 result['list_totals'] = {category: usage.listing(code, category)['total'] for category in ('used', 'not-used', 'expired')}
                 result['report_totals'] = {category: len(usage.report_rows(code, category)) for category in ('used', 'not-used')}

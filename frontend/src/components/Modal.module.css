@@ -51,3 +51,16 @@
 .body {
   padding: 16px 18px 18px;
 }
+
+/* Approval dialogs: wider, with a coloured outer border that tells the request type apart. */
+.wide {
+  width: min(640px, 100%);
+}
+
+.transfer {
+  border: 3px solid var(--success);
+}
+
+.revoke {
+  border: 3px solid #e65100;
+}
