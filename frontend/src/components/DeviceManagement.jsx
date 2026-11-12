@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { registrationsApi } from '../api/registrations';
 import { formatDate, formatDateTime } from '../utils/date';
 import Alert from './Alert';
+import DeviceApprovalModal, { RequestCard } from './DeviceApprovalModal';
 import Modal from './Modal';
 import styles from './CustomerList.module.css';
 
@@ -34,6 +35,9 @@ export default function DeviceManagement({ project, customer: c, onChanged, onNo
   const [dialog, setDialog] = useState(null); // 'revoke' | 'transfer'
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [review, setReview] = useState(false);
+  const closeReview = useCallback(() => setReview(false), []);
+  const closeDialog = useCallback(() => setDialog(null), []);
 
   const load = useCallback(async () => {
     try {
@@ -62,21 +66,14 @@ export default function DeviceManagement({ project, customer: c, onChanged, onNo
   const action = dialog ? ACTIONS[dialog] : null;
   const requests = panel.transfer_requests || [];
 
+  // Called by the approval dialog after the Super Admin confirmed; errors are shown inside that dialog.
   async function decide(request, decision) {
-    setBusy(true);
-    setError('');
-    try {
-      await registrationsApi.decideDeviceTransfer(project, request.id, decision);
-      onNotify('success', decision === 'approve'
-        ? `Transfer approved: ${request.device_name || 'the computer'} is released from ${request.from_user_id}; ${request.to_user_id} can now sign in on it.`
-        : `Transfer request rejected for ${request.to_user_id}.`);
-      await load();
-      onChanged({});
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
+    await registrationsApi.decideDeviceTransfer(project, request.id, decision);
+    onNotify('success', decision === 'approve'
+      ? `Transfer approved: ${request.device_name || 'the computer'} is released from ${request.from_user_id}; ${request.to_user_id} can now sign in on it.`
+      : `Transfer request rejected for ${request.to_user_id}.`);
+    await load();
+    onChanged({});
   }
 
   async function confirm() {
@@ -108,26 +105,14 @@ export default function DeviceManagement({ project, customer: c, onChanged, onNo
         ))}
       </dl>
       {requests.length > 0 && (
-        <div role="group" aria-label="Device transfer requests">
-          <h4 className={styles.groupTitle}>Device Transfer Requests</h4>
-          {requests.map((r) => (
-            <div key={r.id} className={styles.detail}>
-              <dd>
-                {r.device_name || 'Computer'} · {r.from_name} ({r.from_user_id}) → {r.to_name} ({r.to_user_id}) · requested {formatDateTime(r.requested_at)}
-              </dd>
-              <div className={styles.dialogActions}>
-                <button type="button" className={styles.dangerSolid} disabled={busy} onClick={() => decide(r, 'approve')}>
-                  Approve Transfer
-                </button>
-                <button type="button" disabled={busy} onClick={() => decide(r, 'reject')}>
-                  Reject
-                </button>
-              </div>
-            </div>
-          ))}
-          {error && <Alert type="error">{error}</Alert>}
+        <div role="group" aria-label="Device transfer requests" className={styles.dialogActions} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{requests.length} pending device transfer request{requests.length > 1 ? 's' : ''}</span>
+          <button type="button" className={styles.primary} onClick={() => setReview(true)}>
+            Review requests
+          </button>
         </div>
       )}
+      {review && <DeviceApprovalModal requests={requests} onDecide={decide} onClose={closeReview} />}
       <div className={styles.dialogActions}>
         {panel.can_revoke && (
           <button type="button" className={styles.danger} onClick={() => { setError(''); setDialog('revoke'); }}>
@@ -141,14 +126,21 @@ export default function DeviceManagement({ project, customer: c, onChanged, onNo
         )}
       </div>
       {action && (
-        <Modal title={action.title} onClose={() => setDialog(null)}>
-          <p className={styles.message}>{action.message(c)}</p>
+        <Modal title={action.title} onClose={closeDialog} tone={dialog === 'revoke' ? 'revoke' : 'transfer'} wide>
+          <RequestCard
+            kind={dialog}
+            customer={c.name}
+            device={device ? `${device.device_name || 'Unnamed'} · ${device.device_id.slice(0, 8)}` : 'No registered device'}
+            requestedAt={new Date().toISOString()}
+            status={panel.device_status_label}
+          />
+          <p className={styles.message} style={{ marginTop: 12 }}>{action.message(c)}</p>
           {error && <Alert type="error">{error}</Alert>}
           <div className={styles.dialogActions}>
             <button type="button" className={styles.dangerSolid} disabled={busy} onClick={confirm}>
               {busy ? 'Saving…' : action.confirm}
             </button>
-            <button type="button" onClick={() => setDialog(null)} disabled={busy}>
+            <button type="button" onClick={closeDialog} disabled={busy}>
               Keep
             </button>
           </div>

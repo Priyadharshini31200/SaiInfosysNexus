@@ -14,7 +14,7 @@ export default function ProjectUsageCard({ project, selected, onSelect, canOpen 
         {project.label}
       </h2>
 
-      {project.available ? (
+      {project.available && (
         <div className={styles.counts}>
           {COUNTS.map(({ category, field, label, fullLabel, tone }) => (
             <button
@@ -31,7 +31,13 @@ export default function ProjectUsageCard({ project, selected, onSelect, canOpen 
             </button>
           ))}
         </div>
-      ) : (
+      )}
+      {project.available && project.complete === false && project.note && (
+        <p className={styles.unavailable} role="note">
+          {project.note}
+        </p>
+      )}
+      {!project.available && (
         <p className={styles.unavailable} role="status">
           {project.message}
         </p>

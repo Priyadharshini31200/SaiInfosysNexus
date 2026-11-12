@@ -20,9 +20,10 @@ GSTR2Tally (database Gstr_db)
     customer     superadmin_customerprofile.business_name, else the company registered for the
                  license's GSTIN, else the customer's username
 
-Barcode AutoPrint (database PRNPRINT + Nexus)
-    registered   Customers with their non-revoked Licenses (one per license; a customer with none is
-                 one row), merged by serial number with the ACTIVE-status customers Nexus holds
+Barcode AutoPrint (Nexus, plus the optional legacy database PRNPRINT)
+    registered   the ACTIVE-status customers Nexus holds (authoritative), merged by serial number with the legacy
+                 Customers / non-revoked Licenses (one per license) ONLY when that database is configured, readable and
+                 verified (legacy_state); otherwise Nexus alone, and the summary says it is not complete
     usage event  the license was activated, validated, or seen by a device activation, or (in Nexus) the enrolled
                  device was activated/enrolled or reported real use (never merely record creation)
 """
@@ -49,6 +50,13 @@ CATEGORIES = ("used", "not-used", "expiring", "expired")
 PAGE_SIZES = (10, 25, 50, 100)
 
 _DB_NAME = re.compile(r"[A-Za-z0-9_]{1,128}")
+
+
+LEGACY_NOTES = {
+    "not_configured": "Counts are for customers registered in Nexus. The legacy PRN database is not configured.",
+    "invalid_configuration": "Counts are for customers registered in Nexus. The legacy PRN database setting is invalid.",
+    "inaccessible": "Counts are for customers registered in Nexus. The legacy PRN database cannot be read, so older licences are not included.",
+}
 
 
 class ProjectUnavailable(Exception):
@@ -128,9 +136,16 @@ def _nexus_units(code):
     )"""
 
 
-def _prn_base(db):
-    """The PRN project's own records (still holding customers not yet linked to Nexus) merged, by serial number, with the
-    usage Nexus itself records for enrolled devices. A customer in both is one unit; one only in Nexus is one unit."""
+def _prn_base(db, legacy=True):
+    """Barcode AutoPrint units. Nexus is authoritative: every ACTIVE-status customer registered in Nexus is a unit, with the usage
+    Nexus itself records for the enrolled device. The PRN project's own database (historical, not-yet-linked licences) is merged
+    by serial number ONLY when `legacy` is True, i.e. it is configured, readable and verified (see legacy_state)."""
+    if not legacy or not db:
+        return f"""
+    {_nexus_units("prn-auto-print")},
+    base AS (
+        SELECT n.unit_id, n.customer_name, n.device_name, n.serial, n.last_used FROM nexus n
+    )"""
     return f"""
     legacy AS (
         SELECT c.id * 1000000000 + COALESCE(l.id, 0) AS unit_id,
@@ -160,16 +175,47 @@ def _prn_base(db):
     )"""
 
 
+# Exactly what the legacy merge reads; probed with a real (zero-row) SELECT, which is authoritative for "accessible and verified".
+_LEGACY_PROBES = (
+    "SELECT TOP 0 id, name FROM [{db}].dbo.Customers",
+    "SELECT TOP 0 id, customer_id, serial_number, status, activated_device_name, activated_at, last_validated_at FROM [{db}].dbo.Licenses",
+    "SELECT TOP 0 license_id, device_name, last_seen_at FROM [{db}].dbo.LicenseActivations",
+)
+
+
+def legacy_state(code="prn-auto-print"):
+    """{'included': bool, 'reason': str} for the optional legacy PRN database. Never raises: when it is not configured or cannot be
+    read, the dashboard counts Nexus customers only and says so, instead of failing or presenting the counts as complete."""
+    db = getattr(settings, PROJECTS[code]["db_setting"], "") or ""
+    if not db:
+        return {"included": False, "reason": "not_configured"}
+    if not _DB_NAME.fullmatch(db):
+        return {"included": False, "reason": "invalid_configuration"}
+    try:
+        with connection.cursor() as cursor:
+            for probe in _LEGACY_PROBES:
+                cursor.execute(probe.format(db=db))
+    except DatabaseError as exc:
+        logger.warning("Dashboard: legacy %s database is not readable (%s); counting Nexus customers only", db, exc)
+        return {"included": False, "reason": "inaccessible"}
+    return {"included": True, "reason": ""}
+
+
 PROJECTS = {
     "gstr2tally": {"label": "GSTR2Tally", "db_setting": "GSTR_DB_NAME", "base": _gstr_base},
     "prn-auto-print": {"label": "Barcode AutoPrint", "db_setting": "PRN_DB_NAME", "base": _prn_base},
 }
 
 
-def _base_sql(code):
+def _base_sql(code, legacy=None):
     project = PROJECTS[code]
-    db = getattr(settings, project["db_setting"], "")
-    if not _DB_NAME.fullmatch(db or ""):
+    db = getattr(settings, project["db_setting"], "") or ""
+    if code == "prn-auto-print":              # Nexus-only unless the legacy database is configured, readable and verified
+        if legacy is None:
+            legacy = legacy_state(code)["included"]
+        if not legacy:
+            return ";WITH" + project["base"](db, legacy=False)
+    elif not _DB_NAME.fullmatch(db):
         raise ImproperlyConfigured(f"{project['db_setting']} must be a plain database name.")
     return ";WITH" + project["base"](db)
 
@@ -221,10 +267,19 @@ def _run(sql, params):
 def summary(code, now=None):
     """{used, not_used, expiring, total} for one project. Used / Not Used come from the project's own database;
     Expiring This Month from the license expiry dates Nexus holds. Raises ProjectUnavailable."""
-    sql = _base_sql(code) + """
+    extra = {}
+    if code == "prn-auto-print":
+        legacy = legacy_state(code)
+        extra = {"legacy_included": legacy["included"], "complete": legacy["included"]}
+        if not legacy["included"]:
+            extra["note"] = LEGACY_NOTES.get(legacy["reason"], LEGACY_NOTES["inaccessible"])
+        base = _base_sql(code, legacy["included"])
+    else:
+        base = _base_sql(code)
+    sql = base + """
     SELECT COUNT(*), COALESCE(SUM(CASE WHEN last_used IS NOT NULL THEN 1 ELSE 0 END), 0) FROM base"""
     total, used = _run(sql, [])[0]
-    return {"total": total, "used": used, "not_used": total - used, "expiring": _expiring(code, now).count(), "expired": _expired(code, now).count()}
+    return {"total": total, "used": used, "not_used": total - used, "expiring": _expiring(code, now).count(), "expired": _expired(code, now).count(), **extra}
 
 
 def _expiring_listing(code, search, page, page_size, now, category="expiring"):
