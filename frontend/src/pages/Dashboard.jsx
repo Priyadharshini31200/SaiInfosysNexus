@@ -13,6 +13,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const isSuperAdmin = can('view', 'gstr2tally:dashboard') || can('view', 'prn-auto-print:dashboard');
   const [state, setState] = useState({ loading: true, error: '', projects: [] });
+  const [retry, setRetry] = useState(0);
   const synced = useSyncChanges(dashboardApi.sync, isSuperAdmin);
 
   useEffect(() => {
@@ -25,7 +26,15 @@ export default function Dashboard() {
     return () => {
       current = false;
     };
-  }, [isSuperAdmin, synced]);
+  }, [isSuperAdmin, synced, retry]);
+
+  // A project whose data source is down is re-checked every 30 s, so real counts appear by themselves once access is restored.
+  const anyUnavailable = state.projects.some((project) => !project.available);
+  useEffect(() => {
+    if (!anyUnavailable) return undefined;
+    const timer = setInterval(() => document.visibilityState === 'visible' && setRetry((n) => n + 1), 30000);
+    return () => clearInterval(timer);
+  }, [anyUnavailable]);
 
   if (!isSuperAdmin) return <section className={styles.canvas} aria-label="Dashboard"><p className={styles.note}>No Dashboard access is assigned. Choose an authorized menu or contact your Superadmin.</p></section>;
 
