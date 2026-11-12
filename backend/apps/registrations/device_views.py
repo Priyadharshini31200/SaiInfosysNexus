@@ -207,7 +207,11 @@ class DeviceLoginView(DeviceView):
     def post(self, request, project):
         customer = portal.login(project, request.data.get("username"), request.data.get("password"))
         if customer.pk != request.auth.customer_id:
-            raise PortalError("This computer is registered to a different account.", 403, "wrong_device_account")
+            # The credentials are valid (checked above) but the key that signed this call was registered for ANOTHER customer on this
+            # computer. Several customers may share one computer, each with their own registration, so this is not a refusal: the app
+            # signs in again through enroll, which finds or requests THIS customer's own registration (first-activation approval,
+            # one active device per licence and the transfer rules all still apply there). Nothing of the other customer is returned.
+            raise PortalError("Sign in again on this computer to continue with this account.", 401, "device_auth_required")
         data = portal.session_data(customer, request.auth.device_id)
         data["license"] = device.license_view(customer)
         if device.device_license_state(customer, timezone.now()) == "active" and not customer.password_change_required:
