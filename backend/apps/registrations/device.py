@@ -151,13 +151,9 @@ def _start_clock(customer, now):
         ProjectCustomer.objects.filter(pk=customer.pk).update(expires_at=now + timedelta(days=365))
 
 
-def conflicting_device(project, customer, fingerprint):
-    """The ACTIVE registration of another customer's licence that belongs to the computer presenting `fingerprint`, or None."""
-    others = DeviceRegistration.objects.filter(project=project, revoked_at__isnull=True).exclude(customer_id=customer.pk).select_related("customer")
-    for registration in others:
-        if dc.matches_stored(registration.fingerprint_hashes, fingerprint):
-            return registration
-    return None
+# A computer is NOT exclusive to one customer. Registrations are scoped to a customer's licence: the same laptop can hold one
+# registration for each of several independent customers, each created through that customer's own credentials and (for a first
+# computer) its own Super Admin approval. The only exclusivity is per licence: one ACTIVE device per customer.
 
 
 ACTIVATION_PENDING = ("Your first activation is waiting for Sai Infosys Super Admin approval. Sign in again after it has been approved.")
@@ -189,8 +185,13 @@ def _first_activation_request(project, locked, data, protected):
     return req
 
 
-BOUND_TO_OTHER = ("This computer is already registered to another customer account. Ask for a device transfer, which a Sai Infosys "
-                  "Super Admin must approve.")
+
+def _approved_reassignment_for(customer, fingerprint):
+    """True when a Super Admin already approved moving THIS computer from another customer to `customer` (the approved request's
+    released registration is this very computer). Such a customer registers it by signing in, without a second approval."""
+    approved = DeviceTransferRequest.objects.filter(to_customer=customer, kind=DeviceTransferRequest.TRANSFER,
+                                                    status=DeviceTransferRequest.APPROVED).select_related("device")
+    return any(r.device_id and r.from_customer_id != customer.pk and dc.matches_stored(r.device.fingerprint_hashes, fingerprint) for r in approved)
 
 
 def _bind(project, customer, data, now):
@@ -205,8 +206,6 @@ def _bind(project, customer, data, now):
             current = active_device(locked)
             if locked.device_blocked:
                 raise PortalError("This licence's device was revoked. Contact Sai Infosys.", 403, "device_blocked")
-            if conflicting_device(project, locked, fingerprint) is not None:     # never register a computer that belongs to someone else
-                raise PortalError(BOUND_TO_OTHER, 403, "device_bound_to_other")
             if current is not None:
                 if not dc.matches_stored(current.fingerprint_hashes, fingerprint):
                     raise PortalError(
@@ -222,7 +221,7 @@ def _bind(project, customer, data, now):
                 current.last_seen_at = now
                 current.save()
                 device, action = current, "DEVICE_REENROLLED"
-            elif approval_required() and not locked.devices.exists():
+            elif approval_required() and not locked.devices.exists() and not _approved_reassignment_for(locked, fingerprint):
                 waiting = _first_activation_request(project, locked, data, protected)     # the licence's very first computer: Super Admin decides
             else:
                 generation = max(locked.devices.values_list("generation", flat=True), default=0) + 1
@@ -381,6 +380,11 @@ def transfer_summary(r):
         "device_id": str(r.device_id) if r.device_id else "",
         "device_name": r.device.device_name if r.device_id else r.requesting_device_name,
         "requesting_device_name": r.requesting_device_name,
+        "reassignment": bool(r.kind == DeviceTransferRequest.TRANSFER and r.from_customer_id and r.from_customer_id != r.to_customer_id),
+        "reason": ("Computer is registered to another customer: administrator reassignment requested"
+                   if r.kind == DeviceTransferRequest.TRANSFER and r.from_customer_id != r.to_customer_id else
+                   "Customer moves their own licence to a new computer" if r.kind == DeviceTransferRequest.TRANSFER else
+                   "First activation of the licence's first computer" if r.kind == DeviceTransferRequest.FIRST_ACTIVATION else "Device revoked"),
         "requested_at": r.requested_at,
         "decided_at": r.decided_at,
         "decided_by": r.decided_by,
@@ -412,10 +416,8 @@ def request_transfer(project, data):
         try:
             with transaction.atomic():
                 locked = ProjectCustomer.objects.select_for_update().get(pk=customer.pk)
-                other = conflicting_device(project, locked, data["fingerprint"])
-                own = other is None
-                if own:
-                    other = own_other_device(locked, data["fingerprint"])
+                own = True                                  # another customer on this computer is never a conflict any more
+                other = own_other_device(locked, data["fingerprint"])
                 if other is None:
                     raise PortalError("This computer does not need a transfer. Sign in again.", 409, "no_transfer_needed")
                 if locked.device_blocked:
@@ -448,7 +450,7 @@ def transfer_status(project, data):
     if first is not None and active_device(customer) is None and dc.matches_stored(first.fingerprint_hashes, data["fingerprint"]):
         return {"needed": True, "kind": "first_activation", "state": first.status.lower(), "id": first.pk, "decided_at": first.decided_at,
                 "decision_reason": first.decision_reason}
-    other = conflicting_device(project, customer, data["fingerprint"]) or own_other_device(customer, data["fingerprint"])
+    other = own_other_device(customer, data["fingerprint"])
     if other is None:
         return {"needed": False, "state": "none"}
     req = DeviceTransferRequest.objects.filter(device=other, to_customer=customer).order_by("-id").first()
@@ -506,10 +508,6 @@ def decide_transfer(project, pk, user, approve, reason=""):
                     ensure_active(to, now)
                 except PortalError as exc:
                     raise services.RuleError(str(exc))
-                stored = json.loads(req.fingerprint_hashes or "{}")
-                for other in DeviceRegistration.objects.filter(project=project, revoked_at__isnull=True).exclude(customer_id=to.pk):
-                    if dc.fingerprints_match(json.loads(other.fingerprint_hashes), stored):
-                        raise services.RuleError("This computer is registered to another customer. Request a device transfer instead.")
                 bound = _bind_approved(req, to, now)
                 audit.record(user, "DEVICE_ENROLLED", f"{bound.device_name} (generation {bound.generation}) approved (request #{req.pk})", project, to)
             else:

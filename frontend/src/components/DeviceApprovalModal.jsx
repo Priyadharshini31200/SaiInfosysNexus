@@ -11,14 +11,17 @@ const KIND = {
 };
 
 /** One request card: type badge, customer, device, request date and status. Green border = transfer, orange/red = revoke. */
-export function RequestCard({ kind, customer, device, requestedAt, status, children }) {
+export function RequestCard({ kind, customer, device, requestedAt, status, existing, requested, reason, children }) {
   const k = KIND[kind];
   return (
     <article className={`${styles.card} ${k.card}`} aria-label={`${k.label}: ${customer}`}>
       <span className={`${styles.badge} ${k.badge}`}>{k.label}</span>
       <dl className={styles.facts}>
-        <div><dt>Customer</dt><dd>{customer}</dd></div>
-        <div><dt>Device</dt><dd>{device}</dd></div>
+        {existing && <div><dt>Existing account / device</dt><dd>{existing}</dd></div>}
+        {requested && <div><dt>Requested account / device</dt><dd>{requested}</dd></div>}
+        {!existing && <div><dt>Customer</dt><dd>{customer}</dd></div>}
+        {!existing && <div><dt>Device</dt><dd>{device}</dd></div>}
+        {reason && <div><dt>Reason</dt><dd>{reason}</dd></div>}
         <div><dt>Request date</dt><dd>{requestedAt ? formatDateTime(requestedAt) : '—'}</dd></div>
         <div><dt>Status</dt><dd>{status}</dd></div>
       </dl>
@@ -70,6 +73,9 @@ export default function DeviceApprovalModal({ requests, onDecide, onClose }) {
               key={q.id}
               kind={kindOf(q)}
               customer={`${q.to_name} (${q.to_user_id})`}
+              existing={kindOf(q) === 'transfer' ? `${q.from_name} (${q.from_user_id}) · ${q.device_name || 'Computer'}` : undefined}
+              requested={kindOf(q) === 'transfer' ? `${q.to_name} (${q.to_user_id}) · ${q.requesting_device_name || 'this computer'}` : undefined}
+              reason={q.reason}
               device={kindOf(q) === 'activation'
                 ? `${q.device_name || 'New computer'} · first activation`
                 : `${q.device_name || 'Computer'} · registered to ${q.from_name} (${q.from_user_id})`}
