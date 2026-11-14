@@ -7,6 +7,11 @@ import ProjectAddCustomerPage from './pages/ProjectAddCustomerPage';
 import ProjectCustomersPage from './pages/ProjectCustomersPage';
 import LicenseExpiryReportPage from './pages/LicenseExpiryReportPage';
 import UsageReportPage from './pages/UsageReportPage';
+import TallyDashboardPage from './pages/tally/TallyDashboardPage';
+import TallyUsageListPage from './pages/tally/TallyUsageListPage';
+import TallyCustomersPage from './pages/tally/TallyCustomersPage';
+import TallyCustomerDetailPage from './pages/tally/TallyCustomerDetailPage';
+import TallyReportPage from './pages/tally/TallyReportPage';
 import NotFound from './pages/NotFound';
 
 // A bare project URL opens its Customer List.
@@ -31,6 +36,13 @@ export default function App() {
           <Route path="/projects/:slug/customers/:id/edit" element={<ProjectAddCustomerPage />} />
           <Route path="/reports/license-expiry" element={<LicenseExpiryReportPage />} />
           <Route path="/reports/usage" element={<UsageReportPage />} />
+          <Route path="/tally/reports/license-expiry" element={<TallyReportPage kind="expiry" />} />
+          <Route path="/tally/reports/tally-details" element={<TallyReportPage kind="tally" />} />
+          <Route path="/tally/reports/user-performance" element={<TallyReportPage kind="performance" />} />
+          <Route path="/tally/:product/dashboard" element={<TallyDashboardPage />} />
+          <Route path="/tally/:product/usage/:category" element={<TallyUsageListPage />} />
+          <Route path="/tally/:product/customers" element={<TallyCustomersPage />} />
+          <Route path="/tally/:product/customers/:id" element={<TallyCustomerDetailPage />} />
           <Route path="/profile" element={<Navigate to="/dashboard" replace />} />
           <Route path="/reset-password" element={<Navigate to="/dashboard" replace />} />
         </Route>

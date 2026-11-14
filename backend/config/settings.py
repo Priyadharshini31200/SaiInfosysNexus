@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.dashboard",
     "apps.registrations",
+    "apps.tallysl",
 ]
 
 MIDDLEWARE = [

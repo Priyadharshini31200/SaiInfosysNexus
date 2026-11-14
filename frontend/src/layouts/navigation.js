@@ -19,6 +19,10 @@ export const REPORT_PAGES = [
 ];
 export const USAGE_STATUSES = { used: 'Used', 'not-used': 'Not Used' };
 
+// Sidebar grouping only (a navigation change - the project slug, routes and API of Barcode AutoPrint are unchanged).
+// "Non-Tally SL Products" lists Barcode AutoPrint. GSTR2Tally now lives under "Tally SL Products" (apps/tallysl).
+export const NON_TALLY_ITEMS = PROJECT_ITEMS.filter((p) => p.slug === 'prn-auto-print');
+
 export const projectBySlug = (slug) => PROJECT_ITEMS.find((p) => p.slug === slug);
 
 export const PROJECT_PAGES = {
@@ -31,6 +35,12 @@ export const PROJECT_MENU = [PROJECT_PAGES.add, PROJECT_PAGES.list];
 /** Navbar title for a path: "Dashboard", or "<Project> · <Page>". */
 export function getPageTitle(pathname, search = '') {
   if (pathname === '/dashboard') return 'Dashboard';
+  if (pathname.startsWith('/tally/')) {
+        if (pathname.startsWith('/tally/reports/')) return `GSTR Reports · ${pathname.endsWith('tally-details') ? 'Tally Details Report' : pathname.endsWith('user-performance') ? 'User Performance Report' : 'License Expiry Report'}`;
+    const m = pathname.match(/^\/tally\/([^/]+)\/(dashboard|usage|customers)/);
+    const page = { dashboard: 'User Performance', usage: 'User Performance', customers: 'Customers' }[m?.[2]] || '';
+    return `Tally SL Products${page ? ` · ${page}` : ''}`;
+  }
   if (pathname === '/reports/usage') {
     // "GSTR2Tally Used Report" once the Dashboard has sent a project and a count
     const params = new URLSearchParams(search);
