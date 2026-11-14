@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { configApi } from '../api/config';
+import { tallyApi } from '../api/tallysl';
 import { useAuth } from '../context/AuthContext';
 import Drawer from './Drawer';
 import Alert from './Alert';
@@ -12,6 +13,7 @@ export default function ConfigurationDrawer({ open, onClose }) {
   const [data, setData] = useState(null);
   const [adminId, setAdminId] = useState('');
   const [grants, setGrants] = useState({});
+  const [tally, setTally] = useState(null); // Tally SL products + per-product grants (apps/tallysl); PRN grants above are untouched
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -28,6 +30,7 @@ export default function ConfigurationDrawer({ open, onClose }) {
     const token = ++requestId.current;
     setData(null); setGrants({}); setAdminId(''); setLoading(true);
     setError(''); setMessage(''); setPassword(''); setConfirmation('');
+    tallyApi.permissions().then((t) => token === requestId.current && setTally(t)).catch(() => token === requestId.current && setTally(null));
     configApi.projectPermissions().then((result) => {
       if (token !== requestId.current) return;
       setData(result); setAdminId(String(result.admins[0]?.id || ''));
@@ -72,6 +75,20 @@ export default function ConfigurationDrawer({ open, onClose }) {
     finally { locked.current = false; setBusy(false); }
   }
 
+  const tallyAdmin = tally?.admins.find((a) => String(a.id) === adminId);
+  async function toggleTally(code, action, checked) {
+    if (locked.current || loading || !adminId || !allowed) return;
+    locked.current = true;
+    const current = tallyAdmin?.grants[code] || {};
+    const actions = Object.keys(tally.actions).filter((k) => (k === action ? checked : current[k]));
+    setBusy(true); setError(''); setMessage('');
+    try {
+      setTally(await tallyApi.savePermissions(Number(adminId), { [code]: actions }));
+      setMessage('Saved');
+    } catch (e) { setError(`Could not save permissions. ${e.message}`); }
+    finally { locked.current = false; setBusy(false); }
+  }
+
   async function resetPassword() {
     if (locked.current || loading || !adminId || !allowed) return;
     if (!password.trim() || password !== confirmation) { setError('Enter a new password and matching confirmation.'); return; }
@@ -97,7 +114,7 @@ export default function ConfigurationDrawer({ open, onClose }) {
       </div>
       {loading && <div className={styles.loading} role="status"><span className={styles.spinner} /> Loading saved permissions...</div>}
       {!loading && data && !data.admins.length && <p className={styles.empty}>No active Admin accounts.</p>}
-      {!loading && adminId && data?.projects.map((project) => {
+      {!loading && adminId && data?.projects.filter((p) => !tally?.products.some((t) => t.code === p.code)).map((project) => {
         const enabled = project.menus.reduce((count, menu) => count + menu.actions.filter((action) => grants[menu.module]?.[action]).length, 0);
         const total = project.menus.reduce((count, menu) => count + menu.actions.length, 0);
         return <details className={styles.project} key={project.code}>
@@ -118,6 +135,26 @@ export default function ConfigurationDrawer({ open, onClose }) {
                 </fieldset>
               </div>;
             })}
+          </div>
+        </details>;
+      })}
+      {!loading && adminId && tally?.products.map((product) => {
+        const g = tallyAdmin?.grants[product.code] || {};
+        const total = Object.keys(tally.actions).length;
+        return <details className={styles.project} key={`tally-${product.code}`}>
+          <summary><span className={styles.projectIcon}><FolderIcon size={18} /></span><span className={styles.projectName}>{product.name}</span><span className={styles.count}>{Object.values(g).filter(Boolean).length}/{total}</span><span className={styles.chevron} aria-hidden="true" /></summary>
+          <div className={styles.matrix}>
+            <div className={styles.columns}><span>Product</span><span>Allowed actions</span></div>
+            <div className={styles.menu}>
+              <div className={styles.menuName}><span>{product.name}</span></div>
+              <fieldset disabled={busy} className={styles.actions}>
+                <legend className={styles.srOnly}>{product.name} permissions</legend>
+                {Object.entries(tally.actions).map(([action, label]) => <label key={action} className={styles.permission}>
+                  <input type="checkbox" checked={Boolean(g[action])} onChange={(e) => toggleTally(product.code, action, e.target.checked)} />
+                  <span>{label}</span>
+                </label>)}
+              </fieldset>
+            </div>
           </div>
         </details>;
       })}

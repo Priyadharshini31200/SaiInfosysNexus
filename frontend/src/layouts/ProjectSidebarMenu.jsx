@@ -10,14 +10,14 @@ import styles from './Sidebar.module.css';
  * submenus (Add Customer, Customer List). With the sidebar collapsed to icons, a project is a single
  * link to its Customer List.
  */
-export default function ProjectSidebarMenu({ collapsed, onNavigate }) {
+export default function ProjectSidebarMenu({ collapsed, onNavigate, items = PROJECT_ITEMS }) {
   const { can } = useAuth();
   const { pathname } = useLocation();
   const [toggled, setToggled] = useState({}); // slug -> user's explicit open/closed choice
 
   return (
     <ul className={styles.list}>
-      {PROJECT_ITEMS.map(({ slug, label, icon: Icon }) => {
+      {items.map(({ slug, label, icon: Icon }) => {
         if (!can('entry', slug) && !can('view', slug) && !can('approve', slug) && !can('device_transfer', slug)) return null;
         const inProject = pathname.startsWith(`/projects/${slug}/`);
         const open = toggled[slug] ?? inProject;

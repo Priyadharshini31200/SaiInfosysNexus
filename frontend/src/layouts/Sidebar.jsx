@@ -1,13 +1,16 @@
 import { NavLink } from 'react-router-dom';
 import { ChevronsLeftIcon } from '../components/Icons';
-import { NAV_ITEMS } from './navigation';
+import { NAV_ITEMS, NON_TALLY_ITEMS } from './navigation';
+import TallySidebarMenu from './TallySidebarMenu';
 import ProjectSidebarMenu from './ProjectSidebarMenu';
 import ReportsSidebarMenu from './ReportsSidebarMenu';
 import { useAuth } from '../context/AuthContext';
+import { useTallyAccess } from '../context/TallyAccessContext';
 import styles from './Sidebar.module.css';
 
 export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile }) {
   const { can } = useAuth();
+  const { anyCan } = useTallyAccess();
   return (
     <>
       <div className={`${styles.backdrop} ${mobileOpen ? styles.backdropVisible : ''}`} onClick={onCloseMobile} aria-hidden="true" />
@@ -33,10 +36,12 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
             ))}
           </ul>
 
-          <p className={`${styles.sectionLabel} ${styles.projectsLabel}`}>Projects</p>
-          <ProjectSidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} />
+          <p className={`${styles.sectionLabel} ${styles.projectsLabel}`}>Non-Tally SL Products</p>
+          <ProjectSidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} items={NON_TALLY_ITEMS} />
 
-          {can('reports', null) && (
+          <TallySidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} />
+
+          {(can('reports', null) || anyCan('reports')) && (
             <>
               <p className={`${styles.sectionLabel} ${styles.projectsLabel}`}>Reports</p>
               <ReportsSidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} />
