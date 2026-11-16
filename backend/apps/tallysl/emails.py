@@ -19,6 +19,12 @@ def _send(customer, subject, rows, intro, kind, steps=(), notes=()):
     return status
 
 
+def mask_email(address):
+    """ab***@example.com - enough for a customer to recognise where mail went, never the full address."""
+    user, _, domain = (address or "").partition("@")
+    return f"{user[:2]}***@{domain}" if domain else "***"
+
+
 def _fmt(value):
     return timezone.localtime(value).strftime("%d/%m/%Y") if value else "-"
 
@@ -35,25 +41,28 @@ def send_welcome(customer, raw_password):
         ("Product", name), ("User ID (Tally Serial Number)", customer.tally_serial), ("Temporary Password", raw_password),
     ]
     steps = [
-        f"Open {name} and sign in with the User ID and temporary password above.",
-        "You will be asked to choose a new password on your first sign in.",
-        "Your license is activated by Sai Infosys; you will receive your Activation Key by email.",
+        f"Open {name} and sign in with the User ID and password above.",
+        "You can change the password any time from Profile > Change Password.",
+        "Once Sai Infosys activates your license, choose Activate User in the app to receive your Activation Key by email.",
     ]
     status = _send(customer, f"Welcome to {name} - SAI INFOSYS", rows,
                    f"Your {name} account has been created. It is not licensed yet.", "tally_welcome", steps,
-                   ["Do not share the temporary password."])
+                   ["Do not share this password."])
     TallyCustomer.objects.filter(pk=customer.pk).update(welcome_email_status=status)
     return status
 
 
 def send_activation_key(customer, raw_key):
+    """Sent ONLY when the customer asks to activate a computer (Activate User). Never at registration, login or staff actions."""
     name = customer.product.name
-    rows = [("Product", name), ("User ID (Tally Serial Number)", customer.tally_serial),
-            ("Activation Key", raw_key)] + license_rows(customer.license)
+    minutes = getattr(settings, "TALLY_ACTIVATION_KEY_TTL_SECONDS", 900) // 60
+    rows = [("Product", name), ("User ID (Tally Serial Number)", customer.tally_serial), ("Activation Key", raw_key)] + license_rows(customer.license)
     steps = [f"Open {name} on the computer you want to use and choose Activate User.",
-             "Enter your User ID, the verification code we email you, and this Activation Key."]
-    return _send(customer, f"Your {name} license and activation key", rows,
-                 f"Your {name} license is active.", "tally_activation_key", steps, ["Keep the Activation Key private."])
+             "Enter your User ID, then this Activation Key."]
+    return _send(customer, f"Your {name} Activation Key", rows,
+                 f"Use this Activation Key to activate {name} on this computer. It works once and expires in {minutes} minutes.",
+                 "tally_activation_key", steps,
+                 ["Keep the Activation Key private.", "If you did not request this, ignore this email - nothing has changed."])
 
 
 def send_password_reset(customer, token):
@@ -62,13 +71,13 @@ def send_password_reset(customer, token):
     link = ""
     if base:
         link = f"{base}{'&' if '?' in base else '?'}{urlencode({'user_id': customer.tally_serial, 'token': token})}"
-    minutes = getattr(settings, "PASSWORD_RESET_MAX_AGE", 3600) // 60
-    rows = [("User ID", customer.tally_serial), ("Reset Code", token)]
-    if link:
+    minutes = getattr(settings, "PASSWORD_OTP_TTL_SECONDS", 600) // 60
+    rows = [("User ID", customer.tally_serial), ("Verification Code (OTP)", token)]
+    if link and len(token) > 6:  # legacy long-token links only; a 6-digit OTP is never put in a URL
         rows.append(("Reset Link", link))
     return _send(customer, f"Reset your {name} password", rows,
-                 f"Use the code or link below to choose a new password. It works once and expires in {minutes} minutes.",
-                 "tally_password_reset", notes=["If you did not ask for this, ignore this email."])
+                 f"Use this 6-digit code to choose a new password. It works once and expires in {minutes} minutes.",
+                 "tally_password_reset", notes=["Never share this code. If you did not ask for it, ignore this email."])
 
 
 def send_activation_code(customer, code):

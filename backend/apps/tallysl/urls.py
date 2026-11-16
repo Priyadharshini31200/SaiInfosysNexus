@@ -2,6 +2,7 @@ from django.urls import path
 
 from . import admin_views as av
 from . import client_views as cv
+from . import events
 
 V1 = "v1/tally-sl"
 ADMIN = "v1/tally-sl-admin"
@@ -12,6 +13,10 @@ urlpatterns = [
     path(f"{ADMIN}/products/", av.ProductListView.as_view()),
     path(f"{ADMIN}/permissions/", av.PermissionsConfigView.as_view()),
     path(f"{ADMIN}/dashboard/", av.DashboardView.as_view()),
+    path(f"{ADMIN}/notifications/", av.NotificationListView.as_view()),
+    path(f"{ADMIN}/notifications/<int:pk>/read/", av.NotificationReadView.as_view()),
+    path(f"{ADMIN}/products/<slug:product>/transfers/", av.TransferListView.as_view()),
+    path(f"{V1}/<slug:product>/events/device-transfer/", events.DeviceTransferEventView.as_view()),
     path(f"{ADMIN}/usage/<str:category>/", av.UsageListView.as_view()),
     path(f"{ADMIN}/reports/license-expiry/", av.ExpiryReportView.as_view()),
     path(f"{ADMIN}/reports/license-expiry/export/", av.ExpiryExportView.as_view()),
@@ -20,7 +25,9 @@ urlpatterns = [
     path(f"{ADMIN}/reports/tally-details/", av.TallyDetailsReportView.as_view()),
     path(f"{ADMIN}/reports/tally-details/export/", av.TallyDetailsExportView.as_view()),
     path(f"{ADMIN}/products/<slug:product>/customers/", av.CustomerListView.as_view()),
+    path(f"{ADMIN}/products/<slug:product>/customers/export/", av.CustomerExportView.as_view()),
     path(f"{ADMIN}/products/<slug:product>/customers/<int:pk>/", av.CustomerDetailView.as_view()),
+    path(f"{ADMIN}/products/<slug:product>/customers/<int:pk>/credentials/<slug:action>/", av.CredentialsActionView.as_view()),
     path(f"{ADMIN}/products/<slug:product>/customers/<int:pk>/license/<slug:action>/", av.LicenseActionView.as_view()),
     path(f"{ADMIN}/products/<slug:product>/customers/<int:pk>/device/revoke/", av.DeviceRevokeView.as_view()),
     # ---- product clients (X-Product-Key + customer bearer token)
@@ -31,13 +38,16 @@ urlpatterns = [
     path(f"{V1}/<slug:product>/auth/logout/", cv.LogoutView.as_view()),
     path(f"{V1}/<slug:product>/auth/forgot-password/", cv.ForgotPasswordView.as_view()),
     path(f"{V1}/<slug:product>/auth/reset-password/", cv.ResetPasswordView.as_view()),
+    path(f"{V1}/<slug:product>/auth/verify-otp/", cv.VerifyOtpView.as_view()),
+    path(f"{V1}/<slug:product>/auth/resend-credentials/", cv.ResendCredentialsView.as_view()),
     path(f"{V1}/<slug:product>/auth/change-password/", cv.ChangePasswordView.as_view()),
     path(f"{V1}/<slug:product>/session/", cv.SessionView.as_view()),
     path(f"{V1}/<slug:product>/account/", cv.AccountView.as_view()),
     path(f"{V1}/<slug:product>/license/status/", cv.LicenseStatusView.as_view()),
     path(f"{V1}/<slug:product>/tally-info/", cv.TallyInfoView.as_view()),
     path(f"{V1}/<slug:product>/usage/open/", cv.UsageOpenView.as_view()),
-    path(f"{V1}/<slug:product>/activate/request-code/", cv.ActivationCodeView.as_view()),
+    path(f"{V1}/<slug:product>/activate/request-key/", cv.ActivationCodeView.as_view()),
+    path(f"{V1}/<slug:product>/activate/request-code/", cv.ActivationCodeView.as_view()),  # legacy name
     path(f"{V1}/<slug:product>/activate/verify/", cv.ActivationVerifyView.as_view()),
     path(f"{V1}/<slug:product>/activate/confirm/", cv.ActivationConfirmView.as_view()),
 ]

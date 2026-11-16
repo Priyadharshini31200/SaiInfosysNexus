@@ -76,8 +76,8 @@ class Base(TestCase):
         cache.clear()
         customer.verification_codes.update(created_at=timezone.now() - timedelta(minutes=5))
         self.call("activate/request-code/", {"user_id": customer.tally_serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        v = self.call("activate/verify/", {"user_id": customer.tally_serial, "code": code, "activation_key": key})
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        v = self.call("activate/verify/", {"user_id": customer.tally_serial, "activation_key": code})
         self.assertEqual(v.status_code, 200, v.data)
         return self.call("activate/confirm/", {"ticket": v.data["ticket"], "device": device, "confirm_transfer": confirm}), v
 
@@ -97,7 +97,7 @@ class RegistrationAndLoginTests(Base):
         c = TallyCustomer.objects.get(tally_serial="700123456")
         self.assertEqual(c.user_id, "700123456")  # Tally Serial == User ID
         self.assertEqual(c.license.status, TallyLicense.PENDING)  # no free paid licence
-        self.assertTrue(c.must_change_password)
+        self.assertFalse(c.must_change_password)  # no forced first-login change
         welcome = [m for m in mail.outbox if m.to == ["ravi@example.com"]]
         self.assertEqual(len(welcome), 1)
         self.assertIn("User ID (Tally Serial Number): 700123456", welcome[0].body)
@@ -123,20 +123,21 @@ class RegistrationAndLoginTests(Base):
         self.assertEqual(r.data["code"], "validation_error")
         self.assertIn("email", r.data["errors"])
 
-    def test_first_login_forces_password_change_then_works(self):
+    def test_temporary_password_signs_in_directly_and_changing_it_later_is_voluntary(self):
         c = self.registered()
         pw = self.temp_password()
         r = self.call("auth/login/", {"user_id": "700123456", "password": pw, "device": DEV_A})
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(r.data["must_change_password"])
+        self.assertFalse(r.data["must_change_password"])
         token = r.data["token"]
-        blocked = self.call("license/status/", token=token, method="get")
-        self.assertEqual((blocked.status_code, blocked.data["code"]), (403, "password_change_required"))
+        self.assertEqual(self.call("license/status/", token=token, method="get").status_code, 200)  # not blocked
+        other = self.call("auth/login/", {"user_id": "700123456", "password": pw, "device": DEV_B})  # a second session
         ch = self.call("auth/change-password/", {"current_password": pw, "new_password": "MyOwn#1"}, token=token)
         self.assertEqual(ch.status_code, 200)
-        self.assertEqual(self.call("session/", token=token, method="get").status_code, 401)  # old sessions end
+        self.assertEqual(self.call("session/", token=token, method="get").status_code, 200)  # this session stays signed in
+        self.assertEqual(self.call("session/", token=other.data["token"], method="get").status_code, 401)  # other sessions end
+        self.assertEqual(self.call("auth/login/", {"user_id": "700123456", "password": pw}).status_code, 401)  # old password dead
         r2 = self.call("auth/login/", {"user_id": "700123456", "password": "MyOwn#1"})
-        self.assertFalse(r2.data["must_change_password"])
         self.assertEqual(self.call("license/status/", token=r2.data["token"], method="get").status_code, 200)
 
     def test_wrong_password_and_lockout(self):
@@ -155,11 +156,11 @@ class RegistrationAndLoginTests(Base):
         known = self.call("auth/forgot-password/", {"identifier": "ravi@example.com"})
         self.assertEqual(known.status_code, 200)
         self.assertEqual(unknown.data, known.data)
-        token = re.search(r"Reset Code: (\S+)", mail.outbox[-1].body).group(1)
-        self.assertEqual(self.call("auth/reset-password/", {"token": "junk", "new_password": "x1"}).data["code"], "invalid_token")
-        ok = self.call("auth/reset-password/", {"token": token, "new_password": "Fresh#1"})
+        token = re.search(r"Verification Code \(OTP\): (\S+)", mail.outbox[-1].body).group(1)
+        self.assertEqual(self.call("auth/reset-password/", {"identifier": "ravi@example.com", "token": "000000", "new_password": "x1"}).data["code"], "invalid_token")
+        ok = self.call("auth/reset-password/", {"identifier": "ravi@example.com", "token": token, "new_password": "Fresh#1"})
         self.assertEqual(ok.status_code, 200)
-        again = self.call("auth/reset-password/", {"token": token, "new_password": "Other#1"})
+        again = self.call("auth/reset-password/", {"identifier": "ravi@example.com", "token": token, "new_password": "Other#1"})
         self.assertEqual(again.status_code, 400)  # token invalidated
         login = self.call("auth/login/", {"user_id": "700123456", "password": "Fresh#1"})
         self.assertEqual(login.status_code, 200)
@@ -168,9 +169,9 @@ class RegistrationAndLoginTests(Base):
     def test_expired_reset_token(self):
         c = self.registered()
         self.call("auth/forgot-password/", {"identifier": c.email})
-        token = re.search(r"Reset Code: (\S+)", mail.outbox[-1].body).group(1)
+        token = re.search(r"Verification Code \(OTP\): (\S+)", mail.outbox[-1].body).group(1)
         c.password_resets.update(expires_at=timezone.now() - timedelta(seconds=1))
-        self.assertEqual(self.call("auth/reset-password/", {"token": token, "new_password": "x1"}).status_code, 400)
+        self.assertEqual(self.call("auth/reset-password/", {"identifier": c.email, "token": token, "new_password": "x1"}).status_code, 400)
 
 
 class LicenseTests(Base):
@@ -203,9 +204,12 @@ class LicenseTests(Base):
         c = self.registered()
         mail.outbox.clear()
         key = self.activate(c, "LICENSED")
+        self.assertFalse(mail.outbox)  # a staff action never emails the Activation Key
+        self.call("activate/request-code/", {"user_id": c.tally_serial})  # only the customer's own request does
         m = mail.outbox[-1]
         self.assertEqual(m.to, ["ravi@example.com"])
-        self.assertIn(key, m.body)
+        emailed = re.search(r"Activation Key: (\S+)", m.body).group(1)
+        self.assertNotEqual(emailed, key)  # a new key is issued on request
         self.assertIn("Licensed (1 Year)", m.body)
         self.assertNotEqual(c.license.activation_key_hash, key)  # only a hash is stored
 
@@ -251,19 +255,89 @@ class LicenseTests(Base):
         exp = r.data["license"]["expires_at"]
         self.assertLessEqual(lease, exp)
 
-    def test_key_reissue_invalidates_old_key(self):
+    def test_staff_actions_never_email_the_key_and_staff_keys_do_not_activate(self):
         c = self.registered()
-        old = self.activate(c, "LICENSED")
+        mail.outbox.clear()
+        staff_key = self.activate(c, "LICENSED")
         r = self.staff(self.super).post(f"{ADM}/products/gstr2tally/customers/{c.pk}/license/reissue-key/", format="json")
         self.assertEqual(r.status_code, 200)
-        new = r.data["activation_key"]
-        self.assertNotEqual(old, new)
+        reissued = r.data["activation_key"]
+        self.assertEqual(r.data["activation_key_email"], "on_request")
+        self.assertFalse([m for m in mail.outbox if "Activation Key" in m.subject])  # nothing sent unless the customer asks
+        for key in (staff_key, reissued):  # without a customer request there is nothing to verify against
+            bad = self.call("activate/verify/", {"user_id": c.tally_serial, "activation_key": key})
+            self.assertEqual((bad.status_code, bad.data["code"]), (400, "invalid_activation_key"))
         self.call("activate/request-code/", {"user_id": c.tally_serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        bad = self.call("activate/verify/", {"user_id": c.tally_serial, "code": code, "activation_key": old})
-        self.assertEqual((bad.status_code, bad.data["code"]), (400, "invalid_activation_key"))
-        ok = self.call("activate/verify/", {"user_id": c.tally_serial, "code": code, "activation_key": new})
-        self.assertEqual(ok.status_code, 200)
+        emailed = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        self.assertNotIn(emailed, (staff_key, reissued))
+        for key in (staff_key, reissued):  # even after a request only the emailed key works
+            self.assertEqual(self.call("activate/verify/", {"user_id": c.tally_serial, "activation_key": key}).status_code, 400)
+        self.assertEqual(self.call("activate/verify/", {"user_id": c.tally_serial, "activation_key": emailed}).status_code, 200)
+
+    def test_key_email_only_on_request_and_never_at_registration_or_login(self):
+        c = self.registered()
+        self.assertFalse([m for m in mail.outbox if "Activation Key" in m.subject])
+        self.activate(c, "LICENSED")
+        self.assertFalse([m for m in mail.outbox if "Activation Key" in m.subject])
+        resp = self.call("activate/request-code/", {"user_id": c.tally_serial})
+        self.assertEqual(resp.status_code, 200)  # neutral answer, no server error
+        keyed = [m for m in mail.outbox if "Activation Key" in m.subject]
+        self.assertEqual(len(keyed), 1)
+        self.assertEqual(keyed[0].to, [c.email])  # the registered address only
+        self.assertNotIn("Verification Code", keyed[0].body)  # no OTP involved
+
+
+class ProjectCardCountTests(Base):
+    """Used / Not Used / Expire for the common dashboard's project cards (the Tally SL mapping of Barcode AutoPrint's three counts)."""
+
+    def _customer(self, serial, email):
+        c = self.registered(serial, email)
+        return c
+
+    def _open(self, customer, days_ago=0):
+        when = timezone.now() - timedelta(days=days_ago)
+        TallyUsageEvent.objects.create(customer=customer, kind="open", occurred_at=when, day=timezone.localtime(when, services.IST).date())
+
+    def test_counts_per_product_independent_and_unique(self):
+        used = self._customer("710000001", "a@example.com"); self.activate(used, "ANNUAL"); self._open(used); self._open(used, 3)   # several opens: still ONE used customer
+        unused = self._customer("710000002", "b@example.com"); self.activate(unused, "ANNUAL")
+        expired = self._customer("710000003", "c@example.com"); self.activate(expired, "TRIAL", 1)
+        TallyLicense.objects.filter(customer=expired).update(expires_at=timezone.now() - timedelta(hours=1))
+        pending = self._customer("710000004", "d@example.com")                                                                   # registered, never activated
+        other = TallyProduct.objects.create(code="otherapp", name="Other App")
+        o = TallyCustomer.objects.create(product=other, tally_serial="710000001", name="Same serial, other product", email="a@example.com", contact_number="9999999999", password_hash="x")
+        TallyLicense.objects.create(customer=o, license_type="LIFETIME", status="ACTIVE", activated_at=timezone.now())
+        d = self.staff(self.super).get(f"{ADM}/dashboard/").data
+        by = {p["code"]: p for p in d["products"]}
+        self.assertEqual({k: by["gstr2tally"][k] for k in ("used", "not_used", "expired", "total")}, {"used": 1, "not_used": 3, "expired": 1, "total": 4})
+        self.assertEqual({k: by["otherapp"][k] for k in ("used", "not_used", "expired", "total")}, {"used": 0, "not_used": 1, "expired": 0, "total": 1})  # independent: same serial/email never merged
+        self.assertEqual(d["usage_counts"]["total"], 5)
+
+    def test_no_customers_and_product_with_zero(self):
+        d = self.staff(self.super).get(f"{ADM}/dashboard/").data
+        self.assertEqual({k: d["products"][0][k] for k in ("used", "not_used", "expired", "total")}, {"used": 0, "not_used": 0, "expired": 0, "total": 0})
+
+    def test_admin_only_sees_authorised_products(self):
+        c = self._customer("710000010", "e@example.com"); self.activate(c, "ANNUAL")
+        other = TallyProduct.objects.create(code="otherapp", name="Other App")
+        a = self.staff(self.admin)
+        self.assertEqual(a.get(f"{ADM}/dashboard/").data["products"], [])               # no grant: no product cards
+        TallyAdminPermission.objects.create(user=self.admin, product=self.product, can_view=True)
+        d = a.get(f"{ADM}/dashboard/").data
+        self.assertEqual([p["code"] for p in d["products"]], ["gstr2tally"])            # other products stay hidden
+        self.assertEqual(d["products"][0]["total"], 1)
+
+    def test_performance_report_usage_filter_matches_card_counts(self):
+        u = self._customer("710000020", "u@example.com"); self.activate(u, "ANNUAL"); self._open(u)
+        n = self._customer("710000021", "n@example.com"); self.activate(n, "ANNUAL")
+        s = self.staff(self.super)
+        used = s.get(f"{ADM}/reports/user-performance/?usage=used").data
+        unused = s.get(f"{ADM}/reports/user-performance/?usage=not_used").data
+        self.assertEqual(([r["tally_serial"] for r in used["results"]], [r["tally_serial"] for r in unused["results"]]), (["710000020"], ["710000021"]))
+        d = s.get(f"{ADM}/dashboard/").data["products"][0]
+        self.assertEqual((used["total"], unused["total"]), (d["used"], d["not_used"]))   # click target lists exactly what the card counted
+        exp = s.get(f"{ADM}/reports/license-expiry/?status=expired").data
+        self.assertEqual(exp["total"], d["expired"])
 
 
 class ProxyAddressTests(Base):
@@ -320,14 +394,28 @@ class ActivationAndTransferTests(Base):
         self.c = self.registered()
         self.key = self.activate(self.c, "LICENSED")
 
-    def test_cannot_activate_when_license_pending(self):
+    def test_pending_license_gets_no_key_and_cannot_activate(self):
         c2 = self.registered("700999999", "x@example.com")
-        c2.license.activation_key_hash = services._digest("ABCDE2345")
-        c2.license.save()
+        mail.outbox.clear()
         self.call("activate/request-code/", {"user_id": "700999999"})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        r = self.call("activate/verify/", {"user_id": "700999999", "code": code, "activation_key": "ABCDE2345"})
-        self.assertEqual((r.status_code, r.data["code"]), (403, "license_not_active"))
+        self.assertFalse([m for m in mail.outbox if "Activation Key" in m.subject])  # licence is not active: no key issued
+        r = self.call("activate/verify/", {"user_id": "700999999", "activation_key": "ABCDE2345"})
+        self.assertEqual((r.status_code, r.data["code"]), (400, "invalid_activation_key"))
+
+    def test_cross_account_key_cannot_activate_another_customer(self):
+        other = self.registered("700888888", "other@example.com")
+        self.activate(other, "LICENSED")
+        mail.outbox.clear()
+        cache.clear()
+        self.call("activate/request-code/", {"user_id": other.tally_serial})
+        other_key = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        victim = self.c  # has its own active licence; other's key must never open it
+        cache.clear()
+        self.call("activate/request-code/", {"user_id": victim.tally_serial})
+        r = self.call("activate/verify/", {"user_id": victim.tally_serial, "activation_key": other_key})
+        self.assertEqual((r.status_code, r.data["code"]), (400, "invalid_activation_key"))
+        victim.license.refresh_from_db()
+        self.assertEqual(victim.license.status, TallyLicense.ACTIVE)
 
     def test_first_enrollment_on_laptop(self):
         r, v = self.enroll(self.c, self.key)
@@ -344,30 +432,30 @@ class ActivationAndTransferTests(Base):
 
     def test_code_is_single_use_and_wrong_code_limited(self):
         self.call("activate/request-code/", {"user_id": self.c.tally_serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
         for _ in range(5):
-            self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": "WRONG123", "activation_key": self.key})
-        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": code, "activation_key": self.key}).status_code, 400)  # attempts exhausted
+            self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": "WRONG123"})
+        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": code}).status_code, 400)  # attempts exhausted
         cache.clear()
         self.c.verification_codes.update(created_at=timezone.now() - timedelta(minutes=5))
         self.call("activate/request-code/", {"user_id": self.c.tally_serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": code, "activation_key": self.key}).status_code, 200)
-        replay = self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": code, "activation_key": self.key})
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": code}).status_code, 200)
+        replay = self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": code})
         self.assertEqual(replay.status_code, 400)
 
     def test_expired_code_rejected(self):
         self.call("activate/request-code/", {"user_id": self.c.tally_serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
         self.c.verification_codes.update(expires_at=timezone.now() - timedelta(seconds=1))
-        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": code, "activation_key": self.key}).status_code, 400)
+        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": code}).status_code, 400)
 
     def test_new_code_invalidates_previous(self):
         self.call("activate/request-code/", {"user_id": self.c.tally_serial})
-        first = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
+        first = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
         self.c.verification_codes.update(created_at=timezone.now() - timedelta(minutes=5))
         self.call("activate/request-code/", {"user_id": self.c.tally_serial})
-        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": first, "activation_key": self.key}).status_code, 400)
+        self.assertEqual(self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": first}).status_code, 400)
 
     def test_replacement_laptop_needs_confirmation_then_revokes_old(self):
         r1, _ = self.enroll(self.c, self.key, DEV_A)
@@ -409,8 +497,8 @@ class ActivationAndTransferTests(Base):
 
     def test_ticket_expiry(self):
         self.call("activate/request-code/", {"user_id": self.c.tally_serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        v = self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": code, "activation_key": self.key})
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        v = self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": code})
         self.c.verification_codes.update(ticket_expires_at=timezone.now() - timedelta(seconds=1))
         r = self.call("activate/confirm/", {"ticket": v.data["ticket"], "device": DEV_A, "confirm_transfer": True})
         self.assertEqual(r.status_code, 400)
@@ -419,8 +507,8 @@ class ActivationAndTransferTests(Base):
         other = TallyProduct.objects.create(code="otherapp", name="Other")
         TallyProductKey.objects.create(product=other, key_hash=hash_key("other-key"))
         self.call("activate/request-code/", {"user_id": self.c.tally_serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        v = self.call("activate/verify/", {"user_id": self.c.tally_serial, "code": code, "activation_key": self.key})
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        v = self.call("activate/verify/", {"user_id": self.c.tally_serial, "activation_key": code})
         r = self.call("activate/confirm/", {"ticket": v.data["ticket"], "device": DEV_A}, product="otherapp", key="other-key")
         self.assertEqual(r.status_code, 400)
 

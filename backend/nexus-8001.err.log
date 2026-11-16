@@ -1,0 +1,816 @@
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+[16/Nov/2026 12:31:22] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:31:25] "GET /api/v1/tally-sl/gstr2tally/identify/ HTTP/1.1" 200 130
+[16/Nov/2026 12:31:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 12:31:35] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 404 84
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 12:31:35] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 83
+[16/Nov/2026 12:32:23] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:32:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:33:24] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:33:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:33:50] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:33:50] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:33:50] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:33:50] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:33:50] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:33:53] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:53] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:53] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 12:33:53] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 12:33:54] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:54] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:54] "GET /api/v1/tally-sl-admin/reports/tally-details/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:33:54] "GET /api/v1/tally-sl-admin/reports/tally-details/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:33:55] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:55] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:55] "GET /api/v1/tally-sl-admin/reports/license-expiry/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:33:55] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:33:56] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:56] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:33:56] "GET /api/v1/tally-sl-admin/reports/user-performance/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:34:00] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:34:00] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:34:01] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:34:01] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:34:01] "GET /api/v1/tally-sl-admin/dashboard/ HTTP/1.1" 200 646
+[16/Nov/2026 12:34:01] "GET /api/v1/tally-sl-admin/dashboard/ HTTP/1.1" 200 646
+[16/Nov/2026 12:34:01] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:34:01] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:34:01] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 12:34:01] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 12:34:01] "GET /api/dashboard/project-usage/ HTTP/1.1" 200 298
+[16/Nov/2026 12:34:01] "GET /api/dashboard/project-usage/ HTTP/1.1" 200 298
+[16/Nov/2026 12:34:01] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 12:34:01] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 12:34:06] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:34:25] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:34:36] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:35:26] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:35:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:36:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:36:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:37:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:37:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:38:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:38:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:39:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:39:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:40:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:40:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:41:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:41:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:42:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:42:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:43:11] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:43:11] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:43:11] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:43:11] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:43:11] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:43:23] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:43:23] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:43:23] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:43:25] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:43:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:43:36] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:44:06] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:44:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:45:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:45:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:46:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:46:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:47:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:47:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:48:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:48:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:49:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:49:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:50:10] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:50:10] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:50:10] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:50:10] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:10] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:50:10] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:10] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:10] "GET /api/v1/tally-sl-admin/access/ HTTP/1.1" 200 443
+[16/Nov/2026 12:50:10] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:50:10] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:50:10] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:10] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:10] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:10] "GET /api/v1/tally-sl-admin/dashboard/ HTTP/1.1" 200 646
+[16/Nov/2026 12:50:10] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:10] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 12:50:10] "GET /api/dashboard/project-usage/ HTTP/1.1" 200 298
+[16/Nov/2026 12:50:10] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 12:50:18] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:18] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:18] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:18] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:19] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:19] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:19] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 12:50:19] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 12:50:20] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:50:20] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:20] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:50:20] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:20] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:20] "GET /api/v1/tally-sl-admin/reports/license-expiry/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:20] "GET /api/v1/tally-sl-admin/reports/license-expiry/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:21] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:21] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:21] "GET /api/v1/tally-sl-admin/reports/tally-details/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:21] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:21] "GET /api/v1/tally-sl-admin/reports/user-performance/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:21] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:23] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "POST /api/projects/prn-auto-print/temporary-password/ HTTP/1.1" 201 35
+[16/Nov/2026 12:50:23] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:23] "POST /api/projects/prn-auto-print/activation-key/ HTTP/1.1" 201 30
+[16/Nov/2026 12:50:23] "POST /api/projects/prn-auto-print/serial-number/ HTTP/1.1" 201 29
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:25] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 12:50:25] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 12:50:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:50:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:50:27] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:27] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:27] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 12:50:27] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 12:50:28] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:28] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:28] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:28] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:30] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:50:30] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:30] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:50:30] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:30] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:31] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:36] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:36] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:36] "GET /api/v1/tally-sl-admin/reports/user-performance/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:36] "GET /api/v1/tally-sl-admin/reports/user-performance/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:37] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 12:50:37] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:37] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 12:50:37] "GET /api/reports/license-expiry/ HTTP/1.1" 200 2039
+[16/Nov/2026 12:50:37] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:37] "GET /api/reports/license-expiry/ HTTP/1.1" 200 2039
+[16/Nov/2026 12:50:38] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:38] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 12:50:38] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 12:50:38] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:38] "GET /api/reports/usage/ HTTP/1.1" 200 1016
+[16/Nov/2026 12:50:38] "GET /api/reports/usage/ HTTP/1.1" 200 1016
+[16/Nov/2026 12:50:40] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 12:50:40] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 31
+[16/Nov/2026 12:50:40] "GET /api/v1/tally-sl-admin/reports/license-expiry/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:40] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:40] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 12:50:40] "GET /api/v1/tally-sl-admin/reports/license-expiry/?page=1&page_size=100 HTTP/1.1" 200 49
+[16/Nov/2026 12:50:40] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 12:50:40] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 12:57:51] "POST /api/v1/tally-sl/gstr2tally/activate/request-code/ HTTP/1.1" 200 95
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 12:58:47] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+[16/Nov/2026 12:58:57] "POST /api/v1/tally-sl/gstr2tally/activate/request-code/ HTTP/1.1" 200 95
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:01:37] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 57
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:01:54] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 57
+D:\SaiInfosysNexus\backend\apps\tallysl\emails.py changed, reloading.
+D:\SaiInfosysNexus\backend\apps\tallysl\emails.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+[16/Nov/2026 13:14:45] "GET /api/health/ HTTP/1.1" 200 31
+[16/Nov/2026 13:14:55] "GET /api/v1/tally-sl/gstr2tally/identify/ HTTP/1.1" 200 130
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:16:45] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 57
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:16:52] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 57
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:18:08] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 57
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:18:15] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 57
+[16/Nov/2026 13:19:37] "POST /api/v1/tally-sl/gstr2tally/register/ HTTP/1.1" 201 211
+Conflict: /api/v1/tally-sl/gstr2tally/register/
+Conflict: /api/v1/tally-sl/gstr2tally/register/
+[16/Nov/2026 13:19:37] "POST /api/v1/tally-sl/gstr2tally/register/ HTTP/1.1" 409 105
+Bad Request: /api/v1/tally-sl/gstr2tally/register/
+Bad Request: /api/v1/tally-sl/gstr2tally/register/
+[16/Nov/2026 13:19:37] "POST /api/v1/tally-sl/gstr2tally/register/ HTTP/1.1" 400 130
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+Unhandled error in ForgotPasswordView
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\rest_framework\views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\client_views.py", line 187, in post
+    found = services.request_password_reset(self.product, request.data.get("identifier") or request.data.get("email"))
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\services.py", line 265, in request_password_reset
+    TallyPasswordReset.objects.create(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        customer=customer, token_hash=_digest(f"{customer.pk}:{raw}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        expires_at=timezone.now() + timedelta(seconds=conf("PASSWORD_OTP_TTL_SECONDS", 600)),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 665, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/forgot-password/
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/forgot-password/
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/auth/forgot-password/ HTTP/1.1" 503 126
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/auth/forgot-password/ HTTP/1.1" 200 112
+Unhandled error in VerifyOtpView
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\rest_framework\views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\client_views.py", line 211, in post
+    services.verify_reset_otp(self.product, request.data.get("identifier") or request.data.get("user_id"), request.data.get("otp") or request.data.get("token"))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\services.py", line 289, in verify_reset_otp
+    _otp_row(product, identifier, otp)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\services.py", line 279, in _otp_row
+    row = customer.password_resets.filter(used_at__isnull=True).order_by("-id").first()
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 1106, in first
+    for obj in queryset[:1]:
+               ~~~~~~~~^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 386, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 1954, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/auth/verify-otp/ HTTP/1.1" 503 126
+Unhandled error in ResetPasswordView
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\rest_framework\views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\client_views.py", line 201, in post
+    customer = services.reset_password(self.product, request.data.get("token") or request.data.get("otp"),
+                                       s.validated_data["new_password"], identifier=request.data.get("identifier") or request.data.get("user_id"))
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\services.py", line 296, in reset_password
+    row = _otp_row(product, identifier, token)
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\services.py", line 279, in _otp_row
+    row = customer.password_resets.filter(used_at__isnull=True).order_by("-id").first()
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 1106, in first
+    for obj in queryset[:1]:
+               ~~~~~~~~^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 386, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 1954, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/auth/reset-password/ HTTP/1.1" 503 126
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/auth/resend-credentials/ HTTP/1.1" 200 124
+Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+[16/Nov/2026 13:19:38] "GET /api/v1/tally-sl/gstr2tally/identify/ HTTP/1.1" 401 82
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 201 26
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 200 25
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:19:38] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 401 83
+Unhandled error in ForgotPasswordView
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\rest_framework\views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\client_views.py", line 187, in post
+    found = services.request_password_reset(self.product, request.data.get("identifier") or request.data.get("email"))
+  File "D:\SaiInfosysNexus\backend\apps\tallysl\services.py", line 265, in request_password_reset
+    TallyPasswordReset.objects.create(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        customer=customer, token_hash=_digest(f"{customer.pk}:{raw}"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        expires_at=timezone.now() + timedelta(seconds=conf("PASSWORD_OTP_TTL_SECONDS", 600)),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 665, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S22', "[42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid column name 'attempts'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Statement(s) could not be prepared. (8180)")
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/forgot-password/
+Service Unavailable: /api/v1/tally-sl/gstr2tally/auth/forgot-password/
+[16/Nov/2026 13:19:58] "POST /api/v1/tally-sl/gstr2tally/auth/forgot-password/ HTTP/1.1" 503 126
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/login/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:19:58] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 400 147
+[16/Nov/2026 13:19:58] "POST /api/v1/tally-sl/gstr2tally/auth/forgot-password/ HTTP/1.1" 200 112
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:21:59] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 404 84
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+[16/Nov/2026 13:21:59] "POST /api/v1/tally-sl/gstr2tally/events/device-transfer/ HTTP/1.1" 404 84
+[16/Nov/2026 13:25:20] "POST /api/v1/tally-sl/gstr2tally/auth/resend-credentials/ HTTP/1.1" 200 124
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:26:38] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+[16/Nov/2026 13:26:53] "POST /api/v1/tally-sl/gstr2tally/activate/request-code/ HTTP/1.1" 200 95
+Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/me/
+[16/Nov/2026 13:27:34] "GET /api/auth/me/ HTTP/1.1" 401 71
+[16/Nov/2026 13:27:34] "GET /api/auth/me/ HTTP/1.1" 401 71
+[16/Nov/2026 13:27:51] "POST /api/auth/login/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:27:51] "GET /api/v1/tally-sl-admin/access/ HTTP/1.1" 200 443
+[16/Nov/2026 13:27:52] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:27:52] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:27:52] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:27:52] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:27:52] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:27:52] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:27:52] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:27:52] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:27:52] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:27:52] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:27:52] "GET /api/v1/tally-sl-admin/dashboard/ HTTP/1.1" 200 646
+[16/Nov/2026 13:27:52] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:27:52] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 13:27:52] "GET /api/dashboard/project-usage/ HTTP/1.1" 200 298
+[16/Nov/2026 13:27:52] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 13:27:54] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:27:57] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:27:57] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:27:57] "GET /api/v1/tally-sl-admin/reports/user-performance/?product=gstr2tally&usage=not_used&page=1&page_size=100 HTTP/1.1" 200 249
+[16/Nov/2026 13:27:57] "GET /api/v1/tally-sl-admin/reports/user-performance/?product=gstr2tally&usage=not_used&page=1&page_size=100 HTTP/1.1" 200 249
+[16/Nov/2026 13:28:01] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:28:01] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:28:01] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/1/ HTTP/1.1" 200 1711
+[16/Nov/2026 13:28:01] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/1/ HTTP/1.1" 200 1711
+[16/Nov/2026 13:28:02] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:28:02] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:28:04] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:28:11] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:28:11] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:28:11] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:28:11] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:28:12] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:28:12] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:28:14] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:28:22] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:28:52] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:29:22] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:29:49] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:29:49] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:29:49] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:29:49] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:29:52] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:30:15] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:30:15] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:30:15] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:30:22] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:30:52] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:31:00] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:31:00] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:31:00] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:31:04] "GET /api/auth/me/ HTTP/1.1" 200 2065
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:31:51] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:31:54] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:32:03] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+[16/Nov/2026 13:35:13] "POST /api/v1/tally-sl/gstr2tally/activate/request-code/ HTTP/1.1" 200 95
+[16/Nov/2026 13:35:23] "POST /api/v1/tally-sl/gstr2tally/auth/resend-credentials/ HTTP/1.1" 200 124
+[16/Nov/2026 13:35:24] "POST /api/v1/tally-sl/gstr2tally/auth/resend-credentials/ HTTP/1.1" 200 124
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:35:25] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:35:30] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+[16/Nov/2026 13:42:48] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:42:48] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:42:48] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:48] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:48] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:42:48] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:42:48] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:42:48] "GET /api/v1/tally-sl-admin/access/ HTTP/1.1" 200 443
+[16/Nov/2026 13:42:48] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:48] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:42:48] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:42:48] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:42:48] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:48] "GET /api/v1/tally-sl-admin/dashboard/ HTTP/1.1" 200 646
+[16/Nov/2026 13:42:48] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:42:49] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 13:42:49] "GET /api/dashboard/project-usage/ HTTP/1.1" 200 298
+[16/Nov/2026 13:42:49] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 13:42:51] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:51] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:51] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 13:42:51] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 13:42:52] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:52] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:42:52] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:42:52] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:51:22] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:51:22] "GET /api/auth/me/ HTTP/1.1" 200 2065
+D:\SaiInfosysNexus\backend\apps\tallysl\admin_views.py changed, reloading.
+D:\SaiInfosysNexus\backend\apps\tallysl\admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+[16/Nov/2026 13:51:29] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:51:29] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:51:29] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 13:51:29] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 13:51:29] "GET /api/reports/usage/?project=prn-auto-print&status=used HTTP/1.1" 200 317
+[16/Nov/2026 13:51:29] "GET /api/reports/usage/?project=prn-auto-print&status=used HTTP/1.1" 200 317
+[16/Nov/2026 13:51:32] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:51:32] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:51:32] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:51:39] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 13:51:42] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:51:42] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:51:42] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:51:43] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:51:43] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:51:43] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:51:43] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 13:51:52] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:52:06] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:52:06] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:52:06] "GET /api/dashboard/sync/ HTTP/1.1" 200 22
+[16/Nov/2026 13:52:06] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:52:08] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:08] "POST /api/projects/prn-auto-print/temporary-password/ HTTP/1.1" 201 35
+[16/Nov/2026 13:52:08] "POST /api/projects/prn-auto-print/serial-number/ HTTP/1.1" 201 29
+[16/Nov/2026 13:52:08] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:08] "POST /api/projects/prn-auto-print/activation-key/ HTTP/1.1" 201 30
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:52:09] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 13:52:09] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 13:52:12] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:52:18] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:52:18] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:52:18] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:52:18] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:52:18] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:18] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:52:22] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:52:42] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:52:42] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:52:42] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:52:42] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:52:42] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:52:52] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:53:22] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:53:28] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:53:28] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:53:28] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:53:28] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:28] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:28] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:53:28] "GET /api/v1/tally-sl-admin/access/ HTTP/1.1" 200 443
+[16/Nov/2026 13:53:28] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:28] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:53:28] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:28] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:53:28] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:28] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:28] "GET /api/v1/tally-sl-admin/dashboard/ HTTP/1.1" 200 646
+[16/Nov/2026 13:53:28] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:53:28] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 13:53:28] "GET /api/dashboard/project-usage/ HTTP/1.1" 200 298
+[16/Nov/2026 13:53:28] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 13:53:32] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:32] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:32] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 13:53:32] "GET /api/v1/tally-sl-admin/dashboard/?product=gstr2tally HTTP/1.1" 200 646
+[16/Nov/2026 13:53:33] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:33] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:33] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:53:33] "GET /api/v1/tally-sl-admin/products/gstr2tally/customers/?page=1&page_size=100 HTTP/1.1" 200 643
+[16/Nov/2026 13:53:37] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:53:37] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:53:37] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:37] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:37] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:53:37] "GET /api/auth/me/ HTTP/1.1" 200 2065
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 13:53:38] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:53:38] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:38] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:38] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:53:38] "GET /api/v1/tally-sl-admin/access/ HTTP/1.1" 200 443
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/customers/ HTTP/1.1" 200 4625
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/device-transfer-requests/?status=pending HTTP/1.1" 200 14
+[16/Nov/2026 13:53:38] "GET /api/projects/gstr2tally/sync/ HTTP/1.1" 200 17
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/sync/ HTTP/1.1" 200 18
+[16/Nov/2026 13:53:38] "GET /api/projects/gstr2tally/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:53:38] "GET /api/projects/prn-auto-print/registration-requests/ HTTP/1.1" 200 14
+[16/Nov/2026 13:54:08] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:54:38] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:55:08] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+[16/Nov/2026 13:55:13] "POST /api/v1/tally-sl/gstr2tally/auth/login/ HTTP/1.1" 401 83
+[16/Nov/2026 13:55:38] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:56:08] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:56:38] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+[16/Nov/2026 13:57:27] "GET /api/v1/tally-sl-admin/notifications/ HTTP/1.1" 200 446
+D:\SaiInfosysNexus\backend\apps\tallysl\emails.py changed, reloading.
+D:\SaiInfosysNexus\backend\apps\tallysl\emails.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+D:\SaiInfosysNexus\backend\apps\tallysl\client_views.py changed, reloading.
+D:\SaiInfosysNexus\backend\apps\tallysl\client_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader

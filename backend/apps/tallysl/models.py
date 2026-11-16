@@ -47,6 +47,8 @@ class TallyCustomer(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField()
     contact_number = models.CharField(max_length=20)
+    company_name = models.CharField(max_length=150, blank=True, default="")
+    gstin = models.CharField(max_length=15, blank=True, default="")
     password_hash = models.CharField(max_length=256)
     must_change_password = models.BooleanField(default=True)
     password_changed_at = models.DateTimeField(null=True, blank=True)
@@ -143,6 +145,34 @@ class TallyDeviceTransfer(models.Model):
         ordering = ["-id"]
 
 
+class TallyTransferEvent(models.Model):
+    """Notification-only record of a device transfer that the GSTR2Tally application already confirmed and performed itself.
+    Nexus never approves or rejects it. Append-only audit: the API offers no edit/delete. `event_id` makes delivery idempotent.
+    Only opaque device references are kept - never activation keys, tokens or fingerprints."""
+
+    COMPLETED = "COMPLETED"
+
+    event_id = models.CharField(max_length=64, unique=True)
+    product = models.ForeignKey(TallyProduct, on_delete=models.PROTECT, related_name="transfer_events")
+    customer = models.ForeignKey(TallyCustomer, on_delete=models.CASCADE, related_name="transfer_events")
+    customer_name = models.CharField(max_length=100)  # snapshot at the time of the event
+    tally_serial = models.CharField(max_length=30)
+    old_device_name = models.CharField(max_length=100, blank=True, default="")
+    new_device_name = models.CharField(max_length=100, blank=True, default="")
+    old_device_ref = models.CharField(max_length=64, blank=True, default="")
+    new_device_ref = models.CharField(max_length=64, blank=True, default="")
+    initiated_by = models.CharField(max_length=150, blank=True, default="customer")
+    status = models.CharField(max_length=20, default=COMPLETED)
+    occurred_at = models.DateTimeField(db_index=True)
+    received_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    read_by = models.CharField(max_length=150, blank=True, default="")
+
+    class Meta:
+        ordering = ["-occurred_at", "-id"]
+        indexes = [models.Index(fields=["customer", "-occurred_at"], name="tallysl_xfer_cust")]
+
+
 class TallyVerificationCode(models.Model):
     """Short-lived, single-use emailed code for Activate User. Only hashes are stored. After the code (+ activation key)
     is verified a single-use `ticket` is issued for the final Confirm step."""
@@ -178,6 +208,7 @@ class TallyPasswordReset(models.Model):
     token_hash = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)  # wrong-OTP tries; the code is dead after OTP_MAX_ATTEMPTS
     created_at = models.DateTimeField(auto_now_add=True)
 
 

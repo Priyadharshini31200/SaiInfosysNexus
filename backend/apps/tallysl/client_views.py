@@ -17,7 +17,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
 from . import emails, services
-from .models import TallyProduct, TallyProductKey
+from .models import TallyLicense, TallyProduct, TallyProductKey
 
 CONTACT = __import__("re").compile(r"\+?[0-9][0-9 \-]{8,18}")
 
@@ -76,9 +76,25 @@ class ClientView(APIView):
         if isinstance(exc, services.TallyError):
             return _error(str(exc), exc.code, exc.status, exc.errors)
         if isinstance(exc, serializers.ValidationError):
-            response = super().handle_exception(exc)
-            response.data["code"] = "validation_error"
-            return response
+            # Same envelope as every other error: {message, code, errors{field: [msgs]}} so clients can show the real reason.
+            errors = {}
+
+            def flatten(node, key):
+                if isinstance(node, dict):
+                    for k, v in node.items():
+                        flatten(v, f"{key}.{k}" if key else k)
+                elif isinstance(node, (list, tuple)):
+                    for item in node:
+                        flatten(item, key)
+                else:
+                    errors.setdefault(key or "non_field_errors", []).append(str(node))
+
+            flatten(exc.detail, "")
+            key, msgs = next(((k, m) for k, m in errors.items() if m), ("", []))
+            first = msgs[0] if msgs else "Please check the details you entered."
+            if first.startswith("This field") and key:  # generic wording: say which field
+                first = f"{key.replace('.', ' ').replace('_', ' ').capitalize()}: {first[0].lower() + first[1:]}"
+            return _error(first, "validation_error", 400, errors)
         response = super().handle_exception(exc)
         if isinstance(response.data, dict):
             response.data.setdefault("code", {401: "unauthenticated", 403: "forbidden", 404: "not_found", 429: "throttled"}.get(response.status_code, "error"))
@@ -98,9 +114,7 @@ class SignedInView(ClientView):
 
     def signed_in(self):
         session = self.session()
-        if session.customer.must_change_password:
-            raise services.TallyError("Choose a new password before continuing.", 403, "password_change_required")
-        return session
+        return session  # a first-login password change is no longer required; changing it later is voluntary
 
 
 class DeviceSerializer(serializers.Serializer):
@@ -147,8 +161,9 @@ class RegisterView(ClientView):
         emails.notify_superadmins_new_customer(customer)
         return Response({
             "user_id": customer.tally_serial, "status": "registered", "license_status": "pending",
-            "message": "Registered. A temporary password has been emailed. Your license will be activated by Sai Infosys.",
+            "message": f"Registered. A temporary password has been emailed to {emails.mask_email(customer.email)}. Your license will be activated by Sai Infosys.",
             "welcome_email": "submitted" if mail == "accepted" else mail,
+            "email_sent_to": emails.mask_email(customer.email),
         }, status=status.HTTP_201_CREATED)
 
 
@@ -198,9 +213,28 @@ class ResetPasswordView(ClientView):
     def post(self, request, product):
         s = NewPasswordSerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        customer = services.reset_password(self.product, request.data.get("token"), s.validated_data["new_password"])
+        customer = services.reset_password(self.product, request.data.get("token") or request.data.get("otp"),
+                                           s.validated_data["new_password"], identifier=request.data.get("identifier") or request.data.get("user_id"))
         emails.send_password_changed(customer)
         return Response({"message": "Password updated. You can sign in now."})
+
+
+class VerifyOtpView(ClientView):
+    """Checks the emailed 6-digit OTP without changing anything (the app calls it before showing the new-password form)."""
+
+    def post(self, request, product):
+        services.verify_reset_otp(self.product, request.data.get("identifier") or request.data.get("user_id"), request.data.get("otp") or request.data.get("token"))
+        return Response({"valid": True})
+
+
+class ResendCredentialsView(ClientView):
+    """Retry for a failed welcome email. Same neutral answer for every case; never creates a customer."""
+
+    def post(self, request, product):
+        found = services.reissue_credentials(self.product, request.data.get("user_id"))
+        if found:
+            emails.send_welcome(*found)
+        return Response({"message": "If this account is waiting for its first sign-in, new credentials have been emailed to the registered address."})
 
 
 class ChangePasswordView(ClientView):
@@ -208,9 +242,9 @@ class ChangePasswordView(ClientView):
         session = self.session()
         s = NewPasswordSerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        services.change_password(session.customer, request.data.get("current_password"), s.validated_data["new_password"])
+        services.change_password(session.customer, request.data.get("current_password"), s.validated_data["new_password"], keep_session=session)
         emails.send_password_changed(session.customer)
-        return Response({"message": "Password changed. Sign in again."})
+        return Response({"message": "Password changed. Other devices were signed out; this session stays signed in."})
 
 
 # ------------------------------------------------------------------ session / licence
@@ -219,7 +253,7 @@ class SessionView(ClientView):
 
     def get(self, request, product):
         session = self.session()
-        return Response({"valid": True, "must_change_password": session.customer.must_change_password,
+        return Response({"valid": True, "must_change_password": False,
                          "license": services.license_payload(session.customer, services.session_device(session))})
 
 
@@ -268,16 +302,18 @@ class UsageOpenView(SignedInView):
 
 # ------------------------------------------------------------------ Activate User (replacement laptop)
 class ActivationCodeView(ClientView):
+    """Activate User step 1: emails a fresh single-use Activation Key to the registered address. Neutral answer always."""
     def post(self, request, product):
-        found = services.request_activation_code(self.product, request.data.get("user_id"), self.ip())
+        found = services.request_activation_key(self.product, request.data.get("user_id"), self.ip())
         if found:
-            emails.send_activation_code(*found)
-        return Response({"message": "If the account exists, a verification code has been sent to the registered email."})
+            customer, raw_key = found
+            status = emails.send_activation_key(customer, raw_key)
+            TallyLicense.objects.filter(customer=customer).update(activation_key_email_status=status)
+        return Response({"message": "If the account exists and is licensed, an Activation Key has been sent to the registered email."})
 
 
 class ActivationVerifySerializer(serializers.Serializer):
     user_id = serializers.CharField(max_length=60)
-    code = serializers.CharField(max_length=20)
     activation_key = serializers.CharField(max_length=40)
 
 
@@ -286,7 +322,7 @@ class ActivationVerifyView(ClientView):
         s = ActivationVerifySerializer(data=request.data)
         s.is_valid(raise_exception=True)
         d = s.validated_data
-        return Response(services.verify_activation(self.product, d["user_id"], d["code"], d["activation_key"], self.ip()))
+        return Response(services.verify_activation(self.product, d["user_id"], d["activation_key"], self.ip()))
 
 
 class ActivationConfirmSerializer(serializers.Serializer):

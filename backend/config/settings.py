@@ -189,6 +189,7 @@ DEFAULT_FROM_EMAIL = (env("DEFAULT_FROM_EMAIL") or "").strip() or (
 )
 
 # ---------------------------------------------------------------- Customer portal (connected projects)
+TALLY_EVENT_SIGNING_SECRET = env("TALLY_EVENT_SIGNING_SECRET", "")  # shared with the GSTR2Tally backend; empty = event delivery refused
 CUSTOMER_TOKEN_MAX_AGE = int(env("CUSTOMER_TOKEN_MAX_AGE", "86400"))  # seconds a customer sign-in token stays valid
 PASSWORD_RESET_MAX_AGE = int(env("PASSWORD_RESET_MAX_AGE", "3600"))
 # Extra addresses (besides every active Super Admin account with an email) told about each new sign-up request

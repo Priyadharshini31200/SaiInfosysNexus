@@ -5,10 +5,11 @@ import ExportButtons from '../../components/ExportButtons';
 import Toast from '../../components/Toast';
 import { useTallyAccess } from '../../context/TallyAccessContext';
 import { formatDate, formatDateTime } from '../../utils/date';
-import { DateFilter, Filter, NA, PLAN_LABELS, REPORT_MAX_ROWS, SearchBox, STATE_LABELS, useAllRows, useDebounced, useToast } from './TallyShared';
+import { DateFilter, Filter, ListPanel, NA, PLAN_LABELS, REPORT_MAX_ROWS, SearchBox, STATE_LABELS, useAllRows, useDebounced, useToast } from './TallyShared';
 import styles from './Tally.module.css';
 
 const CATEGORIES = [{ value: 'all', label: 'All' }, { value: 'speed', label: 'Speed User' }, { value: 'normal', label: 'Normal User' }, { value: 'new', label: 'New User' }, { value: 'one_time', label: 'One-Time User' }];
+const USAGES = [{ value: 'all', label: 'All' }, { value: 'used', label: 'Used' }, { value: 'not_used', label: 'Not Used' }];
 const STATUSES = ['all', 'pending', 'active', 'expired', 'cancelled', 'inactive'].map((v) => ({ value: v, label: v === 'all' ? 'All' : STATE_LABELS[v] }));
 const TYPES = [{ value: 'all', label: 'All' }, { value: 'TRIAL', label: 'Trial' }, { value: 'ANNUAL', label: 'Annual' }, { value: 'LIFETIME', label: 'Lifetime' }];
 
@@ -56,7 +57,8 @@ export default function TallyReportPage({ kind }) {
   const from = params.get('from') || '';
   const to = params.get('to') || '';
   const category = params.get('category') || 'all';
-  const filters = useMemo(() => ({ product, search: term, from, to, ...(isExpiry ? { status, license_type: type } : {}), ...(isPerf ? { category } : {}) }), [product, term, status, type, isExpiry, isPerf, from, to, category]);
+  const usage = params.get('usage') || 'all';
+  const filters = useMemo(() => ({ product, search: term, from, to, ...(isExpiry ? { status, license_type: type } : {}), ...(isPerf ? { category, usage } : {}) }), [product, term, status, type, isExpiry, isPerf, from, to, category, usage]);
   const allowed = anyCan('reports');
   const data = useAllRows((page, page_size) => (isExpiry ? tallyApi.expiryReport : isPerf ? tallyApi.performanceReport : tallyApi.tallyReport)({ ...filters, page, page_size }), [kind, filters], allowed);
   const { rows, loading, error, total, truncated } = data;
@@ -71,40 +73,40 @@ export default function TallyReportPage({ kind }) {
       ? ['S.No', 'Customer Name', 'Product', 'Tally Serial No.', 'License Plan', 'Nexus Activation Date', 'Nexus Expiry Date', 'Status']
       : ['S.No', 'Tally Serial No.', 'Tally Email ID', 'Tally Expiry Date'];
 
+  const note = truncated || (loading && rows.length > 0)
+    ? (loading
+      ? `Loading… ${rows.length.toLocaleString()} of ${Math.min(total, REPORT_MAX_ROWS).toLocaleString()} records${truncated ? ` (report limited to the first ${REPORT_MAX_ROWS.toLocaleString()} of ${total.toLocaleString()})` : ''}`
+      : `Showing the first ${REPORT_MAX_ROWS.toLocaleString()} of ${total.toLocaleString()} records. Narrow the filters or use Export for the complete list.`)
+    : null;
   return (
-    <section className={`${styles.panel} ${styles.reportPanel}`} aria-label={isExpiry ? 'License Expiry Report' : isPerf ? 'User Performance Report' : 'Tally Details Report'}>
-      <header className={styles.toolbar}>
-        <SearchBox value={search} onChange={setSearch} placeholder="Search customer or serial" label="Search report" />
-        <Filter label="Product" value={product} onChange={(v) => set('product', v)} options={productOptions} />
-        {isExpiry && <Filter label="Plan" value={type} onChange={(v) => set('type', v)} options={TYPES} />}
-        {isExpiry && <Filter label="Status" value={status} onChange={(v) => set('status', v)} options={STATUSES} />}
-        {isPerf && <Filter label="Category" value={category} onChange={(v) => set('category', v)} options={CATEGORIES} />}
-        <DateFilter label={dateLabel} value={from} onChange={(v) => set('from', v)} />
-        <DateFilter label="To" value={to} onChange={(v) => set('to', v)} />
-        <div className={styles.right}>
-          <ExportButtons menu disabled={loading || total === 0} onError={(t) => notify('error', t)}
-            run={(fmt) => (isExpiry ? tallyApi.exportExpiry : isPerf ? tallyApi.exportPerformance : tallyApi.exportTally)(fmt, filters)} />
-        </div>
-      </header>
-      {(truncated || (loading && rows.length > 0)) && (
-        <div className={styles.reportNote} role="status">
-          {loading
-            ? `Loading… ${rows.length.toLocaleString()} of ${Math.min(total, REPORT_MAX_ROWS).toLocaleString()} records${truncated ? ` (report limited to the first ${REPORT_MAX_ROWS.toLocaleString()} of ${total.toLocaleString()})` : ''}`
-            : `Showing the first ${REPORT_MAX_ROWS.toLocaleString()} of ${total.toLocaleString()} records. Narrow the filters or use Export for the complete list.`}
-        </div>
-      )}
-      <div className={styles.reportBody}>
-        <table className={styles.table}>
-          <thead><tr>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((r, i) => <ReportRow key={r.id} kind={kind} r={r} n={i + 1} />)}
-          </tbody>
-        </table>
-        {loading && rows.length === 0 && <div className={styles.reportEmpty} role="status">Loading…</div>}
-        {!loading && !error && rows.length === 0 && <div className={styles.reportEmpty}>No records match.</div>}
-        {error && <div className={`${styles.reportEmpty} ${styles.reportEmptyError}`} role="alert">{error}</div>}
-      </div>
+    <>
+      <ListPanel
+        label={isExpiry ? 'License Expiry Report' : isPerf ? 'User Performance Report' : 'Tally Details Report'}
+        columns={cols}
+        loading={loading}
+        error={error}
+        empty="No records match."
+        note={note}
+        toolbar={(
+          <>
+            <SearchBox value={search} onChange={setSearch} placeholder="Search customer or serial" label="Search report" />
+            <Filter label="Product" value={product} onChange={(v) => set('product', v)} options={productOptions} />
+            {isExpiry && <Filter label="Plan" value={type} onChange={(v) => set('type', v)} options={TYPES} />}
+            {isExpiry && <Filter label="Status" value={status} onChange={(v) => set('status', v)} options={STATUSES} />}
+            {isPerf && <Filter label="Category" value={category} onChange={(v) => set('category', v)} options={CATEGORIES} />}
+            {isPerf && <Filter label="Usage" value={usage} onChange={(v) => set('usage', v)} options={USAGES} />}
+            <DateFilter label={dateLabel} value={from} onChange={(v) => set('from', v)} />
+            <DateFilter label="To" value={to} onChange={(v) => set('to', v)} />
+            <div className={styles.right}>
+              <ExportButtons menu disabled={loading || total === 0} onError={(t) => notify('error', t)}
+                run={(fmt) => (isExpiry ? tallyApi.exportExpiry : isPerf ? tallyApi.exportPerformance : tallyApi.exportTally)(fmt, filters)} />
+            </div>
+          </>
+        )}
+      >
+        {rows.map((r, i) => <ReportRow key={r.id} kind={kind} r={r} n={i + 1} />)}
+      </ListPanel>
       <Toast toast={toast} onDone={clear} />
-    </section>
+    </>
   );
 }

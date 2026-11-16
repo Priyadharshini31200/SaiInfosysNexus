@@ -21,7 +21,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
       >
         <nav className={styles.nav}>
           <ul className={styles.list}>
-            {NAV_ITEMS.filter(() => can('view', 'gstr2tally:dashboard') || can('view', 'prn-auto-print:dashboard')).map(({ to, label, icon: Icon }) => (
+            {NAV_ITEMS.filter(() => can('view', 'gstr2tally:dashboard') || can('view', 'prn-auto-print:dashboard') || anyCan('view')).map(({ to, label, icon: Icon }) => (
               <li key={to}>
                 <NavLink
                   to={to}

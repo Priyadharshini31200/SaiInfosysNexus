@@ -2,7 +2,7 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout';
 import { ProtectedRoute, PublicOnlyRoute } from './routes/guards';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import OverallDashboard from './pages/OverallDashboard';
 import ProjectAddCustomerPage from './pages/ProjectAddCustomerPage';
 import ProjectCustomersPage from './pages/ProjectCustomersPage';
 import LicenseExpiryReportPage from './pages/LicenseExpiryReportPage';
@@ -10,7 +10,7 @@ import UsageReportPage from './pages/UsageReportPage';
 import TallyDashboardPage from './pages/tally/TallyDashboardPage';
 import TallyUsageListPage from './pages/tally/TallyUsageListPage';
 import TallyCustomersPage from './pages/tally/TallyCustomersPage';
-import TallyCustomerDetailPage from './pages/tally/TallyCustomerDetailPage';
+import TallyTransfersPage from './pages/tally/TallyTransfersPage';
 import TallyReportPage from './pages/tally/TallyReportPage';
 import NotFound from './pages/NotFound';
 
@@ -29,7 +29,7 @@ export default function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<OverallDashboard />} />
           <Route path="/projects/:slug" element={<ProjectRedirect />} />
           <Route path="/projects/:slug/add" element={<ProjectAddCustomerPage />} />
           <Route path="/projects/:slug/customers" element={<ProjectCustomersPage />} />
@@ -41,8 +41,9 @@ export default function App() {
           <Route path="/tally/reports/user-performance" element={<TallyReportPage kind="performance" />} />
           <Route path="/tally/:product/dashboard" element={<TallyDashboardPage />} />
           <Route path="/tally/:product/usage/:category" element={<TallyUsageListPage />} />
+          <Route path="/tally/:product/transfers" element={<TallyTransfersPage />} />
           <Route path="/tally/:product/customers" element={<TallyCustomersPage />} />
-          <Route path="/tally/:product/customers/:id" element={<TallyCustomerDetailPage />} />
+          <Route path="/tally/:product/customers/:id" element={<TallyCustomersPage />} /> /* the Customer Details drawer opens over the list */
           <Route path="/profile" element={<Navigate to="/dashboard" replace />} />
           <Route path="/reset-password" element={<Navigate to="/dashboard" replace />} />
         </Route>

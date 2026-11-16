@@ -88,10 +88,10 @@ class RegistrationToReportsFlow(TestCase):
         # 3. login with temporary password -> must change password
         login = self.call("login_first", "post", "auth/login/", {"user_id": serial, "password": temp, "device": DEVICE})
         self.assertEqual(login.status_code, 200)
-        self.assertTrue(login.data["must_change_password"])
+        self.assertFalse(login.data["must_change_password"])  # the temporary password works directly
         self.assertFalse(login.data["license"]["authorized"])  # registration alone is not a licence
         tok = login.data["token"]
-        self.assertEqual(self.call("license_status_blocked", "get", "license/status/", token=tok).data["code"], "password_change_required")
+        self.assertEqual(self.call("license_status_ok", "get", "license/status/", token=tok).status_code, 200)
         self.assertEqual(self.call("login_wrong_password", "post", "auth/login/", {"user_id": serial, "password": "nope"}).data["code"], "invalid_credentials")
         self.assertEqual(self.call("change_password", "post", "auth/change-password/", {"current_password": temp, "new_password": "My#Pass123"}, token=tok).status_code, 200)
         login = self.call("login", "post", "auth/login/", {"user_id": serial, "password": "My#Pass123", "device": DEVICE})
@@ -113,11 +113,11 @@ class RegistrationToReportsFlow(TestCase):
                     "request": {"license_plan": "ANNUAL"}, "status": act.status_code, "response": _body(act)})
         self.assertEqual((act.status_code, act.data["customer"]["license_plan"]), (200, "ANNUAL"))
         key = act.data["activation_key"]
-        self.assertIn(key, mail.outbox[-1].body)
+        self.assertFalse(mail.outbox)  # the key is NOT emailed by the staff action; only on the customer's request
         # 7. Activate User (device enrolment): request code -> verify (code + activation key) -> confirm
         r = self.call("activate_request_code", "post", "activate/request-code/", {"user_id": serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        v = self.call("activate_verify", "post", "activate/verify/", {"user_id": serial, "code": code, "activation_key": key})
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        v = self.call("activate_verify", "post", "activate/verify/", {"user_id": serial, "activation_key": code})
         self.assertEqual(v.status_code, 200, v.data)
         self.assertFalse(v.data["requires_confirmation"])
         c = self.call("activate_confirm", "post", "activate/confirm/", {"ticket": v.data["ticket"], "device": DEVICE, "confirm_transfer": False})
@@ -153,8 +153,8 @@ class RegistrationToReportsFlow(TestCase):
         from .models import TallyVerificationCode
         TallyVerificationCode.objects.update(created_at=__import__("django.utils.timezone", fromlist=["x"]).now() - __import__("datetime").timedelta(minutes=5))
         self.call("transfer_request_code", "post", "activate/request-code/", {"user_id": serial})
-        code = re.search(r"Verification Code: (\S+)", mail.outbox[-1].body).group(1)
-        v = self.call("transfer_verify", "post", "activate/verify/", {"user_id": serial, "code": code, "activation_key": key})
+        code = re.search(r"Activation Key: (\S+)", mail.outbox[-1].body).group(1)
+        v = self.call("transfer_verify", "post", "activate/verify/", {"user_id": serial, "activation_key": code})
         self.assertTrue(v.data["requires_confirmation"])
         no = self.call("transfer_confirm_without_consent", "post", "activate/confirm/", {"ticket": v.data["ticket"], "device": NEW_DEVICE, "confirm_transfer": False})
         self.assertEqual((no.status_code, no.data["code"]), (409, "confirmation_required"))
@@ -170,9 +170,9 @@ class RegistrationToReportsFlow(TestCase):
         mail.outbox.clear()
         cache.clear()
         self.call("forgot_password", "post", "auth/forgot-password/", {"identifier": "ravi@example.com"})
-        reset = re.search(r"Reset Code: (\S+)", mail.outbox[-1].body).group(1)
-        self.assertEqual(self.call("reset_password", "post", "auth/reset-password/", {"token": reset, "new_password": "Fresh#Pass9"}).status_code, 200)
-        self.assertEqual(self.call("reset_password_reuse", "post", "auth/reset-password/", {"token": reset, "new_password": "Other#Pass9"}).status_code, 400)
+        reset = re.search(r"Verification Code \(OTP\): (\S+)", mail.outbox[-1].body).group(1)
+        self.assertEqual(self.call("reset_password", "post", "auth/reset-password/", {"identifier": "ravi@example.com", "token": reset, "new_password": "Fresh#Pass9"}).status_code, 200)
+        self.assertEqual(self.call("reset_password_reuse", "post", "auth/reset-password/", {"identifier": "ravi@example.com", "token": reset, "new_password": "Other#Pass9"}).status_code, 400)
         self.assertEqual(self.call("login_after_reset", "post", "auth/login/", {"user_id": serial, "password": "Fresh#Pass9", "device": NEW_DEVICE}).status_code, 200)
         # cross-product isolation: the GSTR key cannot act on another product's URL
         other = TallyProduct.objects.create(code="otherapp", name="Other")

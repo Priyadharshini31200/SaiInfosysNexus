@@ -14,6 +14,9 @@ export const tallyApi = {
   products: () => request(`${A}/products/`),
   permissions: () => request(`${A}/permissions/`),
   savePermissions: (user_id, grants) => request(`${A}/permissions/`, { method: 'PUT', body: { user_id, grants } }),
+  notifications: () => request(`${A}/notifications/`),
+  markNotificationRead: (id) => request(`${A}/notifications/${id}/read/`, { method: 'POST' }),
+  transfers: (product, params) => request(`${A}/products/${product}/transfers/${qs(params)}`),
   dashboard: (product) => request(`${A}/dashboard/${qs({ product })}`),
   usageList: (category, params) => request(`${A}/usage/${category}/${qs(params)}`),
   customers: (product, params) => request(`${A}/products/${product}/customers/${qs(params)}`),
@@ -23,6 +26,12 @@ export const tallyApi = {
   deleteCustomer: (product, id) => request(`${A}/products/${product}/customers/${id}/`, { method: 'DELETE' }),
   licenseAction: (product, id, action, body = {}) =>
     request(`${A}/products/${product}/customers/${id}/license/${action}/`, { method: 'POST', body }),
+  credentials: (product, id, action) => request(`${A}/products/${product}/customers/${id}/credentials/${action}/`, { method: 'POST', body: {} }), // action: resend | reset-password
+  exportCustomers: (product, fmt, filters = {}) => {
+    const clean = Object.fromEntries(Object.entries(filters).filter(([, v]) => v && v !== 'all'));
+    const path = `${A}/products/${product}/customers/export/`;
+    return fmt === 'print' ? request(path, { method: 'POST', body: { fmt, filters: clean } }) : download(path, { fmt, filters: clean });
+  },
   revokeDevice: (product, id, reason) => request(`${A}/products/${product}/customers/${id}/device/revoke/`, { method: 'POST', body: { reason } }),
   expiryReport: (params) => request(`${A}/reports/license-expiry/${qs(params)}`),
   tallyReport: (params) => request(`${A}/reports/tally-details/${qs(params)}`),

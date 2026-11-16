@@ -4,7 +4,8 @@ import { ChevronDownIcon, FolderIcon } from '../components/Icons';
 import { useTallyAccess } from '../context/TallyAccessContext';
 import styles from './Sidebar.module.css';
 
-const pagesFor = (code, actions) => [actions.view && { label: 'Customers', path: `/tally/${code}/customers` }].filter(Boolean);
+const pagesFor = (code, actions) =>
+  [actions.view && { label: 'Dashboard', path: `/tally/${code}/dashboard` }, actions.view && { label: 'Customers', path: `/tally/${code}/customers` }].filter(Boolean);
 
 /**
  * TALLY SL PRODUCTS section: one expandable item per registered Tally SL product (GSTR2Tally today; future .NET / Python

@@ -15,19 +15,17 @@
 
 /* ---- registration summary ---- */
 .summary { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-sm); padding: 8px 14px; }
-.metrics { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
-.metric { display: flex; align-items: baseline; gap: 8px; padding: 0 18px; border-left: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
-.metric:first-child { padding-left: 0; border-left: 0; }
-.metric strong { font-size: 16px; color: var(--navy-950); }
-.summaryTitle { margin-right: 18px; font-size: 13px; font-weight: 700; color: var(--navy-950); }
+/* Registration Summary: three equal cells on one row */
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.metricBtn { background: none; border-top: 0; border-right: 0; border-bottom: 0; cursor: pointer; font-family: inherit; }
+.metricBtn:hover { background: var(--navy-50); }
+.hit td { background: #fff7d6; }
+.metric { display: flex; align-items: baseline; justify-content: center; gap: 10px; padding: 0 12px; border-left: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+.metric:first-child { border-left: 0; }
+.metric strong { font-size: 18px; color: var(--navy-950); }
 .rule { margin: 6px 0 0; font-size: 11.5px; color: var(--placeholder); line-height: 1.4; }
 
 /* ---- panel / toolbar / table ---- */
-.panel {
-  display: flex; flex-direction: column; min-width: 0;
-  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 @media (min-width: 1340px) { .toolbar { flex-wrap: nowrap; } }
 .title { font-size: 14px; font-weight: 700; color: var(--navy-950); white-space: nowrap; }
@@ -59,7 +57,6 @@
   background: var(--navy-800); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .primary:hover { background: var(--navy-700); color: var(--navy-900); }
-.scroll { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - var(--header-height) - 230px); min-height: 120px; }
 .table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--text); }
 .table th, .table td { padding: 6px 12px; text-align: left; vertical-align: middle; overflow-wrap: anywhere; }
 .table th {
@@ -74,25 +71,20 @@
 .row:focus-visible { outline: none; }
 .row:focus-visible td { background: var(--navy-50); }
 .name { font-weight: 600; color: var(--navy-900); }
-.empty { margin: 0; padding: 36px 16px; text-align: center; font-size: 13px; color: var(--muted); }
-.emptyError { color: var(--danger); }
-.pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; padding: 6px 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
-.pager label { display: inline-flex; align-items: center; gap: 4px; }
-.pager select { height: 26px; border: 1px solid var(--border-strong); border-radius: 6px; background: #fff; font-size: 12px; color: var(--text); }
-.pager button { height: 26px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 6px; background: #fff; font-size: 12px; cursor: pointer; color: var(--text); }
-.pager button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ---- full-height report panel (GSTR reports only; the shared PRN list styles are untouched) ---- */
-.reportPanel {
-  flex: none; height: calc(100vh - var(--header-height) - 14px); height: calc(100dvh - var(--header-height) - 14px);
-  margin-bottom: -28px; /* cancel the content area's bottom padding so the white panel reaches the viewport bottom */
-  border-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+/* ---- full-height list/report panel (GSTR pages only; PRN list styles are separate and untouched) ---- */
+.listPanel {
+  flex: 1 1 auto; min-height: 0; min-width: 0; display: flex; flex-direction: column;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-sm); overflow: hidden;
 }
-@media (max-width: 960px) { .reportPanel { margin-bottom: -18px; } }
-.reportBody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; background: var(--surface); }
-.reportBody .table { flex: none; }
-.reportEmpty { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 120px; padding: 24px 16px; text-align: center; font-size: 13px; color: var(--muted); }
-.reportEmptyError { color: var(--danger); }
+.listBody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; background: var(--surface); }
+/* scrolling stays fully functional (wheel, touch, Arrow/PageUp/PageDown/Home/End on the focused area); only the scrollbar is not drawn */
+.listBody { scrollbar-width: none; -ms-overflow-style: none; }
+.listBody::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.listBody:focus-visible { outline: 2px solid var(--navy-700); outline-offset: -2px; }
+.listBody .table { flex: none; }
+.listEmpty { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 120px; padding: 24px 16px; text-align: center; font-size: 13px; color: var(--muted); }
+.listEmptyError { color: var(--danger); }
 .reportNote { flex: none; padding: 6px 12px; border-bottom: 1px solid var(--border); background: var(--navy-50); font-size: 12px; color: var(--muted); }
 
 /* ---- detail page / forms (compact) ---- */

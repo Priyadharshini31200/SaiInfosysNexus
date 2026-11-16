@@ -37,8 +37,8 @@ export function getPageTitle(pathname, search = '') {
   if (pathname === '/dashboard') return 'Dashboard';
   if (pathname.startsWith('/tally/')) {
         if (pathname.startsWith('/tally/reports/')) return `GSTR Reports · ${pathname.endsWith('tally-details') ? 'Tally Details Report' : pathname.endsWith('user-performance') ? 'User Performance Report' : 'License Expiry Report'}`;
-    const m = pathname.match(/^\/tally\/([^/]+)\/(dashboard|usage|customers)/);
-    const page = { dashboard: 'User Performance', usage: 'User Performance', customers: 'Customers' }[m?.[2]] || '';
+    const m = pathname.match(/^\/tally\/([^/]+)\/(dashboard|usage|customers|transfers)/);
+    const page = { dashboard: 'Dashboard', usage: 'Dashboard', customers: 'Customers', transfers: 'Recent Device Transfers' }[m?.[2]] || '';
     return `Tally SL Products${page ? ` · ${page}` : ''}`;
   }
   if (pathname === '/reports/usage') {
@@ -58,3 +58,7 @@ export function getPageTitle(pathname, search = '') {
   const page = match[2] === 'add' ? PROJECT_PAGES.add : match[2] === 'customers' ? PROJECT_PAGES.list : PROJECT_PAGES.edit;
   return `${project.label} · ${page.label}`;
 }
+
+/** GSTR/Tally list pages that fill the viewport (white panel scrolls inside; the page itself does not). Detail pages and PRN pages are not matched. */
+export const isTallyFillPage = (pathname) =>
+  /^\/tally\/reports\/(license-expiry|tally-details|user-performance)\/?$/.test(pathname) || /^\/tally\/[^/]+\/(customers(\/\d+)?|transfers|usage\/[^/]+)\/?$/.test(pathname);

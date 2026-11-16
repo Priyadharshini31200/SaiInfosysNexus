@@ -23,7 +23,7 @@ SERIAL_RE = re.compile(r"[A-Za-z0-9]{5,30}")
 _KEY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 _PWD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
 TRANSFER_WARNING = (
-    "This license is currently active on another device. Continuing will sign out the previous device and activate this device."
+    "Your GSTR2Tally license is currently active on another laptop. Do you want to log out from the previous laptop and activate this laptop?"
 )
 
 
@@ -153,7 +153,7 @@ def license_payload(customer, device=None, now=None):
         "license_status": lic.status,
         "activated_at": lic.activated_at,
         "expires_at": None if lic.license_type == TallyLicense.LIFETIME else lic.expires_at,
-        "must_change_password": customer.must_change_password,
+        "must_change_password": False,  # no forced first-login change (kept in the contract for older clients)
         "checked_at": now,
         "lease_until": lease_until,
     }
@@ -178,7 +178,7 @@ def register_customer(product, data, *, actor="customer", ip=""):
         with transaction.atomic():
             customer = TallyCustomer.objects.create(
                 product=product, tally_serial=serial, name=data["name"].strip(), email=data["email"].strip().lower(),
-                contact_number=data["contact_number"].strip(), password_hash=make_password(raw), must_change_password=True,
+                contact_number=data["contact_number"].strip(), password_hash=make_password(raw), must_change_password=False,
             )
     except IntegrityError:
         raise TallyError("An account already exists for this Tally Serial Number.", 409, "account_exists")
@@ -215,7 +215,7 @@ def authenticate(product, user_id, password):
     return customer
 
 
-def _set_password(customer, raw):
+def _set_password(customer, raw, keep_session=None):
     check_password_rule(raw)
     customer.password_hash = make_password(raw)
     customer.must_change_password = False
@@ -223,55 +223,117 @@ def _set_password(customer, raw):
     customer.failed_logins, customer.locked_until = 0, None
     customer.save(update_fields=["password_hash", "must_change_password", "password_changed_at", "failed_logins", "locked_until", "updated_at"])
     # A new password signs out every session (other laptops, stolen tokens). Callers issue a fresh one if needed.
-    customer.sessions.filter(revoked_at__isnull=True).update(revoked_at=timezone.now(), revoked_reason="password_changed")
+    others = customer.sessions.filter(revoked_at__isnull=True)
+    if keep_session is not None:  # a voluntary change keeps the session it was made from; every other one is signed out
+        others = others.exclude(pk=keep_session.pk)
+    others.update(revoked_at=timezone.now(), revoked_reason="password_changed")
 
 
 @transaction.atomic
-def change_password(customer, current, new):
+def change_password(customer, current, new, keep_session=None):
     if not check_password(current or "", customer.password_hash):
         raise TallyError("Current password is incorrect.", 400, "wrong_password")
     if check_password(new or "", customer.password_hash):
         raise TallyError("Choose a password different from the current one.", 400, "same_password")
-    _set_password(customer, new)
+    _set_password(customer, new, keep_session)
     audit("PASSWORD_CHANGED", customer=customer, actor="customer")
 
 
-def request_password_reset(product, identifier):
-    """Always silent about whether the account exists. Returns (customer, raw_token) when a mail should go out, else None."""
+OTP_MAX_ATTEMPTS = 5
+
+
+def _find_by_identifier(product, identifier):
     identifier = (identifier or "").strip()
     if not identifier:
         return None
-    customer = TallyCustomer.objects.select_related("product").filter(product=product).filter(
+    return TallyCustomer.objects.select_related("product").filter(product=product).filter(
         Q(email__iexact=identifier) | Q(tally_serial__iexact=identifier)
     ).first()
+
+
+def request_password_reset(product, identifier):
+    """Always silent about whether the account exists. Returns (customer, otp) when a mail should go out, else None.
+    The OTP is 6 digits, single use, expires (PASSWORD_OTP_TTL_SECONDS, default 10 min) and only its hash is stored."""
+    customer = _find_by_identifier(product, identifier)
     if customer is None:
         return None
-    recent = customer.password_resets.filter(created_at__gte=timezone.now() - timedelta(seconds=60)).exists()
-    if recent:
+    if customer.password_resets.filter(created_at__gte=timezone.now() - timedelta(seconds=60)).exists():
         return None
     with transaction.atomic():
-        customer.password_resets.filter(used_at__isnull=True).update(used_at=timezone.now())  # a newer link kills older ones
-        raw = secrets.token_urlsafe(32)
+        customer.password_resets.filter(used_at__isnull=True).update(used_at=timezone.now())  # a newer code kills older ones
+        for _ in range(10):  # the hash is unique; a repeated 6-digit value for this customer is simply redrawn
+            raw = f"{secrets.randbelow(10 ** 6):06d}"
+            if not TallyPasswordReset.objects.filter(token_hash=_digest(f"{customer.pk}:{raw}")).exists():
+                break
         TallyPasswordReset.objects.create(
-            customer=customer, token_hash=_digest(raw), expires_at=timezone.now() + timedelta(seconds=conf("PASSWORD_RESET_MAX_AGE", 3600))
+            customer=customer, token_hash=_digest(f"{customer.pk}:{raw}"),
+            expires_at=timezone.now() + timedelta(seconds=conf("PASSWORD_OTP_TTL_SECONDS", 600)),
         )
         audit("PASSWORD_RESET_REQUESTED", customer=customer, actor="customer")
     return customer, raw
 
 
-@transaction.atomic
-def reset_password(product, token, new):
+def _otp_row(product, identifier, otp):
+    """Validates an OTP WITHOUT consuming it. A wrong code counts an attempt (committed even though we then raise)."""
+    bad = TallyError("This code is invalid or has expired.", 400, "invalid_token")
+    customer = _find_by_identifier(product, identifier)
+    if customer is None:
+        raise bad
+    row = customer.password_resets.filter(used_at__isnull=True).order_by("-id").first()
+    if row is None or row.expires_at <= timezone.now() or row.attempts >= OTP_MAX_ATTEMPTS:
+        raise bad
+    if not hmac.compare_digest(row.token_hash, _digest(f"{customer.pk}:{(otp or '').strip()}")):
+        TallyPasswordReset.objects.filter(pk=row.pk).update(attempts=F("attempts") + 1)
+        raise bad
+    return row
+
+
+def verify_reset_otp(product, identifier, otp):
+    _otp_row(product, identifier, otp)
+    return True
+
+
+def reset_password(product, token, new, identifier=None):
     check_password_rule(new)
-    row = TallyPasswordReset.objects.select_for_update().select_related("customer__product").filter(
-        token_hash=_digest(token or ""), customer__product=product
-    ).first()
-    if row is None or row.used_at or row.expires_at <= timezone.now():
-        raise TallyError("This reset link is invalid or has expired.", 400, "invalid_token")
-    row.used_at = timezone.now()
-    row.save(update_fields=["used_at"])
-    _set_password(row.customer, new)
-    audit("PASSWORD_RESET", customer=row.customer, actor="customer")
-    return row.customer
+    if identifier:  # OTP flow: the OTP is verified first, then the password is changed and the code is spent, atomically
+        row = _otp_row(product, identifier, token)
+        with transaction.atomic():
+            if not TallyPasswordReset.objects.filter(pk=row.pk, used_at__isnull=True).update(used_at=timezone.now()):
+                raise TallyError("This code is invalid or has expired.", 400, "invalid_token")  # already spent (replay)
+            _set_password(row.customer, new)
+            audit("PASSWORD_RESET", customer=row.customer, actor="customer")
+        return row.customer
+    with transaction.atomic():  # legacy long-token link
+        row = TallyPasswordReset.objects.select_for_update().select_related("customer__product").filter(
+            token_hash=_digest(token or ""), customer__product=product
+        ).first()
+        if row is None or row.used_at or row.expires_at <= timezone.now():
+            raise TallyError("This reset link is invalid or has expired.", 400, "invalid_token")
+        row.used_at = timezone.now()
+        row.save(update_fields=["used_at"])
+        _set_password(row.customer, new)
+        audit("PASSWORD_RESET", customer=row.customer, actor="customer")
+        return row.customer
+
+
+RESEND_COOLDOWN_SECONDS = 60
+
+
+def reissue_credentials(product, user_id):
+    """Safe retry of a failed welcome email: only for an account that never signed in / changed its password. Issues a NEW
+    temporary password (the old one stops working; passwords are never stored in plain text) and never creates a customer.
+    Returns (customer, raw) or None (silent, so it cannot be used to probe accounts)."""
+    customer = find_customer(product, user_id)
+    if customer is None or customer.password_changed_at:  # only while the customer still has the emailed temporary password
+        return None
+    if customer.audit.filter(action__in=["REGISTERED", "CREDENTIALS_RESENT"], created_at__gte=timezone.now() - timedelta(seconds=RESEND_COOLDOWN_SECONDS)).exists():
+        return None
+    raw = temp_password()
+    customer.password_hash = make_password(raw)
+    customer.save(update_fields=["password_hash", "updated_at"])
+    customer.sessions.filter(revoked_at__isnull=True).update(revoked_at=timezone.now(), revoked_reason="credentials_reissued")
+    audit("CREDENTIALS_RESENT", customer=customer, actor="customer")
+    return customer, raw
 
 
 # ------------------------------------------------------------------ sessions
@@ -326,10 +388,10 @@ def login(product, user_id, password, device_info, ip=""):
     token = issue_session(customer, info.get("client_device_id", ""), device)
     audit("LOGIN", "device matched" if device else "no enrolled device match", customer=customer, actor="customer", ip=ip)
     payload = license_payload(customer, device)
-    if payload["authorized"] and not customer.must_change_password:
+    if payload["authorized"]:
         record_open(customer, device, "login", info.get("app_version", ""))
     return {
-        "token": token, "must_change_password": customer.must_change_password,
+        "token": token, "must_change_password": False,
         "account": account_data(customer), "license": payload,
     }
 
@@ -433,52 +495,59 @@ def usage_rows(customers):
 
 
 # ------------------------------------------------------------------ Activate User / device replacement
-def request_activation_code(product, user_id, ip=""):
-    """Returns (customer, raw_code) when an email should be sent; None otherwise (unknown account, throttled)."""
+def request_activation_key(product, user_id, ip=""):
+    """Customer-initiated: issues a NEW single-use Activation Key for an ACTIVE licence and returns
+    (customer, raw_key) so it can be emailed to the registered address. Returns None (caller still answers neutrally)
+    for an unknown account, a licence that is not active, or when throttled (60 s apart, 5 per hour).
+    Keys are only ever created here and only the keyed hash is stored; no email OTP is involved."""
     customer = find_customer(product, user_id)
     if customer is None or not customer.email:
         return None
     now = timezone.now()
+    if license_state(customer.license, now) != "active":
+        return None
     if customer.verification_codes.filter(created_at__gte=now - timedelta(seconds=60)).exists():
         return None
     if customer.verification_codes.filter(created_at__gte=now - timedelta(hours=1)).count() >= 5:
         return None
-    raw = "".join(secrets.choice(_KEY_ALPHABET) for _ in range(8))
+    raw = new_activation_key()
     with transaction.atomic():
-        customer.verification_codes.filter(consumed_at__isnull=True).update(consumed_at=now)  # only the newest code works
+        customer.verification_codes.filter(consumed_at__isnull=True).update(consumed_at=now)  # only the newest key works
         TallyVerificationCode.objects.create(
-            customer=customer, code_hash=_keyed("code", f"{customer.pk}|{raw}"),
-            expires_at=now + timedelta(seconds=conf("TALLY_CODE_TTL_SECONDS", 600)),
+            customer=customer, code_hash=_keyed("key", f"{customer.pk}|{normalize_key(raw)}"),
+            expires_at=now + timedelta(seconds=conf("TALLY_ACTIVATION_KEY_TTL_SECONDS", 900)),
         )
-        audit("ACTIVATION_CODE_SENT", customer=customer, actor="customer", ip=ip)
+        audit("ACTIVATION_KEY_SENT", customer=customer, actor="customer", ip=ip)  # never records the key itself
     return customer, raw
 
 
-def verify_activation(product, user_id, code, activation_key, ip=""):
-    """Validates customer + licence + emailed code + Nexus activation key. Returns a single-use confirmation ticket."""
+request_activation_code = request_activation_key  # backward-compatible name
+
+
+def verify_activation(product, user_id, activation_key, ip=""):
+    """Validates customer + licence + the Activation Key that was emailed on request. Returns a single-use
+    confirmation ticket. The key is bound to this customer (the keyed hash includes the customer id), so one
+    customer's key can never activate or take over another customer's licence."""
     customer = find_customer(product, user_id)
-    invalid = TallyError("The verification code is invalid or has expired.", 400, "invalid_code")
+    invalid = TallyError("The activation key is invalid or has expired. Request a new one.", 400, "invalid_activation_key")
     if customer is None:
         raise invalid
     now = timezone.now()
     row = customer.verification_codes.filter(consumed_at__isnull=True, verified_at__isnull=True, expires_at__gt=now).order_by("-id").first()
     if row is None or row.attempts >= conf("TALLY_CODE_MAX_ATTEMPTS", 5):
         raise invalid
-    code_ok = hmac.compare_digest(row.code_hash, _keyed("code", f"{customer.pk}|{normalize_key(code)}"))
-    lic = customer.license
-    key_ok = bool(lic.activation_key_hash) and hmac.compare_digest(lic.activation_key_hash, _digest(normalize_key(activation_key)))
-    if not (code_ok and key_ok):
+    if not hmac.compare_digest(row.code_hash, _keyed("key", f"{customer.pk}|{normalize_key(activation_key)}")):
         TallyVerificationCode.objects.filter(pk=row.pk).update(attempts=F("attempts") + 1)
-        audit("ACTIVATION_VERIFY_FAILED", "code" if not code_ok else "activation key", customer=customer, actor="customer", ip=ip)
-        raise invalid if not code_ok else TallyError("The activation key is not valid for this account.", 400, "invalid_activation_key")
-    state = license_state(lic, now)
+        audit("ACTIVATION_VERIFY_FAILED", "activation key", customer=customer, actor="customer", ip=ip)
+        raise invalid
+    state = license_state(customer.license, now)
     if state != "active":
         raise TallyError(f"This license is not active ({state}). Contact Sai Infosys.", 403, "license_not_active", {"state": [state]})
     ticket = secrets.token_urlsafe(32)
     claimed = TallyVerificationCode.objects.filter(pk=row.pk, verified_at__isnull=True).update(
         verified_at=now, ticket_hash=_digest(ticket), ticket_expires_at=now + timedelta(seconds=conf("TALLY_TICKET_TTL_SECONDS", 600))
     )
-    if not claimed:  # a concurrent request already used this code: replay
+    if not claimed:  # a concurrent request already used this key: replay
         raise invalid
     current = active_device(customer)
     audit("ACTIVATION_VERIFIED", customer=customer, actor="customer", ip=ip)
@@ -537,10 +606,10 @@ def confirm_activation(product, ticket, device_info, confirm_transfer, ip=""):
                   customer=customer, actor="customer", ip=ip)
         token = issue_session(customer, info["client_device_id"], device)
         payload = license_payload(customer, device, now)
-    if payload["authorized"] and not customer.must_change_password:
+    if payload["authorized"]:
         record_open(customer, device, "login", info.get("app_version", ""))
     return {"token": token, "license": payload, "account": account_data(customer), "device_replaced": replaced,
-            "must_change_password": customer.must_change_password}, customer, replaced
+            "must_change_password": False}, customer, replaced
 
 
 # ------------------------------------------------------------------ staff: licence management
@@ -671,9 +740,9 @@ def revoke_device(customer, user, reason="Revoked by an administrator", ip=""):
 def update_customer(customer, data, user, ip=""):
     customer = _lock(customer)
     changed = []
-    for field in ("name", "email", "contact_number"):
+    for field in ("name", "email", "contact_number", "company_name", "gstin"):
         if field in data and data[field] != getattr(customer, field):
-            setattr(customer, field, data[field].strip().lower() if field == "email" else data[field].strip())
+            setattr(customer, field, data[field].strip().lower() if field == "email" else data[field].strip().upper() if field == "gstin" else data[field].strip())
             changed.append(field)
     if changed:
         customer.save()
@@ -686,3 +755,20 @@ def delete_customer(customer, user, ip=""):
     customer = _lock(customer)
     audit("CUSTOMER_DELETED", f"{customer.tally_serial} {customer.name}", product=customer.product, actor=actor_name(user), ip=ip)
     customer.delete()
+
+
+@transaction.atomic
+def issue_temp_password(customer, user, ip="", action="resend"):
+    """Staff action (Resend Credentials / Reset Password): a NEW secure temporary password replaces the old one (only its hash
+    is stored), every session is signed out and the lockout is cleared. The customer may sign in with it directly; no forced
+    change. Returns (customer, raw) - the caller emails it. Never creates or deletes anything else."""
+    customer = _lock(customer)
+    raw = temp_password()
+    customer.password_hash = make_password(raw)
+    customer.must_change_password = False
+    customer.password_changed_at = None  # status goes back to "temporary password issued"
+    customer.failed_logins, customer.locked_until = 0, None
+    customer.save(update_fields=["password_hash", "must_change_password", "password_changed_at", "failed_logins", "locked_until", "updated_at"])
+    customer.sessions.filter(revoked_at__isnull=True).update(revoked_at=timezone.now(), revoked_reason="credentials_reissued")
+    audit("CREDENTIALS_RESENT" if action == "resend" else "PASSWORD_RESET_BY_ADMIN", customer=customer, actor=actor_name(user), ip=ip)
+    return customer, raw

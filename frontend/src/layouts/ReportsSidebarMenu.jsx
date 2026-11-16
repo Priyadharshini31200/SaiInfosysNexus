@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDownIcon } from '../components/Icons';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,8 @@ export default function ReportsSidebarMenu({ collapsed, onNavigate }) {
   const { pathname } = useLocation();
   const [toggled, setToggled] = useState({});
   const { label, icon: Icon } = REPORTS_MENU;
+  // A user's manual expand/collapse lasts for the current page only: on every navigation the group holding the active report opens and the rest close.
+  useEffect(() => setToggled({}), [pathname]);
 
   const prnPages = REPORT_PAGES.filter((p) => PROJECT_ITEMS.some(({ slug }) => can('reports', `${slug}:${p.path.endsWith('usage') ? 'usage' : 'expiry'}`)));
   const groups = [
