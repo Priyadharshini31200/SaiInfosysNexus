@@ -9,4 +9,5 @@ urlpatterns = [
     path("api/", include("apps.dashboard.urls")),
     path("api/", include("apps.registrations.urls")),
     path("api/", include("apps.tallysl.urls")),
+    path("api/", include("apps.integrations.urls")),
 ]

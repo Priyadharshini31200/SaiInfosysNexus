@@ -1,0 +1,16 @@
+/* Overall Nexus dashboard (new page). The shared PRN card/dashboard styles are not modified. */
+.page { display: flex; flex-direction: column; gap: 12px; width: 100%; min-width: 0; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.retry { margin-left: 8px; border: 0; background: none; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; color: inherit; }
+.tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.tile { display: flex; flex-direction: column; gap: 0; padding: 10px 14px; line-height: 1.2; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-sm); }
+.tileLabel { font-size: 12px; font-weight: 600; color: var(--muted); }
+.tileValue { font-size: 24px; font-weight: 700; color: var(--navy-950); }
+.heading { margin: 6px 0 0; font-size: 14px; font-weight: 700; color: var(--navy-950); }
+/* two project cards per row on desktop; they stack on narrow screens */
+.projects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; align-items: stretch; }
+.projects > * { min-width: 0; }
+@media (max-width: 1100px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1000px) { .projects { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .projects { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

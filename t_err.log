@@ -1,0 +1,109 @@
+Creating test database for alias 'default'...
+Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+Conflict: /api/v1/tally-sl/gstr2tally/register/
+Bad Request: /api/v1/tally-sl/gstr2tally/register/
+Forbidden: /api/v1/tally-sl/gstr2tally/license/status/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+Conflict: /api/v1/tally-sl/gstr2tally/activate/confirm/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/confirm/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+Forbidden: /api/v1/tally-sl/otherapp/auth/login/
+.Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+..Conflict: /api/v1/tally-sl/gstr2tally/register/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+.Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+..Conflict: /api/v1/tally-sl/gstr2tally/register/
+..Not Found: /api/v1/tally-sl-admin/notifications/2/read/
+..Method Not Allowed: /api/v1/tally-sl-admin/notifications/5/read/
+Method Not Allowed: /api/v1/tally-sl-admin/notifications/5/read/
+Method Not Allowed: /api/v1/tally-sl-admin/notifications/5/read/
+.Forbidden: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+.Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Forbidden: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Bad Request: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Bad Request: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Bad Request: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+..Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+..Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Conflict: /api/v1/tally-sl/gstr2tally/activate/confirm/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+..Bad Request: /api/v1/tally-sl/gstr2tally/activate/confirm/
+.Bad Request: /api/v1/tally-sl/otherapp/activate/confirm/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/confirm/
+..Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+.Bad Request: /api/v1/tally-sl-admin/products/gstr2tally/customers/31/license/activate/
+...Conflict: /api/v1/tally-sl-admin/products/gstr2tally/customers/34/license/extend-trial/
+.....Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.......Too Many Requests: /api/v1/tally-sl/gstr2tally/identify/
+.Conflict: /api/v1/tally-sl/gstr2tally/register/
+.Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+.Forbidden: /api/v1/tally-sl/gstr2tally/license/status/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+.Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+..Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+Forbidden: /api/v1/tally-sl/gstr2tally/identify/
+..Bad Request: /api/v1/tally-sl/gstr2tally/register/
+.Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Too Many Requests: /api/v1/tally-sl/gstr2tally/auth/login/
+.Forbidden: /api/v1/tally-sl-admin/permissions/
+Forbidden: /api/v1/tally-sl-admin/permissions/
+.Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/59/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/59/license/activate/
+.Unauthorized: /api/v1/tally-sl-admin/dashboard/
+.Not Found: /api/v1/tally-sl-admin/products/gstr2tally/customers/64/
+.Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/65/license/activate/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/65/device/revoke/
+Conflict: /api/v1/tally-sl-admin/products/gstr2tally/customers/65/device/revoke/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/65/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/65/
+.Bad Request: /api/v1/tally-sl-admin/reports/license-expiry/export/
+..Bad Request: /api/v1/tally-sl-admin/reports/user-performance/
+.Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/74/license/renew/
+Forbidden: /api/v1/tally-sl-admin/products/otherapp/customers/
+.Bad Request: /api/v1/tally-sl-admin/permissions/
+Method Not Allowed: /api/v1/tally-sl-admin/products/
+Not Found: /api/v1/tally-sl-admin/products/gstr2tally/api-key/
+Not Found: /api/v1/tally-sl-admin/usage-rules/
+...Not Found: /api/v1/tally-sl-admin/usage/bogus/
+.....Forbidden: /api/v1/tally-sl/gstr2tally/usage/open/
+.
+----------------------------------------------------------------------
+Ran 71 tests in 177.719s
+
+OK
+Destroying test database for alias 'default'...

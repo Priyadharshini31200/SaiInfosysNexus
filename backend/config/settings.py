@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "apps.dashboard",
     "apps.registrations",
     "apps.tallysl",
+    "apps.integrations",
 ]
 
 MIDDLEWARE = [
@@ -166,6 +167,12 @@ REST_FRAMEWORK = {
     },
 }
 
+# ---------------------------------------------------------------- Cache (rate limits, throttles)
+# Default: per-process memory (fine for one worker / development). With SEVERAL worker processes set CACHE_DB_TABLE (and run
+# `python manage.py createcachetable`) so every worker shares one rate-limit counter. Unset = behaviour unchanged.
+if env("CACHE_DB_TABLE", "").strip():
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": env("CACHE_DB_TABLE").strip()}}
+
 # ---------------------------------------------------------------- Email (credentials, recovery, reset links)
 EMAIL_HOST = env("EMAIL_HOST", "").strip()
 # A configured EMAIL_HOST means real SMTP, in DEBUG too; without one, DEBUG prints mail to the console
@@ -189,6 +196,7 @@ DEFAULT_FROM_EMAIL = (env("DEFAULT_FROM_EMAIL") or "").strip() or (
 )
 
 # ---------------------------------------------------------------- Customer portal (connected projects)
+TALLY_EVENT_SIGNING_SECRET = env("TALLY_EVENT_SIGNING_SECRET", "")  # shared with the GSTR2Tally backend; empty = event delivery refused
 CUSTOMER_TOKEN_MAX_AGE = int(env("CUSTOMER_TOKEN_MAX_AGE", "86400"))  # seconds a customer sign-in token stays valid
 PASSWORD_RESET_MAX_AGE = int(env("PASSWORD_RESET_MAX_AGE", "3600"))
 # Extra addresses (besides every active Super Admin account with an email) told about each new sign-up request

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
+import NotificationBell from './NotificationBell';
 import { ArrowLeftIcon, ChevronDownIcon, LogoutIcon, MenuIcon, SettingsIcon, UserIcon } from '../components/Icons';
 import styles from './Header.module.css';
 
@@ -51,6 +52,7 @@ export default function Header({ title, onBack, user, onOpenMobileNav, onOpenPro
         <h1 className={styles.pageName}>{title}</h1>
       </div>
 
+      <NotificationBell />
       <div className={styles.profile} ref={wrapRef}>
         <button
           ref={triggerRef}

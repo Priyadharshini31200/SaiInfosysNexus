@@ -30,7 +30,7 @@ export default function TallyDashboardPage() {
   if (error) return <p role="alert" className={styles.emptyError}>{error}</p>;
   const reg = data.registrations;
   return (
-    <>
+    <div className={styles.page}>
       <div className={styles.cards} role="list" aria-label="Customers by usage category">
         {data.categories.map((c) => (
           <button key={c.key} type="button" role="listitem" className={styles.card} onClick={() => navigate(`/tally/${product}/usage/${c.key}`)}>
@@ -40,14 +40,14 @@ export default function TallyDashboardPage() {
           </button>
         ))}
       </div>
-      <section className={styles.summary} aria-label="Registrations">
+      <section className={styles.summary} aria-label="Registration Summary">
         <div className={styles.metrics}>
-          <span className={styles.summaryTitle}>Registrations</span>
-          <span className={styles.metric}>Total Customers <strong>{reg.total}</strong></span>
-          <span className={styles.metric}>Last 7 Days <strong>{reg.last_7_days}</strong></span>
-          <span className={styles.metric}>Pending Activation <strong>{reg.pending_license}</strong></span>
+          <span className={styles.metric}><span>Total Customers</span><strong>{reg.total}</strong></span>
+          <span className={styles.metric}><span>Last 7 Days</span><strong>{reg.last_7_days}</strong></span>
+          <span className={styles.metric}><span>Pending Activation</span><strong>{reg.pending_license}</strong></span>
+          <button type="button" className={`${styles.metric} ${styles.metricBtn}`} onClick={() => navigate(`/tally/${product}/transfers`)} aria-label={`Recent Device Transfers, ${reg.recent_device_transfers} in the last 7 days. View list`}><span>Recent Device Transfers</span><strong>{reg.recent_device_transfers}</strong></button>
         </div>
       </section>
-    </>
+    </div>
   );
 }

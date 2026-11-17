@@ -6,7 +6,7 @@ import Header from './Header';
 import ApprovalGate from '../components/ApprovalGate';
 import ProfileDrawer from '../components/ProfileDrawer';
 import ConfigurationDrawer from '../components/ConfigurationDrawer';
-import { getPageTitle } from './navigation';
+import { getPageTitle, isTallyFillPage } from './navigation';
 import styles from './AppLayout.module.css';
 
 const DESKTOP_QUERY = '(min-width: 961px)';
@@ -98,7 +98,7 @@ export default function AppLayout() {
       <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onToggleCollapse={toggleCollapse} onCloseMobile={() => setMobileOpen(false)} />
       <div className={`${styles.main} ${collapsed ? styles.mainCollapsed : ''}`}>
         <Header title={title} onBack={handleBack} user={user} onOpenMobileNav={() => setMobileOpen(true)} onOpenProfile={() => setDrawer('profile')} onOpenConfig={() => setDrawer('config')} onLogout={handleLogout} />
-        <main className={styles.content}>
+        <main className={`${styles.content} ${isTallyFillPage(pathname) ? styles.contentFill : ''}`}>
           <Outlet />
         </main>
       </div>

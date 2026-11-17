@@ -15,9 +15,13 @@ from rest_framework.views import APIView
 
 from apps.registrations import exports
 
-from . import access, emails, services
+from . import access, emails, events, services
+from apps.accounts.constants import Role
+from apps.accounts.permissions import get_role
+
 from .models import (
-    PERMISSION_ACTIONS, PERMISSION_LABELS, TallyAdminPermission, TallyCustomer, TallyLicense, TallyProduct,
+    PERMISSION_ACTIONS, PERMISSION_LABELS, TallyAdminPermission, TallyCustomer, TallyDevice, TallyLicense, TallyProduct,
+    TallyTransferEvent,
 )
 
 PAGE_SIZES = (10, 25, 50, 100)
@@ -58,10 +62,14 @@ def customer_row(c):
     return {
         "id": c.pk, "product": c.product.code, "product_name": c.product.name, "name": c.name, "email": c.email,
         "contact_number": c.contact_number, "tally_serial": c.tally_serial, "user_id": c.tally_serial,
+        "company_name": c.company_name, "gstin": c.gstin,
         "license_type": lic.license_type, "license_plan": services.plan_of(lic), "license_type_label": lic.get_license_type_display(),
         "license_status": lic.status, "state": services.license_state(lic),
         "activated_at": _dt(lic.activated_at), "expires_at": _dt(None if lic.license_type == "LIFETIME" else lic.expires_at),
         "registered_at": _dt(c.registered_at), "must_change_password": c.must_change_password,
+        "password_changed_at": _dt(c.password_changed_at),
+        "password_status": "Changed by customer" if c.password_changed_at else "Temporary password issued",
+        "credentials_email_status": c.welcome_email_status, "welcome_email_status": c.welcome_email_status, "activation_email_status": c.license.activation_key_email_status,
     }
 
 
@@ -171,9 +179,20 @@ class CustomerListView(StaffView):
     def get(self, request, product):
         p = self.product_or_404(product)
         access.require(request.user, p, "view")
-        qs = _search(TallyCustomer.objects.select_related("product", "license").filter(product=p), request.query_params.get("search"))
-        rows, meta = _paginate(qs, request)
-        return Response({"results": [customer_row(c) for c in rows], **meta})
+        rows, meta = _paginate(filtered_customers(request.query_params, p), request)
+        rows = list(rows)
+        active = {d.customer_id: d for d in TallyDevice.objects.filter(customer__in=rows, revoked_at__isnull=True)}
+        last = {}
+        for e in TallyTransferEvent.objects.filter(customer__in=rows).order_by("occurred_at"):
+            last[e.customer_id] = e.occurred_at
+        out = []
+        for c in rows:
+            r = customer_row(c)
+            d = active.get(c.pk)
+            r["active_device"] = (d.device_name or "") if d else ""
+            r["last_transfer_at"] = _dt(last.get(c.pk))
+            out.append(r)
+        return Response({"results": out, **meta})
 
     def post(self, request, product):
         """Staff creates a customer (Entry). Same rules as self-registration; license stays Pending until activated."""
@@ -186,6 +205,66 @@ class CustomerListView(StaffView):
         customer, raw = services.register_customer(p, d, actor=services.actor_name(request.user), ip=self.ip())
         emails.send_welcome(customer, raw)
         return Response(customer_row(customer), status=201)
+
+
+def filtered_customers(params, product):
+    """Search + License Type (plan) + Status filters shared by the list and its exports."""
+    qs = _search(TallyCustomer.objects.select_related("product", "license").filter(product=product), params.get("search"))
+    plan = params.get("license_plan")
+    if plan and plan != "all":
+        qs = qs.filter(license__license_type=services.STORED_OF.get(plan, "?"))
+    state = params.get("state")
+    if state and state != "all":
+        return [c for c in qs if services.license_state(c.license) == state]
+    return qs
+
+
+def _customers_table(rows):
+    body = []
+    for i, c in enumerate(rows, 1):
+        r = customer_row(c)
+        body.append([str(i), r["name"], r["company_name"] or "-", r["contact_number"], r["email"], r["tally_serial"],
+                     PLAN_LABEL[r["license_plan"]], r["state"].title(), "Never" if r["license_type"] == "LIFETIME" else _fmt_iso(r["expires_at"])])
+    return exports.Table("GSTR2Tally Customers", exports._subtitle(len(body), ""),
+                         ["S.No", "Customer", "Company", "Contact", "Email", "Tally Serial / User ID", "License Type", "License Status", "Expiry Date"],
+                         body, [3, 11, 10, 8, 14, 9, 8, 7, 8])
+
+
+class CustomerExportView(StaffView):
+    """POST {fmt: xlsx|pdf|print, filters: {search, license_plan, state}} - needs View on the product, like the list."""
+
+    def post(self, request, product):
+        p = self.product_or_404(product)
+        access.require(request.user, p, "view")
+        rows = list(filtered_customers(request.data.get("filters") or {}, p))
+        return _export(request, _customers_table(rows), request.data.get("fmt"))
+
+
+class CredentialsActionView(StaffView):
+    """POST .../customers/<id>/credentials/<resend|reset-password>/ - emails a NEW temporary password to the registered address.
+    Resend needs Entry (only while the customer still has the emailed password); Reset Password is Superadmin-only (as in PRN)."""
+
+    def post(self, request, product, pk, action):
+        p = self.product_or_404(product)
+        if action == "resend":
+            c = self.customer_or_404(p, pk, "entry")
+            if c.password_changed_at:
+                raise services.TallyError("This customer already chose their own password. Use Reset Password instead.", 409, "password_already_changed")
+        elif action == "reset-password":
+            if get_role(request.user) != Role.SUPERADMIN:
+                raise PermissionDenied("Only a Super Admin can reset a customer's password.")
+            c = self.customer_or_404(p, pk, "edit")
+        else:
+            raise NotFound("Unknown action.")
+        if services.license_state(c.license) == "inactive":
+            raise services.TallyError("This customer's license is inactive.", 409, "license_inactive")
+        c, raw = services.issue_temp_password(c, request.user, self.ip(), action)
+        status = emails.send_welcome(c, raw)
+        out = {"customer": customer_row(TallyCustomer.objects.select_related("product", "license").get(pk=c.pk)),
+               "credentials_email": "submitted" if status == "accepted" else status, "email_sent_to": emails.mask_email(c.email)}
+        if status != "accepted":
+            out["temporary_password"] = raw  # shown once so staff can pass it on another way; never stored
+        return Response(out)
 
 
 def customer_detail(c):
@@ -204,7 +283,17 @@ def customer_detail(c):
     transfers = [{"kind": t.kind, "at": _dt(t.created_at), "by": t.performed_by,
                   "from": t.from_device.device_name if t.from_device else "", "to": t.to_device.device_name if t.to_device else ""}
                  for t in c.transfers.select_related("from_device", "to_device")[:50]]
+    active_dev = next((d for d in devices if d["active"]), None)
+    revoked = [d for d in devices if not d["active"]]
+    evs = [{"id": e.pk, "old_device": e.old_device_name, "new_device": e.new_device_name, "at": _dt(e.occurred_at),
+            "initiated_by": e.initiated_by, "status": e.status} for e in c.transfer_events.all()[:100]]
     return {
+        "device_summary": {
+            "current": active_dev["name"] if active_dev else "", "current_activated_at": active_dev["enrolled_at"] if active_dev else None,
+            "previous": evs[0]["old_device"] if evs else (revoked[0]["name"] if revoked else ""),
+            "last_transfer_at": evs[0]["at"] if evs else None,
+        },
+        "transfer_history": evs,
         "customer": customer_row(c),
         "tally": {
             "tally_serial": c.tally_serial,
@@ -239,6 +328,8 @@ class CustomerDetailView(StaffView):
             name = serializers.CharField(max_length=100, required=False)
             email = serializers.EmailField(required=False)
             contact_number = serializers.CharField(max_length=20, required=False)
+            company_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+            gstin = serializers.RegexField(r"^$|^[0-9]{2}[A-Za-z0-9]{13}$", required=False, allow_blank=True)
 
         s = S(data=request.data)
         s.is_valid(raise_exception=True)
@@ -276,14 +367,13 @@ class LicenseActionView(StaffView):
             c = services.inactivate_license(c, user, ip)
         else:
             c, key = services.reissue_key(c, user, ip)
-        mail = None
+        # Activation Keys are emailed ONLY when the customer requests activation (Activate User), never by a staff action.
         if key:
-            mail = emails.send_activation_key(c, key)
-            TallyLicense.objects.filter(customer=c).update(activation_key_email_status=mail)
+            TallyLicense.objects.filter(customer=c).update(activation_key_email_status="on_request")
         c = TallyCustomer.objects.select_related("product", "license").get(pk=c.pk)
         out = {"customer": customer_row(c)}
         if key:
-            out.update(activation_key=key, activation_key_email="submitted" if mail == "accepted" else mail)
+            out.update(activation_key=key, activation_key_email="on_request")
         return Response(out)
 
 
@@ -302,6 +392,15 @@ def _scoped_customers(user, action, product_code=None):
     return TallyCustomer.objects.filter(product__in=products), products
 
 
+def usage_counts(rows):
+    """Project card counts, same shape as Barcode AutoPrint's Used / Not Used / Expire.
+    Used = at least one successful application opening/sign-in recorded by Nexus; Not Used = none yet;
+    Expire = Nexus licence expired (Trial/Annual past its expiry). Every registered customer is counted once."""
+    used = sum(1 for _c, u in rows if u["opens"] >= 1)
+    expired = sum(1 for c, _u in rows if services.license_state(c.license) == "expired")
+    return {"used": used, "not_used": len(rows) - used, "expired": expired, "total": len(rows)}
+
+
 class DashboardView(StaffView):
     def get(self, request):
         customers, products = _scoped_customers(request.user, "view", request.query_params.get("product"))
@@ -314,17 +413,55 @@ class DashboardView(StaffView):
             else:
                 internal[u["category"]] += 1
         now = timezone.now()
+        by_code = {}
+        for c, u in rows:
+            by_code.setdefault(c.product.code, []).append((c, u))
         return Response({
             "categories": [{"key": k, "label": services.CATEGORY_LABELS[k], "count": counts[k]} for k in services.CATEGORIES],
+            "usage_counts": usage_counts(rows),
+            "products": [{"code": p.code, "name": p.name, **usage_counts(by_code.get(p.code, []))} for p in products if p.active],
             "internal": internal,
             "registrations": {
                 "total": customers.count(),
                 "last_7_days": customers.filter(registered_at__gte=now - timedelta(days=7)).count(),
                 "pending_license": customers.filter(license__status=TallyLicense.PENDING).count(),
+                "recent_device_transfers": events.visible_events(request.user, request.query_params.get("product")).filter(occurred_at__gte=now - timedelta(days=7)).count(),
                 "by_product": [{"code": p.code, "name": p.name, "customers": customers.filter(product=p).count()} for p in products],
             },
             "rule": _rule_data(),
         })
+
+
+class NotificationListView(StaffView):
+    """Bell feed: completed GSTR2Tally device transfers the caller may view (per-product `view`), newest first."""
+
+    def get(self, request):
+        qs = events.visible_events(request.user)
+        return Response({"unread_count": qs.filter(read_at__isnull=True).count(),
+                         "results": [events.event_data(e) for e in qs[:30]]})
+
+
+class NotificationReadView(StaffView):
+    def post(self, request, pk):
+        e = events.visible_events(request.user).filter(pk=pk).first()
+        if e is None:
+            raise NotFound("Notification not found.")
+        if e.read_at is None:
+            TallyTransferEvent.objects.filter(pk=pk, read_at__isnull=True).update(read_at=timezone.now(), read_by=services.actor_name(request.user))
+        return Response({"id": e.pk, "read": True})
+
+
+class TransferListView(StaffView):
+    """Read-only list of completed device transfers (newest first); ?recent=1 limits it to the last 7 days."""
+
+    def get(self, request, product):
+        p = self.product_or_404(product)
+        access.require(request.user, p, "view")
+        qs = events.visible_events(request.user, product)
+        if request.query_params.get("recent"):
+            qs = qs.filter(occurred_at__gte=timezone.now() - timedelta(days=7))
+        rows, meta = _paginate(qs, request)
+        return Response({"results": [events.event_data(e) for e in rows], **meta})
 
 
 def _rule_data():
@@ -486,6 +623,10 @@ def performance_rows(request):
     rows = []
     for c, u in services.usage_rows(qs):
         if p.get("category") and u["category"] != p["category"]:
+            continue
+        if p.get("usage") == "used" and u["opens"] < 1:
+            continue
+        if p.get("usage") == "not_used" and u["opens"] >= 1:
             continue
         opened = timezone.localtime(u["last_opened"], services.IST).date() if u["last_opened"] else None
         if (start or end) and (opened is None or (start and opened < start) or (end and opened > end)):

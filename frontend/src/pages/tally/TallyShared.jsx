@@ -2,30 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { SearchIcon } from '../../components/Icons';
 import styles from './Tally.module.css';
 
-export const PAGE_SIZES = [10, 25, 50, 100];
-
-/** Loads a paged list; `load(page, pageSize)` returns { results, total }. Reloads when `deps` change. */
-export function usePaged(load, deps, enabled = true) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
-  const [state, setState] = useState({ loading: true, error: '', results: [], total: 0 });
-  const key = JSON.stringify(deps);
-  useEffect(() => setPage(1), [key]);
-  useEffect(() => {
-    if (!enabled) return undefined;
-    let current = true;
-    setState((s) => ({ ...s, loading: true }));
-    load(page, pageSize)
-      .then((d) => current && setState({ loading: false, error: '', results: d.results, total: d.total }))
-      .catch((err) => current && setState({ loading: false, error: err.message, results: [], total: 0 }));
-    return () => {
-      current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, key, enabled]);
-  return { ...state, page, pageSize, setPage, setPageSize };
-}
-
 export const REPORT_CHUNK = 100;      // largest page size the API accepts
 export const REPORT_MAX_ROWS = 5000;  // safety bound: beyond this the report says so and asks for narrower filters
 
@@ -67,21 +43,27 @@ export function useAllRows(fetchPage, deps, enabled = true) {
   return state;
 }
 
-export function Pager({ page, pageSize, total, setPage, setPageSize, showTotal = true }) {
-  const pages = Math.max(1, Math.ceil(total / pageSize));
+/**
+ * The one list/report layout of the GSTR pages: toolbar on top, then a white body that takes all remaining height, scrolls inside
+ * (wheel, touch, keyboard) with its scrollbar hidden, keeps the navy header sticky, and shows the empty/loading/error message centred.
+ * The page structure (a viewport-height content area) comes from AppLayout's contentFill class.
+ */
+export function ListPanel({ label, toolbar, note, columns, children, loading, error, empty }) {
+  const hasRows = Array.isArray(children) ? children.length > 0 : Boolean(children);
   return (
-    <div className={styles.pager}>
-      {showTotal && <span>Total: {total}</span>}
-      <label>
-        Rows{' '}
-        <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
-          {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
-        </select>
-      </label>
-      <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button>
-      <span>Page {page} of {pages}</span>
-      <button type="button" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</button>
-    </div>
+    <section className={styles.listPanel} aria-label={label}>
+      <header className={styles.toolbar}>{toolbar}</header>
+      {note && <div className={styles.reportNote} role="status">{note}</div>}
+      <div className={styles.listBody} tabIndex={0} role="region" aria-label={`${label} results`}>
+        <table className={styles.table}>
+          <thead><tr>{columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+          <tbody>{children}</tbody>
+        </table>
+        {loading && !hasRows && <div className={styles.listEmpty} role="status">Loading…</div>}
+        {!loading && !error && !hasRows && <div className={styles.listEmpty}>{empty}</div>}
+        {error && <div className={`${styles.listEmpty} ${styles.listEmptyError}`} role="alert">{error}</div>}
+      </div>
+    </section>
   );
 }
 

@@ -4,6 +4,7 @@ import { NAV_ITEMS, NON_TALLY_ITEMS } from './navigation';
 import TallySidebarMenu from './TallySidebarMenu';
 import ProjectSidebarMenu from './ProjectSidebarMenu';
 import ReportsSidebarMenu from './ReportsSidebarMenu';
+import ProjectManagementMenu from './ProjectManagementMenu';
 import { useAuth } from '../context/AuthContext';
 import { useTallyAccess } from '../context/TallyAccessContext';
 import styles from './Sidebar.module.css';
@@ -21,7 +22,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
       >
         <nav className={styles.nav}>
           <ul className={styles.list}>
-            {NAV_ITEMS.filter(() => can('view', 'gstr2tally:dashboard') || can('view', 'prn-auto-print:dashboard')).map(({ to, label, icon: Icon }) => (
+            {NAV_ITEMS.filter(() => can('view', 'gstr2tally:dashboard') || can('view', 'prn-auto-print:dashboard') || anyCan('view')).map(({ to, label, icon: Icon }) => (
               <li key={to}>
                 <NavLink
                   to={to}
@@ -40,6 +41,8 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
           <ProjectSidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} items={NON_TALLY_ITEMS} />
 
           <TallySidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} />
+
+          <ProjectManagementMenu collapsed={collapsed} onNavigate={onCloseMobile} />
 
           {(can('reports', null) || anyCan('reports')) && (
             <>
