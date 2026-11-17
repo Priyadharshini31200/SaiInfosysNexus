@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDownIcon, FolderIcon } from '../components/Icons';
 import { useTallyAccess } from '../context/TallyAccessContext';
+import { useAuth } from '../context/AuthContext';
+import { integrationsApi } from '../api/integrations';
 import styles from './Sidebar.module.css';
 
 const pagesFor = (code, actions) =>
@@ -16,17 +18,29 @@ export default function TallySidebarMenu({ collapsed, onNavigate }) {
   const { pathname } = useLocation();
   const [toggled, setToggled] = useState({});
 
-  const visible = products
-    .map((p) => ({ ...p, pages: pagesFor(p.code, p.actions || {}) }))
-    .filter((p) => p.pages.length);
-  if (!loaded || !visible.length) return null;
+  const { user } = useAuth();
+  const [apiProducts, setApiProducts] = useState([]);
+  // API-connected products (Mothys) sit in the same group, directly below the Tally products. Registry-driven, Super Admin only.
+  useEffect(() => {
+    if (user?.role !== 'SUPERADMIN') return;
+    integrationsApi.projects().then((d) => setApiProducts(d.projects.filter((p) => p.enabled).map((p) => ({
+      code: p.code, name: p.code === 'MOTHYS' ? 'Mothys Inventory' : p.name, prefix: `/product/${p.code}/`,
+      pages: [{ label: 'Dashboard', path: `/product/${p.code}/dashboard` }, { label: 'Customers', path: `/product/${p.code}/customers` }],
+    }))), () => {});
+  }, [user?.role]);
+
+  const visible = [
+    ...products.map((p) => ({ ...p, pages: pagesFor(p.code, p.actions || {}) })).filter((p) => p.pages.length),
+    ...apiProducts,
+  ];
+  if (!visible.length || (!loaded && !apiProducts.length)) return null;
 
   return (
     <>
       <p className={`${styles.sectionLabel} ${styles.projectsLabel}`}>Tally SL Products</p>
       <ul className={styles.list}>
-        {visible.map(({ code, name, pages }) => {
-          const inProduct = pathname.startsWith(`/tally/${code}/`);
+        {visible.map(({ code, name, pages, prefix }) => {
+          const inProduct = pathname.startsWith(prefix || `/tally/${code}/`);
           const open = toggled[code] ?? inProduct;
           if (collapsed) {
             return (

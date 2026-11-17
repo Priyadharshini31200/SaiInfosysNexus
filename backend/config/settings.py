@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "apps.dashboard",
     "apps.registrations",
     "apps.tallysl",
+    "apps.integrations",
 ]
 
 MIDDLEWARE = [
@@ -165,6 +166,12 @@ REST_FRAMEWORK = {
         "device_public": env("DEVICE_PUBLIC_THROTTLE_RATE", "10/min"),
     },
 }
+
+# ---------------------------------------------------------------- Cache (rate limits, throttles)
+# Default: per-process memory (fine for one worker / development). With SEVERAL worker processes set CACHE_DB_TABLE (and run
+# `python manage.py createcachetable`) so every worker shares one rate-limit counter. Unset = behaviour unchanged.
+if env("CACHE_DB_TABLE", "").strip():
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": env("CACHE_DB_TABLE").strip()}}
 
 # ---------------------------------------------------------------- Email (credentials, recovery, reset links)
 EMAIL_HOST = env("EMAIL_HOST", "").strip()

@@ -4,6 +4,7 @@ import { NAV_ITEMS, NON_TALLY_ITEMS } from './navigation';
 import TallySidebarMenu from './TallySidebarMenu';
 import ProjectSidebarMenu from './ProjectSidebarMenu';
 import ReportsSidebarMenu from './ReportsSidebarMenu';
+import ProjectManagementMenu from './ProjectManagementMenu';
 import { useAuth } from '../context/AuthContext';
 import { useTallyAccess } from '../context/TallyAccessContext';
 import styles from './Sidebar.module.css';
@@ -40,6 +41,8 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
           <ProjectSidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} items={NON_TALLY_ITEMS} />
 
           <TallySidebarMenu collapsed={collapsed} onNavigate={onCloseMobile} />
+
+          <ProjectManagementMenu collapsed={collapsed} onNavigate={onCloseMobile} />
 
           {(can('reports', null) || anyCan('reports')) && (
             <>

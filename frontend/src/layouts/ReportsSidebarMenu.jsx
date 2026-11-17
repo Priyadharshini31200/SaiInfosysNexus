@@ -12,9 +12,15 @@ const GSTR_REPORTS = [
   { label: 'User Performance Report', path: '/tally/reports/user-performance' },
 ];
 
+const MOTHYS_REPORTS = [
+  { label: 'License Expiry Report', path: '/mothys/reports/license-expiry' },
+  { label: 'Customer Details Report', path: '/mothys/reports/customer-details' },
+  { label: 'User Performance Report', path: '/mothys/reports/user-performance' },
+];
+
 /** REPORTS: "GSTR Reports" (Tally SL, per-product Reports permission) and "PRN Reports" (the existing reports, unchanged). */
 export default function ReportsSidebarMenu({ collapsed, onNavigate }) {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const { anyCan } = useTallyAccess();
   const { pathname } = useLocation();
   const [toggled, setToggled] = useState({});
@@ -25,6 +31,7 @@ export default function ReportsSidebarMenu({ collapsed, onNavigate }) {
   const prnPages = REPORT_PAGES.filter((p) => PROJECT_ITEMS.some(({ slug }) => can('reports', `${slug}:${p.path.endsWith('usage') ? 'usage' : 'expiry'}`)));
   const groups = [
     anyCan('reports') && { key: 'gstr', title: 'GSTR Reports', pages: GSTR_REPORTS, active: pathname.startsWith('/tally/reports/') },
+    user?.role === 'SUPERADMIN' && { key: 'mothys', title: 'Mothys Reports', pages: MOTHYS_REPORTS, active: pathname.startsWith('/mothys/reports/') },
     prnPages.length > 0 && { key: 'prn', title: 'PRN Reports', pages: prnPages, active: pathname.startsWith('/reports/') },
   ].filter(Boolean);
   if (!groups.length) return null;

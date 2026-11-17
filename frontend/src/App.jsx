@@ -12,6 +12,13 @@ import TallyUsageListPage from './pages/tally/TallyUsageListPage';
 import TallyCustomersPage from './pages/tally/TallyCustomersPage';
 import TallyTransfersPage from './pages/tally/TallyTransfersPage';
 import TallyReportPage from './pages/tally/TallyReportPage';
+import ProjectListPage from './pages/integrations/ProjectListPage';
+import ProjectFormPage from './pages/integrations/ProjectFormPage';
+import ProjectIntegrationPage from './pages/integrations/ProjectIntegrationPage';
+import IntegrationStatusPage from './pages/integrations/IntegrationStatusPage';
+import ProductDashboardPage from './pages/product/ProductDashboardPage';
+import ProductCustomersPage from './pages/product/ProductCustomersPage';
+import ProductReportPage from './pages/product/ProductReportPage';
 import NotFound from './pages/NotFound';
 
 // A bare project URL opens its Customer List.
@@ -44,6 +51,16 @@ export default function App() {
           <Route path="/tally/:product/transfers" element={<TallyTransfersPage />} />
           <Route path="/tally/:product/customers" element={<TallyCustomersPage />} />
           <Route path="/tally/:product/customers/:id" element={<TallyCustomersPage />} /> /* the Customer Details drawer opens over the list */
+          <Route path="/product/:code/dashboard" element={<ProductDashboardPage />} />
+          <Route path="/product/:code/customers" element={<ProductCustomersPage />} />
+          <Route path="/product/:code/customers/:id" element={<ProductCustomersPage />} />
+          <Route path="/mothys/reports/license-expiry" element={<ProductReportPage kind="expiry" />} />
+          <Route path="/mothys/reports/customer-details" element={<ProductReportPage kind="details" />} />
+          <Route path="/mothys/reports/user-performance" element={<ProductReportPage kind="performance" />} />
+          <Route path="/project-management" element={<ProjectListPage />} />
+          <Route path="/project-management/add" element={<ProjectFormPage />} />
+          <Route path="/project-management/status" element={<IntegrationStatusPage />} />
+          <Route path="/project-management/:code/integration" element={<ProjectIntegrationPage />} />
           <Route path="/profile" element={<Navigate to="/dashboard" replace />} />
           <Route path="/reset-password" element={<Navigate to="/dashboard" replace />} />
         </Route>

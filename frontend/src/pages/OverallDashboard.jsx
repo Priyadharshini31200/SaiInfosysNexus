@@ -8,6 +8,7 @@ import ProjectUsageCard from '../components/ProjectUsageCard';
 import { useAuth } from '../context/AuthContext';
 import { useTallyAccess } from '../context/TallyAccessContext';
 import { monthKey } from '../utils/date';
+import { integrationsApi } from '../api/integrations';
 import styles from './OverallDashboard.module.css';
 
 const PRN = 'prn-auto-print';
@@ -61,6 +62,8 @@ async function loadAllTally(code) {
   }
 }
 
+const MOTHYS = 'MOTHYS';
+
 /** Common dashboard: overall Nexus summary on top, then one Used / Not Used / Expire card per authorised product. */
 export default function OverallDashboard() {
   const { can } = useAuth();
@@ -68,6 +71,20 @@ export default function OverallDashboard() {
   const { loaded, can: canTally } = useTallyAccess();
   const [state, setState] = useState({ loading: true, error: '', overall: null, cards: [] });
   const [retry, setRetry] = useState(0);
+  // Mothys Inventory (API-connected, TALLY SL PRODUCTS group): its own Used / Not Used / Expire from the project-scoped API.
+  // Super Admin only. While loading nothing is shown; on failure the card shows "unavailable", never a false zero.
+  const { user } = useAuth();
+  const [mothys, setMothys] = useState(null);
+  useEffect(() => {
+    if (user?.role !== 'SUPERADMIN') return undefined;
+    let current = true;
+    const label = 'Mothys Inventory Management';
+    integrationsApi.productDashboard(MOTHYS).then(
+      (d) => current && setMothys({ code: MOTHYS, label, available: true, used: d.used, not_used: d.not_used, expired: d.expired, kind: 'tally' }),
+      (e) => current && setMothys({ code: MOTHYS, label, available: false, message: `${label} data is currently unavailable.`, kind: 'tally' }),
+    );
+    return () => { current = false; };
+  }, [user?.role, retry]);
   const canPrn = can('view', PRN) || can('view', `${PRN}:dashboard`);
   const canPrnCard = can('view', `${PRN}:dashboard`);
 
@@ -128,7 +145,7 @@ export default function OverallDashboard() {
           loading: false,
           error: errors.join(' · '),
           overall: { ...sum, total: identities.size, pending: pendingKnown ? sum.pending : null },
-          cards: [...tallyCards, ...(prnCard ? [prnCard] : [])],
+          cards: [...tallyCards, ...(prnCard ? [prnCard] : [])], // Mothys is merged at render time (below)
         });
       }
     })();
@@ -138,6 +155,10 @@ export default function OverallDashboard() {
   }, [loaded, canPrn, canPrnCard, retry]);
 
   const open = useCallback((code, category) => {
+    if (code === MOTHYS) {
+      navigate(`/product/${MOTHYS}/customers?${new URLSearchParams({ filter: category.replace('-', '_') })}`); // used | not_used | expired
+      return;
+    }
     if (code === PRN) {
       // existing Barcode AutoPrint drill-downs, unchanged
       const query = category === 'expired' ? { product: code, state: 'expired' } : { project: code, status: category };
@@ -148,11 +169,12 @@ export default function OverallDashboard() {
     if (category === 'expired') navigate(`/tally/reports/license-expiry?${new URLSearchParams({ product: code, status: 'expired' })}`);
     else navigate(`/tally/reports/user-performance?${new URLSearchParams({ product: code, usage: category === 'used' ? 'used' : 'not_used' })}`);
   }, [navigate]);
-  const canOpen = useCallback((code, category) => (code === PRN ? can('reports', `${PRN}:${category === 'expired' ? 'expiry' : 'usage'}`) : canTally('reports', code)), [can, canTally]);
+  const canOpen = useCallback((code, category) => (code === MOTHYS ? true : code === PRN ? can('reports', `${PRN}:${category === 'expired' ? 'expiry' : 'usage'}`) : canTally('reports', code)), [can, canTally]);
 
   if (loaded && !canPrn && state.cards.length === 0 && !state.loading) {
     return <section className={styles.page} aria-label="Dashboard"><p className={styles.note}>No Dashboard access is assigned. Choose an authorized menu or contact your Superadmin.</p></section>;
   }
+  const cards = mothys ? [...state.cards.filter((c) => c.kind === 'tally'), mothys, ...state.cards.filter((c) => c.kind !== 'tally')] : state.cards;
   const { overall } = state;
 
   return (
@@ -172,10 +194,10 @@ export default function OverallDashboard() {
           </div>
 
           <div className={styles.projects} aria-label="Projects">
-            {state.cards.map((project) => (
+            {cards.map((project) => (
               <ProjectUsageCard key={project.code} project={project} selected={null} onSelect={open} canOpen={(category) => canOpen(project.code, category)} />
             ))}
-            {state.cards.length === 0 && !state.error && <p className={styles.note}>No products to show.</p>}
+            {cards.length === 0 && !state.error && <p className={styles.note}>No products to show.</p>}
           </div>
         </>
       )}

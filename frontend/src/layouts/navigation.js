@@ -35,6 +35,11 @@ export const PROJECT_MENU = [PROJECT_PAGES.add, PROJECT_PAGES.list];
 /** Navbar title for a path: "Dashboard", or "<Project> · <Page>". */
 export function getPageTitle(pathname, search = '') {
   if (pathname === '/dashboard') return 'Dashboard';
+  if (pathname.startsWith('/mothys/reports/')) return `Mothys Reports · ${pathname.endsWith('customer-details') ? 'Customer Details Report' : pathname.endsWith('user-performance') ? 'User Performance Report' : 'License Expiry Report'}`;
+  if (pathname.startsWith('/product/')) return `Tally SL Products · Mothys · ${pathname.includes('/dashboard') ? 'Dashboard' : 'Customers'}`;
+  if (pathname.startsWith('/project-management')) {
+    return `Project Management · ${pathname.endsWith('/add') ? 'Add / Connect Project' : pathname.endsWith('/status') ? 'API Integration Status' : pathname.endsWith('/integration') ? 'API Integration' : 'Project List'}`;
+  }
   if (pathname.startsWith('/tally/')) {
         if (pathname.startsWith('/tally/reports/')) return `GSTR Reports · ${pathname.endsWith('tally-details') ? 'Tally Details Report' : pathname.endsWith('user-performance') ? 'User Performance Report' : 'License Expiry Report'}`;
     const m = pathname.match(/^\/tally\/([^/]+)\/(dashboard|usage|customers|transfers)/);
@@ -61,4 +66,5 @@ export function getPageTitle(pathname, search = '') {
 
 /** GSTR/Tally list pages that fill the viewport (white panel scrolls inside; the page itself does not). Detail pages and PRN pages are not matched. */
 export const isTallyFillPage = (pathname) =>
+  /^\/product\/[^/]+\/customers(\/\d+)?\/?$/.test(pathname) || /^\/mothys\/reports\//.test(pathname) ||
   /^\/tally\/reports\/(license-expiry|tally-details|user-performance)\/?$/.test(pathname) || /^\/tally\/[^/]+\/(customers(\/\d+)?|transfers|usage\/[^/]+)\/?$/.test(pathname);
