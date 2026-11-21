@@ -71,3 +71,70 @@
 .iconDanger { background: #b3261e; border-color: #b3261e; }
 .iconDanger:hover:not(:disabled) { background: #8e1d17; }
 @media (max-width: 760px) { .cardBody .table { display: block; overflow-x: auto; } }
+
+/* Unified customer card (no tabs) */
+.hdr { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; line-height: 1.3; }
+.hdrName { font-weight: 700; overflow-wrap: anywhere; }
+.hdrSep { color: #9fb2c8; font-weight: 400; }
+.hdr .mono { font-size: 13px; font-weight: 600; color: #46607f; }
+.unified { padding-top: 4px; }
+.unified > .section h3 { font-size: 13.5px; text-transform: none; }
+.badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.sub { margin: 10px 0 4px; font-size: 12px; font-weight: 600; color: #46607f; }
+.tableWrap { overflow-x: auto; margin-top: 6px; }
+.tableWrap .table { margin-top: 0; min-width: 520px; }
+.actMenu { margin-top: 10px; border: 1px solid #d6e3f2; border-radius: 8px; background: #f7faff; }
+.actMenu > summary { padding: 8px 12px; font-size: 13px; font-weight: 600; color: var(--navy-800, #12305a); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.actMenu > summary::-webkit-details-marker { display: none; }
+.actMenu > summary::after { content: '▾'; font-size: 12px; transition: transform .15s; }
+.actMenu[open] > summary::after { transform: rotate(180deg); }
+.actMenu > summary:focus-visible { outline: 2px solid #2b7bd6; outline-offset: 1px; border-radius: 8px; }
+.actMenu > .actions, .actMenu > .grid { padding: 0 12px 10px; }
+.actMenu .btn { height: 34px; padding: 0 12px; font-size: 13px; }
+.inline { display: inline-flex; gap: 6px; align-items: center; }
+.inline input { width: 70px; height: 34px; box-sizing: border-box; padding: 0 8px; border: 1px solid #b9cde4; border-radius: 6px; font: inherit; }
+@media (max-width: 760px) { .unified .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .unified .grid { grid-template-columns: 1fr; } }
+.unified .field input, .unified .field select { height: 38px; box-sizing: border-box; }
+.pwOut { width: 150px; height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #b9cde4; border-radius: 6px; background: #f8fbff; font-size: 13px; }
+.actMenu .actions { align-items: center; }
+/* Always-open action toolbar: Password [reset][show][copy] | Extend Trial [days][tick][x] | Suspend */
+.actMenu { padding: 8px 12px 10px; }
+.actMenu > .sub { margin: 0 0 8px; }
+.actMenu > .actions { padding: 0; gap: 10px 16px; }
+.actMenu .btn { height: 40px; }
+.pwOut { width: 140px; }
+.iconLite { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid #b9cde4; border-radius: 7px; background: #fff; color: var(--navy-800, #12305a); cursor: pointer; }
+.iconLite:hover:not(:disabled) { background: #eef5fd; }
+.iconLite:disabled { opacity: .45; cursor: not-allowed; }
+.iconLite:focus-visible, .tickBtn:focus-visible { outline: 2px solid #2b7bd6; outline-offset: 2px; }
+.tickBtn { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid #1b7f4b; border-radius: 7px; background: #1b7f4b; color: #fff; cursor: pointer; }
+.tickBtn:hover:not(:disabled) { background: #156a3e; }
+.tickBtn:disabled { opacity: .45; cursor: not-allowed; }
+.daysIn { width: 120px; height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid #b9cde4; border-radius: 6px; font: inherit; font-size: 13px; }
+.toast { position: fixed; bottom: max(20px, env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 200; padding: 8px 16px; border-radius: 8px; background: #002b49; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+/* Account / License Actions: ONE row, labels above, 40px controls, wraps (never overlaps) on narrow screens */
+.actRow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; min-width: 0; }
+.actRow > * { min-width: 0; }
+.col { display: grid; gap: 2px; min-width: 0; }
+.lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .2px; color: #6b7f99; }
+.actRow .btn { height: 40px; padding: 0 12px; white-space: nowrap; }
+.actRow .pwOut { width: 120px; }
+.actRow .daysIn { width: 110px; }
+.actRow .field { gap: 2px; }
+.actRow .field input, .actRow .field select { height: 40px; box-sizing: border-box; }
+.fLic { width: 140px; }
+.fDur { width: 90px; }
+/* one row on desktop, ending with the navy check; scrolls sideways (no overlap) when narrower */
+.actRow { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.actRow > * { flex: none; }
+.actRow .pwOut { width: 104px; }
+.actRow .btn { padding: 0 10px; }
+.fLic { width: 124px; }
+.fDur { width: 72px; }
+@media (max-width: 760px) { .actRow { flex-wrap: wrap; overflow-x: visible; } }
+/* History tables: ~5 rows visible, the table scrolls itself (header stays), shrinks to fit when fewer rows */
+.scroll5 { max-height: 222px; overflow: auto; scrollbar-width: thin; scrollbar-color: #9fb6d1 transparent; border: 1px solid #e3ecf6; border-radius: 6px; }
+.scroll5::-webkit-scrollbar { width: 6px; height: 6px; }
+.scroll5::-webkit-scrollbar-thumb { background: #9fb6d1; border-radius: 3px; }
+.scroll5 thead th { position: sticky; top: 0; z-index: 1; background: #f1f6fc; }

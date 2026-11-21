@@ -39,6 +39,7 @@ def _view(row, now, user, code):
         "code": code,
         "mode": row.visibility_mode if row else V.SHOW,
         "visible_from_utc": row.visible_from_utc.isoformat() if row and row.visible_from_utc else None,
+        "visible_until_utc": row.visible_until_utc.isoformat() if row and row.visible_until_utc else None,
         "effective": row.is_effective(now) if row else True,
         "version": row.concurrency_version if row else 0,
         "can_edit": can_manage(user, code),
@@ -73,7 +74,7 @@ class CardVisibilityDetailView(APIView):
         if mode not in (V.SHOW, V.HIDDEN, V.SCHEDULED):
             raise ValidationError({"mode": ["Choose Show Now, Hide or Schedule."]})
         now = timezone.now()
-        when = None
+        when = until = None
         if mode == V.SCHEDULED:
             raw = request.data.get("visible_from_utc")
             when = parse_datetime(raw) if isinstance(raw, str) else None
@@ -81,6 +82,13 @@ class CardVisibilityDetailView(APIView):
                 raise ValidationError({"visible_from_utc": ["Enter a valid date and time."]})
             if when <= now:
                 raise ValidationError({"visible_from_utc": ["The scheduled time must be in the future."]})
+            raw_end = request.data.get("visible_until_utc")
+            if raw_end not in (None, ""):
+                until = parse_datetime(raw_end) if isinstance(raw_end, str) else None
+                if until is None or timezone.is_naive(until):
+                    raise ValidationError({"visible_until_utc": ["Enter a valid end date and time."]})
+                if until <= when:
+                    raise ValidationError({"visible_until_utc": ["The end must be after the start."]})
         try:
             expected = int(request.data.get("version", 0))
         except (TypeError, ValueError):
@@ -93,7 +101,7 @@ class CardVisibilityDetailView(APIView):
             old_mode, old_from = (row.visibility_mode, row.visible_from_utc) if row else (V.SHOW, None)
             if row is None:
                 row = V(project_code=code)
-            row.visibility_mode, row.visible_from_utc, row.updated_by = mode, when, request.user
+            row.visibility_mode, row.visible_from_utc, row.visible_until_utc, row.updated_by = mode, when, until, request.user
             row.concurrency_version = current + 1
             row.save()
             Audit.objects.create(project_code=code, old_mode=old_mode, new_mode=mode, old_visible_from_utc=old_from, new_visible_from_utc=when, changed_by=request.user)

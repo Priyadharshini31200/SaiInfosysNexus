@@ -15,6 +15,7 @@ urlpatterns = [
     path(f"{ADMIN}/dashboard/", av.DashboardView.as_view()),
     path(f"{ADMIN}/notifications/", av.NotificationListView.as_view()),
     path(f"{ADMIN}/notifications/<int:pk>/read/", av.NotificationReadView.as_view()),
+    path(f"{ADMIN}/notifications/<int:pk>/dismiss/", av.NotificationDismissView.as_view()),
     path(f"{ADMIN}/products/<slug:product>/transfers/", av.TransferListView.as_view()),
     path(f"{V1}/<slug:product>/events/device-transfer/", events.DeviceTransferEventView.as_view()),
     path(f"{ADMIN}/usage/<str:category>/", av.UsageListView.as_view()),

@@ -107,7 +107,9 @@ class UniverseCardsView(UniverseProjectsView):
         now = timezone.now()
         cards, rows = [], []
         for p in universe_projects(request.user):
-            if p.status != IntegrationProject.ACTIVE or not p.enabled:
+            # every enabled, non-archived UNIVERSE project gets a card (SETUP_PENDING included); whether it is SHOWN is decided only by
+            # Dashboard Visibility (Configuration / the project's gear), never by the integration-setup status
+            if p.status in ("ARCHIVED", IntegrationProject.DISABLED) or not p.enabled:
                 continue
             if get_role(request.user) != Role.SUPERADMIN and not _can(request.user, p.code, ":dashboard", "view"):
                 continue
@@ -486,7 +488,7 @@ class UniverseCustomerActionView(UniverseCustomerView):
         elif action == "renew":
             s.renew_license(lic, who)
         elif action == "set-license":
-            s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"))
+            s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"), custom_days=body.get("custom_days"), allow_custom=True)
         elif action == "inactivate":
             s.set_customer_active(c, False, who)
         elif action == "reactivate":

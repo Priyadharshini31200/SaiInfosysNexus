@@ -41,7 +41,7 @@ class CompanyProfileTests(TestCase):
 
     def test_validation(self):
         c = self.client_for(Role.SUPERADMIN, "co_boss2")
-        self.assertEqual(c.put(URL, {"name": ""}, format="multipart").status_code, 400)
+        self.assertEqual(c.put(URL, {"name": "A"}, format="multipart").status_code, 400)  # blank is allowed (optional); 1 character is not
         self.assertEqual(c.put(URL, {"name": "Acme", "gstin": "BAD"}, format="multipart").status_code, 400)
         bad = c.put(URL, {"name": "Acme", "logo": SimpleUploadedFile("x.png", b"not an image", "image/png")}, format="multipart")
         self.assertEqual(bad.status_code, 400)

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { dashboardApi } from '../api/dashboard';
 import { registrationsApi } from '../api/registrations';
 import { tallyApi } from '../api/tallysl';
+import { onVisibilityChanged } from '../utils/cardVisibility';
 import Alert from '../components/Alert';
 import ProjectUsageCard from '../components/ProjectUsageCard';
 import { useAuth } from '../context/AuthContext';
@@ -78,7 +79,8 @@ export default function OverallDashboard() {
     const load = () => dashboardApi.cardVisibility().then((d) => current && setVis(d.settings), () => {});
     load();
     const timer = setInterval(load, 30000);
-    return () => { current = false; clearInterval(timer); };
+    const off = onVisibilityChanged(load); // gear / Configuration changes apply here immediately
+    return () => { current = false; clearInterval(timer); off(); };
   }, []);
   // Mothys Inventory (API-connected, TALLY SL PRODUCTS group): its own Used / Not Used / Expire from the project-scoped API.
   // Super Admin only. While loading nothing is shown; on failure the card shows "unavailable", never a false zero.

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import DashboardVisibilityGear from '../../components/DashboardVisibilityGear';
+import gearStyles from '../../components/DashboardVisibilityGear.module.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import { integrationsApi } from '../../api/integrations';
 import styles from '../tally/Tally.module.css';
@@ -28,6 +30,7 @@ export default function ProductDashboardPage() {
   const go = (qs) => navigate(`/product/${code}/customers?${qs}`);
   return (
     <div className={styles.page}>
+      <div className={gearStyles.bar}><DashboardVisibilityGear code={code} /></div>
       <div className={styles.cards} role="list" aria-label="Customers by usage category">
         {USAGE.map(([key, label, usage]) => (
           <button key={key} type="button" role="listitem" className={styles.card} onClick={() => go(`usage=${usage}`)}>

@@ -26,6 +26,11 @@ const SOURCES = {
     editPath: (code, c) => `/product/${code}/customers/${c.id}`,
     remove: null,
   },
+  universe: { // UNIVERSE project: approved customers of THIS project only (server-side search); opens the unified Customer Details drawer
+    list: (code, search) => integrationsApi.universeCustomers(code, { search, page_size: 100 }).then((d) => d.results.filter((r) => r.kind === 'customer')),
+    editPath: (code, c) => `/universe/projects/${code}/customers?open=customer:${c.id}`,
+    remove: null,
+  },
 };
 const serialOf = (c) => String(c.serial_number || c.tally_serial || c.user_id || '');
 

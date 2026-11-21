@@ -23,6 +23,20 @@ class CardVisibilityTests(TestCase):
     def put(self, code, **body):
         return self.client.put(f"{URL}{code}/", body, format="json")
 
+    def test_schedule_with_end_time_window(self):
+        now = timezone.now()
+        start, end = now + timedelta(hours=1), now + timedelta(hours=3)
+        self.assertEqual(self.put("gstr2tally", mode="scheduled", visible_from_utc=start.isoformat(), visible_until_utc=start.isoformat(), version=0).status_code, 400)  # end must follow start
+        r = self.put("gstr2tally", mode="scheduled", visible_from_utc=start.isoformat(), visible_until_utc=end.isoformat(), version=0)
+        self.assertEqual(r.status_code, 200)
+        self.assertIsNotNone(r.data["visible_until_utc"])
+        row = V.objects.get(project_code="gstr2tally")
+        self.assertFalse(row.is_effective(now))                         # before the window
+        self.assertTrue(row.is_effective(now + timedelta(hours=2)))     # inside
+        self.assertFalse(row.is_effective(now + timedelta(hours=4)))    # after the end: hidden again
+        r = self.put("gstr2tally", mode="show", version=1)
+        self.assertIsNone(r.data["visible_until_utc"])                  # Show Now clears the window
+
     def test_default_visible_without_rows(self):
         r = self.client.get(f"{URL}gstr2tally/")
         self.assertEqual((r.data["mode"], r.data["effective"], r.data["version"]), ("show", True, 0))

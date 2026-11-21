@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import DashboardVisibilityGear from '../../components/DashboardVisibilityGear';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { integrationsApi } from '../../api/integrations';
 import { formatDateTime } from '../../utils/date';
@@ -33,6 +34,7 @@ export default function UniverseDashboardPage() {
         <strong>{{ ACTIVE: 'Active', DISABLED: 'Disabled', ARCHIVED: 'Archived', SETUP_PENDING: 'Setup Pending' }[data.project.status]}</strong>
         <ProjectActions project={data.project} grants={{ edit: grants?.edit, configure: grants?.configure, archive: grants?.archive }}
           label="Manage Project" state={{ from: `/universe/projects/${code}/dashboard` }} onChange={() => setRevision((v) => v + 1)} />
+        <DashboardVisibilityGear code={data.project.code} />
       </header>
       <div className={styles.cards} role="list" aria-label="Customers by usage category">
         {data.cards.map((c) => (

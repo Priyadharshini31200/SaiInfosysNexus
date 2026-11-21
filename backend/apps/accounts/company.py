@@ -42,8 +42,8 @@ class CompanyProfileView(APIView):
         errors = {}
         name = " ".join(str(request.data.get("name", "")).split())
         gstin = str(request.data.get("gstin", "")).strip().upper()
-        if not 2 <= len(name) <= 150:
-            errors["name"] = ["Company Name is required (2-150 characters)."]
+        if name and not 2 <= len(name) <= 150:  # optional; blank falls back to "Sai Infosys Nexus" in the header
+            errors["name"] = ["Company Name must be 2-150 characters, or leave it blank."]
         if gstin and not GSTIN.match(gstin):
             errors["gstin"] = ["Enter a valid 15-character GSTIN, or leave it blank."]
         logo = request.FILES.get("logo")
