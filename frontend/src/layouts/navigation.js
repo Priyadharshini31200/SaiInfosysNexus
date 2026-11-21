@@ -12,6 +12,10 @@ export const PROJECT_ITEMS = [
 ];
 
 // The Reports menu (shown to users who may view reports): one expandable item with a page per report.
+// Project Management (Universal API project registry UI) is ON HOLD: hidden from the sidebar and its routes redirect to the dashboard.
+// Its pages and the Super Admin backend APIs are kept; set to true to bring the menu and pages back.
+export const PROJECT_MANAGEMENT_ENABLED = false;
+
 export const REPORTS_MENU = { label: 'Reports', icon: ReportIcon };
 export const REPORT_PAGES = [
   { label: 'License Expiry Report', path: '/reports/license-expiry' },
@@ -34,9 +38,20 @@ export const PROJECT_MENU = [PROJECT_PAGES.add, PROJECT_PAGES.list];
 
 /** Navbar title for a path: "Dashboard", or "<Project> · <Page>". */
 export function getPageTitle(pathname, search = '') {
+  if (pathname === '/reports') return 'Nexus Consolidated Reports';
   if (pathname === '/dashboard') return 'Dashboard';
+  if (pathname === '/directory/tally') return 'Tally SL Projects';
+  if (pathname === '/directory/non-tally') return 'Non-Tally SL Projects';
+  if (pathname === '/reports/consolidated-expiry') return 'Reports · Consolidated This Month Expiry';
   if (pathname.startsWith('/mothys/reports/')) return `Mothys Reports · ${pathname.endsWith('customer-details') ? 'Customer Details Report' : pathname.endsWith('user-performance') ? 'User Performance Report' : 'License Expiry Report'}`;
   if (pathname.startsWith('/product/')) return `Tally SL Products · Mothys · ${pathname.includes('/dashboard') ? 'Dashboard' : 'Customers'}`;
+  if (pathname.startsWith('/universe')) {
+    const parts = pathname.split('/');
+    if (parts[2] === 'api' || parts[2] === 'logs') return 'UNIVERSE · API Integration';
+    if (parts[2] === 'projects' && parts[3] && parts[4] === 'customers') return `${parts[3]} · ${parts[5] === 'add' ? 'Add Customer' : 'Customers'}`;
+    if (parts[2] === 'projects' && parts[3] && parts[3] !== 'add') return `UNIVERSE · Projects · ${parts[3]}`;
+    return 'UNIVERSE · Projects';
+  }
   if (pathname.startsWith('/project-management')) {
     return `Project Management · ${pathname.endsWith('/add') ? 'Add / Connect Project' : pathname.endsWith('/status') ? 'API Integration Status' : pathname.endsWith('/integration') ? 'API Integration' : 'Project List'}`;
   }

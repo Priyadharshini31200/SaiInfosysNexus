@@ -1,0 +1,154 @@
+<title>Sai Infosys Nexus Overview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one centered reading column; sections are plain bands, only the flow diagram and checklist are set off */
+:root {
+  --bg: #f5f8fc; --surface: #ffffff; --fg: #12263f; --muted: #5a6f8a; --line: #d6e2f0;
+  --navy: #002b49; --accent: #2b7bd6; --ok: #1b7f4b; --okbg: #e1f4ea; --warn: #8a5a00; --warnbg: #fff4d6; --bad: #b3261e; --badbg: #fbe4e2;
+  --code: #eaf1fa;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1622; --surface: #112233; --fg: #e3ecf7; --muted: #93a8c2; --line: #24384e;
+  --navy: #4d8fd1; --accent: #6fb0f5; --ok: #6fd3a0; --okbg: #12332a; --warn: #f2c76b; --warnbg: #3a2e10; --bad: #f19a92; --badbg: #3d1a18; --code: #17293d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b1622; --surface: #112233; --fg: #e3ecf7; --muted: #93a8c2; --line: #24384e;
+  --navy: #4d8fd1; --accent: #6fb0f5; --ok: #6fd3a0; --okbg: #12332a; --warn: #f2c76b; --warnbg: #3a2e10; --bad: #f19a92; --badbg: #3d1a18; --code: #17293d; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--sans); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 30px; }
+header { display: grid; gap: 6px; border-bottom: 2px solid var(--navy); padding-bottom: 16px; }
+.eyebrow { font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; text-wrap: balance; }
+h2 { margin: 0 0 10px; font-size: 19px; text-wrap: balance; }
+h3 { margin: 0 0 4px; font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+section { display: grid; gap: 10px; min-width: 0; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+code, .mono { font-family: var(--mono); font-size: .9em; background: var(--code); padding: 1px 5px; border-radius: 4px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.col { min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+ul, ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.flow { display: grid; gap: 0; counter-reset: s; }
+.step { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.num { width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: #fff; display: grid; place-items: center; font: 600 13px var(--mono); }
+.who { font: 600 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.ok { background: var(--okbg); color: var(--ok); } .warn { background: var(--warnbg); color: var(--warn); } .bad { background: var(--badbg); color: var(--bad); }
+.check { list-style: none; padding: 0; counter-reset: c; }
+.check li { counter-increment: c; display: grid; grid-template-columns: 28px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.check li:first-child { border-top: 0; }
+.check li::before { content: counter(c); font: 600 13px var(--mono); color: var(--accent); }
+.note { padding: 10px 14px; border-left: 3px solid var(--warn); background: var(--warnbg); border-radius: 0 6px 6px 0; font-size: 14px; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 12px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Central licensing · status as of 21 Nov 2026</span>
+    <h1>Sai Infosys Nexus Overview</h1>
+    <p class="lead">One system that registers, approves, licenses and tracks customers for every Sai Infosys product. Customers, licenses, devices and usage are all controlled from Nexus.</p>
+  </header>
+
+  <section>
+    <h2>Product groups</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Group</th><th>Products</th><th>How it works</th></tr></thead>
+      <tbody>
+        <tr><td><b>Legacy</b></td><td>MOTHYS (legacy), GSTR2Tally, Barcode AutoPrint</td><td>Existing flows, unchanged</td></tr>
+        <tr><td><b>UNIVERSE</b></td><td>MMM / Mothys Inventory and every new project</td><td>Universal API: register → review → approve → device authorisation</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Main menu</h2>
+    <div class="cols">
+      <div class="col"><h3>Dashboard</h3><p>Overall cards: customers, active, expiring, expired.</p></div>
+      <div class="col"><h3>UNIVERSE → Projects</h3><p>Project list. <b>Edit Project</b> has Manage Customers, API Settings, Cancel and Save Changes.</p></div>
+      <div class="col"><h3>Project workspace</h3><p>A Dashboard and a Customer List for each project.</p></div>
+      <div class="col"><h3>API Integration</h3><p>Setup wizard, credentials, developer docs and sync logs.</p></div>
+      <div class="col"><h3>Reports &amp; Notifications</h3><p>Consolidated reports, expiry alerts.</p></div>
+      <div class="col"><h3>Users &amp; Permissions</h3><p>Admins work only through per-user module grants.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>UNIVERSE customer flow</h2>
+    <div class="col flow">
+      <div class="step"><span class="num">1</span><div><span class="who">External app → Nexus</span><h3>Register</h3><p><code>POST customers/register</code> returns <b>HTTP 202 PENDING_REVIEW</b>. Nothing is issued yet.</p></div></div>
+      <div class="step"><span class="num">2</span><div><span class="who">Superadmin / Admin</span><h3>Review in the approval popup</h3>
+        <ul>
+          <li>9-digit Serial / User ID, starts with 9, editable, regenerate icon</li>
+          <li>Temporary password: 3+ characters; show, copy and regenerate icons</li>
+          <li>License: Trial, Yearly, Lifetime or Custom, set in one row</li>
+          <li>Device Activation: AUTOMATIC</li>
+        </ul></div></div>
+      <div class="step"><span class="num">3</span><div><span class="who">Nexus</span><h3>Save &amp; Allow</h3><p>Creates the customer and license, then sends one welcome email with the User ID, temporary password, license type, expiry and login URL. Hold and Reject are also available.</p></div></div>
+      <div class="step"><span class="num">4</span><div><span class="who">Customer app → Nexus</span><h3>Authorise the device</h3><p><code>POST devices/authorize</code> returns AUTHORIZED and a session. A second device gets <b>409 TRANSFER_CONFIRMATION_REQUIRED</b> and must send <code>confirm_transfer</code>. <code>sessions/introspect</code> checks the session.</p></div></div>
+    </div>
+    <p class="lead">The temporary password must be changed at first login; rate limiting and lockout stay on. The activation key is internal, stored only as a hash, never shown or emailed.</p>
+  </section>
+
+  <section>
+    <h2>Customer Management card</h2>
+    <p>After approval a customer opens in one card with four tabs: <b>Customer</b>, <b>License</b>, <b>Usage &amp; Devices</b> and <b>History</b>.</p>
+    <ul>
+      <li>License tab: extend trial, renew, suspend or reactivate, change license type.</li>
+      <li>Bottom right: <b>Edit Customer</b> (opens the customer form, never Edit Project) and <b>Delete Customer</b> (asks first, then deletes permanently).</li>
+      <li>Delete a test customer and register again: it returns as Pending Review.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>API Integration for developers</h2>
+    <div class="cols">
+      <div class="col"><h3>Setup wizard</h3><p>Protocol, framework and authentication (Custom, Basic, OAuth2), then push (webhook) or poll, detect fields, and validate.</p></div>
+      <div class="col"><h3>Credentials</h3><p>Client ID plus a hashed API secret. The secret is shown once; rotation cancels the old one.</p></div>
+      <div class="col"><h3>Developer email</h3><p>Short: project, API base, Client ID, a register example and <b>one link</b> (24 hours, single use) that issues a new API secret.</p></div>
+      <div class="col"><h3>Sync Logs</h3><p>Received, rejected, unauthenticated and handoff-redeemed events. No secret, token or password is ever logged.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recent work</h2>
+    <p class="lead">Done locally only. Not committed, migrated on production or deployed.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Change</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>MMM001: the repeat registration never reached local Nexus; rejected registrations are now logged</td><td><span class="pill ok">Fixed</span></td></tr>
+        <tr><td>Developer email: one link, 6-digit code removed</td><td><span class="pill ok">Done</span></td></tr>
+        <tr><td>Approval popup: navy icon buttons, 3+ character password, one-row license, Trial Days field fix</td><td><span class="pill ok">Done</span></td></tr>
+        <tr><td>Customer card with four tabs and Edit / Delete icons</td><td><span class="pill ok">Done</span></td></tr>
+        <tr><td>Edit Project: Manage Customers button, centered layout</td><td><span class="pill ok">Done</span></td></tr>
+        <tr><td>Backend tests: all pass except 2 that already failed before (custom-auth 39/39)</td><td><span class="pill warn">2 old failures</span></td></tr>
+        <tr><td>Frontend: build OK, 16/16 tests</td><td><span class="pill ok">Pass</span></td></tr>
+        <tr><td>Screens checked in a browser</td><td><span class="pill bad">Not yet</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Before production</h2>
+    <ol class="check">
+      <li><span>Take a full SQL Server backup and test-restore it into a scratch database.</span></li>
+      <li><span>Deploy backend and frontend together, then run <code>migrate</code> (applies 0008). Rollback: <code>migrate integrations 0007</code> plus the backup.</span></li>
+      <li><span>Set <code>NEXUS_PUBLIC_API_BASE</code>, <code>NEXUS_PUBLIC_APP_URL</code> and working SMTP.</span></li>
+      <li><span>Check the public routes answer 401/405, not 404. <code>devices/authorize</code> returns 404 on production today.</span></li>
+      <li><span>Give every Admin per-user permission grants.</span></li>
+      <li><span>Smoke test with a test project: register, approve, email, device authorisation, delete.</span></li>
+      <li><span>Create MMM001 again on production and give Mothys those new credentials.</span></li>
+      <li><span>Regression check on legacy MOTHYS, GSTR2Tally and Barcode AutoPrint.</span></li>
+    </ol>
+    <p class="note">The local MMM001 Client ID and secret do not work on production. Do not hand them to the Mothys team.</p>
+  </section>
+
+  <footer>Prepared from the local Nexus workspace. Production was not checked.</footer>
+</div>

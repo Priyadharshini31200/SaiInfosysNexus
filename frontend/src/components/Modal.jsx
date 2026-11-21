@@ -5,7 +5,7 @@ import styles from './Modal.module.css';
 const open = []; // open dialogs, innermost last: Esc closes only the innermost
 
 /** Small centred dialog: backdrop click and Esc close it, focus moves in and is given back on close. */
-export default function Modal({ title, onClose, children, tone, wide }) {
+export default function Modal({ title, onClose, children, tone, wide, icon, dialogClass }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -24,9 +24,9 @@ export default function Modal({ title, onClose, children, tone, wide }) {
 
   return (
     <div className={styles.backdrop} data-modal onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={[styles.dialog, wide && styles.wide, tone && styles[tone]].filter(Boolean).join(' ')} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>
+      <div className={[styles.dialog, wide && styles.wide, tone && styles[tone], dialogClass].filter(Boolean).join(' ')} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>
         <header className={styles.head}>
-          <h2 className={styles.title}>{title}</h2>
+          <h2 className={styles.title}>{icon}{title}</h2>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close">
             <CloseIcon size={18} />
           </button>

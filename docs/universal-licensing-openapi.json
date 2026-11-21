@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/",
+      "url": "https://saitallyexpert.in/nexus/api/integrations/v1/",
       "description": "Production"
     },
     {
@@ -267,6 +267,8 @@
                   "ok": true,
                   "data": {
                     "verified": true,
+                    "device_authorized": false,
+                    "session_id": null,
                     "customer_id": 12,
                     "external_customer_id": "MOTHYS-1001",
                     "user_id": "912345678",
@@ -306,7 +308,7 @@
             }
           }
         },
-        "description": "Checks User ID + password (5 failures lock the account for 15 minutes). Does not create a device session.",
+        "description": "Checks User ID + password (5 failures lock the account for 15 minutes). Does not create a device session. Send device_id to learn whether this device already holds the licence: device_authorized=true means log in again with no activation key and no transfer.",
         "requestBody": {
           "required": true,
           "content": {
@@ -317,7 +319,8 @@
               "example": {
                 "project_code": "MOTHYS",
                 "user_id": "912345678",
-                "password": "Temp-Pass-1"
+                "password": "Temp-Pass-1",
+                "device_id": "PC-A1B2"
               }
             }
           }
@@ -503,7 +506,7 @@
             }
           }
         },
-        "description": "Emails a one-time 9-digit key to the registered address (valid 15 minutes, 3 requests/hour). The key is never returned by the API.",
+        "description": "Identify the customer with user_id plus EITHER the registered email OR the password (a wrong email counts as a failed attempt). Emails a one-time 9-digit key to the registered address (valid 15 minutes, 3 requests/hour). The key is never returned by the API.",
         "requestBody": {
           "required": true,
           "content": {
@@ -514,7 +517,7 @@
               "example": {
                 "project_code": "MOTHYS",
                 "user_id": "912345678",
-                "password": "Temp-Pass-1"
+                "email": "kumar@example.com"
               }
             }
           }
@@ -617,7 +620,7 @@
               "example": {
                 "project_code": "MOTHYS",
                 "user_id": "912345678",
-                "password": "Temp-Pass-1",
+                "email": "kumar@example.com",
                 "activation_key": "123456789",
                 "device_id": "PC-A1B2",
                 "device_name": "Office PC"

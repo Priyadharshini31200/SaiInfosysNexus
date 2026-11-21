@@ -8,7 +8,7 @@ import styles from './Drawer.module.css';
  * `actions` renders extra header buttons left of the close button. `flush` removes the body padding and scrolling, for content
  * that scrolls itself above a fixed footer.
  */
-export default function Drawer({ open, onClose, title, titleId, closeLabel = 'Close', actions = null, flush = false, children }) {
+export default function Drawer({ open, onClose, title, titleId, closeLabel = 'Close', actions = null, flush = false, wide = false, children }) {
   const closeRef = useRef(null);
   const returnFocusRef = useRef(null);
 
@@ -33,7 +33,7 @@ export default function Drawer({ open, onClose, title, titleId, closeLabel = 'Cl
     <>
       <div className={`${styles.backdrop} ${open ? styles.backdropVisible : ''}`} onClick={onClose} aria-hidden="true" />
       <aside
-        className={`${styles.drawer} ${open ? styles.open : ''}`}
+        className={`${styles.drawer} ${wide ? styles.wide : ''} ${open ? styles.open : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

@@ -9,6 +9,14 @@ LIC = {"license_id": 12, "customer_id": 12, "license_type": "TRIAL", "state": "A
        "expires_at": "2026-12-17T09:00:00Z", "serial_number": "912345678", "user_id": "912345678"}
 
 ENDPOINTS = [
+    {"id": "devices_authorize", "method": "POST", "path": "devices/authorize", "summary": "UNIVERSE: authorise this device (single-device, confirmed transfer)", "idempotent": False,
+     "description": "Verifies User ID + password + licence (an expired licence is denied with LICENSE_EXPIRED / HTTP 403 and no session) and authorises the device. If another device is active the answer is HTTP 409 TRANSFER_CONFIRMATION_REQUIRED (title: Account Already Active on Another System); show OK - Continue / Cancel, then call again with confirm_transfer true (OK: previous session revoked atomically, this device authorised) or false (Cancel: nothing changes). The internal activation key is never involved. A temporary password must be changed first (auth/change-password).",
+     "request": {"project_code": P, "user_id": "912345678", "password": "********", "device_id": "PC-OFFICE-01", "device_name": "Office PC", "confirm_transfer": None},
+     "response": {"status": "AUTHORIZED|TRANSFERRED|CANCELLED", "authorized": True, "session_token": "nxt_...", "session_id": 7, "device_id": "PC-OFFICE-01", "offline_lease_seconds": 86400}},
+    {"id": "tally_submit", "method": "POST", "path": "tally/submit", "summary": "UNIVERSE: submit Tally details for a pending registration", "idempotent": True,
+     "description": "Secure connector path for Tally-required projects. Mandatory: serial (9 digits), edition, tss_active, license_admin. Optional: tss_expiry, virtual_user_limit, gateway_server. Without them the registration stays Pending Tally Verification and no licence is issued.",
+     "request": {"project_code": P, "external_customer_id": "PMP-1001", "tally": {"serial": "756123456", "edition": "Gold", "tss_active": True, "license_admin": "Ravi"}},
+     "response": {"status": "PENDING_REVIEW", "registration_id": 5, "license_issued": False}, "http": 202},
     {"id": "register", "method": "POST", "path": "customers/register", "summary": "Register customer", "idempotent": True,
      "description": "Creates the Nexus customer, a 9-digit serial (= User ID), a temporary password, the licence and queues the welcome email. Repeat calls with the same Idempotency-Key replay the first answer. Paid licence types stay PENDING_APPROVAL until approved in Nexus.",
      "request": {"project_code": P, "external_customer_id": "MOTHYS-1001", "customer_name": "Kumar", "email": "kumar@example.com", "contact_number": "9876543210"},
@@ -23,20 +31,20 @@ ENDPOINTS = [
      "request": {"project_code": P, "send_welcome_email": True, "customers": [{"external_customer_id": "MOTHYS-1001", "customer_name": "Kumar", "email": "kumar@example.com", "contact_number": "9876543210"}]},
      "response": {"imported": 1, "failed": 0, "results": [{"index": 0, "external_customer_id": "MOTHYS-1001", "ok": True, "serial_number": "912345678"}]}},
     {"id": "auth_verify", "method": "POST", "path": "auth/verify", "summary": "Verify customer credentials",
-     "description": "Checks User ID + password (5 failures lock the account for 15 minutes). Does not create a device session.",
-     "request": {"project_code": P, "user_id": "912345678", "password": "Temp-Pass-1"},
-     "response": {"verified": True, "customer_id": 12, "external_customer_id": "MOTHYS-1001", "user_id": "912345678", "name": "Kumar", "email": "kumar@example.com", "must_change_password": True, "license": LIC, "active_devices": 0}},
+     "description": "Checks User ID + password (5 failures lock the account for 15 minutes). Does not create a device session. Send device_id to learn whether this device already holds the licence: device_authorized=true means log in again with no activation key and no transfer.",
+     "request": {"project_code": P, "user_id": "912345678", "password": "Temp-Pass-1", "device_id": "PC-A1B2"},
+     "response": {"verified": True, "device_authorized": False, "session_id": None, "customer_id": 12, "external_customer_id": "MOTHYS-1001", "user_id": "912345678", "name": "Kumar", "email": "kumar@example.com", "must_change_password": True, "license": LIC, "active_devices": 0}},
     {"id": "change_password", "method": "POST", "path": "auth/change-password", "summary": "Change password (first login)",
      "request": {"project_code": P, "user_id": "912345678", "current_password": "Temp-Pass-1", "new_password": "MyNewPass#9"}, "response": {"changed": True}},
     {"id": "license_validate", "method": "POST", "path": "licenses/validate", "summary": "Validate license",
      "description": "Identify the customer with user_id, serial_number or external_customer_id. state: ACTIVE | EXPIRED | PENDING_APPROVAL | SUSPENDED | INACTIVE.",
      "request": {"project_code": P, "user_id": "912345678"}, "response": {**LIC, "valid": True, "active_devices": 1, "device_limit": 1}},
     {"id": "activation_request", "method": "POST", "path": "activation/request", "summary": "Request activation key",
-     "description": "Emails a one-time 9-digit key to the registered address (valid 15 minutes, 3 requests/hour). The key is never returned by the API.",
-     "request": {"project_code": P, "user_id": "912345678", "password": "Temp-Pass-1"}, "response": {"sent_to": "ku***@example.com", "expires_in_seconds": 900, "email_status": "accepted"}},
+     "description": "Identify the customer with user_id plus EITHER the registered email OR the password (a wrong email counts as a failed attempt). Emails a one-time 9-digit key to the registered address (valid 15 minutes, 3 requests/hour). The key is never returned by the API.",
+     "request": {"project_code": P, "user_id": "912345678", "email": "kumar@example.com"}, "response": {"sent_to": "ku***@example.com", "expires_in_seconds": 900, "email_status": "accepted"}},
     {"id": "activation_verify", "method": "POST", "path": "activation/verify", "summary": "Verify activation key / activate device",
      "description": "Success returns a session. If another device holds the licence the answer is HTTP 409 TRANSFER_CONFIRMATION_REQUIRED with a transfer_token; call devices/transfer/confirm next.",
-     "request": {"project_code": P, "user_id": "912345678", "password": "Temp-Pass-1", "activation_key": "123456789", "device_id": "PC-A1B2", "device_name": "Office PC"},
+     "request": {"project_code": P, "user_id": "912345678", "email": "kumar@example.com", "activation_key": "123456789", "device_id": "PC-A1B2", "device_name": "Office PC"},
      "response": {"session_token": SESSION, "session_id": 7, "device_id": "PC-A1B2", "license": LIC, "authorization": "ACTIVE"},
      "conflict": {"title": "License Already Active on Another Device", "message": "Your previous device session will be terminated and this device will become active. Do you want to continue?", "actions": [{"id": "cancel", "label": "Cancel"}, {"id": "confirm", "label": "OK – Activate This Device"}], "transfer_token": "nxx_example", "expires_in_seconds": 600, "active_device_name": "Office PC"}},
     {"id": "transfer_confirm", "method": "POST", "path": "devices/transfer/confirm", "summary": "Confirm or cancel device transfer",
@@ -72,13 +80,26 @@ ERRORS = [
 ]
 
 
+def for_project(value, code):
+    """Examples are written with the MOTHYS code; documentation for another project must show that project's code only."""
+    if not code or code == P:
+        return value
+    if isinstance(value, str):
+        return value.replace(P, code)
+    if isinstance(value, dict):
+        return {k: for_project(v, code) for k, v in value.items()}
+    if isinstance(value, list):
+        return [for_project(v, code) for v in value]
+    return value
+
+
 def base_url(request_base):
     return request_base.rstrip("/") + "/integrations/v1/"
 
 
 def openapi(api_base, project_code=None):
     paths = {}
-    for e in ENDPOINTS:
+    for e in for_project(ENDPOINTS, project_code):
         path = "/" + e["path"]
         op = {"summary": e["summary"], "operationId": e["id"], "security": [{"ClientId": [], "ClientSecret": []}], "tags": ["Universal Licensing"],
               "responses": {str(e.get("http", 200)): {"description": "Success", "content": {"application/json": {"example": {"ok": True, "data": e["response"], "request_id": "…"}}}},
@@ -112,7 +133,7 @@ def markdown(api_base, project=None):
            "```", "X-Client-Id: <client id>", "X-Client-Secret: <api secret>", "Content-Type: application/json", "```", "",
            "Credentials are scoped: `project_code` must match the credentials. Rate limit: 300 requests/minute per client.", "",
            "## Response format", "```json", json.dumps({"ok": True, "data": {"...": "..."}, "request_id": "a1b2…"}, indent=2), json.dumps({"ok": False, "error": {"code": "VALIDATION_ERROR", "message": "…", "fields": {}}, "request_id": "a1b2…"}, indent=2), "```", ""]
-    for e in ENDPOINTS:
+    for e in for_project(ENDPOINTS, project.code if project else None):
         out += [f"## {e['summary']}", f"`{e['method']} {base}{e['path']}`", ""]
         if e.get("description"):
             out += [e["description"], ""]

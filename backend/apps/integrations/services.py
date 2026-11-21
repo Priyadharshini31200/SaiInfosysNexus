@@ -16,11 +16,11 @@ from django.utils import timezone
 from apps.registrations import mailer
 
 from .models import (
-    IntegrationActivationKey, IntegrationAudit, IntegrationCredential, IntegrationCustomer, IntegrationIdempotency,
-    IntegrationLicense, IntegrationProject, IntegrationSession, IntegrationSyncLog, IntegrationUsageEvent,
+    IntegrationActivationKey, IntegrationApiConfig, IntegrationAudit, IntegrationCredential, IntegrationCustomer, IntegrationIdempotency,
+    IntegrationLicense, IntegrationProject, IntegrationRenewal, IntegrationSession, IntegrationSyncLog, IntegrationTallyInfo, IntegrationUsageEvent,
 )
 
-USAGE_EVENTS = ("APP_OPEN", "LOGIN", "HEARTBEAT", "LOGOUT", "DEVICE_ACTIVATION", "DEVICE_TRANSFER")
+USAGE_EVENTS = ("APP_OPEN", "LOGIN", "HEARTBEAT", "LOGOUT", "DEVICE_ACTIVATION", "DEVICE_TRANSFER", "IDLE_START", "IDLE_END")
 ACTIVITY_EVENTS = ("APP_OPEN", "LOGIN", "HEARTBEAT", "DEVICE_ACTIVATION")  # events that count as "the customer used the app"
 SYNC_EVENTS = ("CUSTOMER_UPDATED", "EMAIL_CHANGED", "CONTACT_UPDATED", "CUSTOMER_INACTIVATED", "CUSTOMER_REACTIVATED", "LICENSE_STATUS_UPDATED")
 MAX_LOGIN_FAILURES, LOCK_MINUTES = 5, 15
@@ -80,6 +80,43 @@ def issue_credential(project):
     return cred, secret
 
 
+# ------------------------------------------------------------------ developer credential handoff (one-time link + out-of-band code)
+HANDOFF_SALT, HANDOFF_HOURS = "nexus.int.dev-credential-handoff", 24
+
+
+def issue_handoff(project):
+    """ONE short-lived, single-use, signed link bound to the project's CURRENT credential (and the tail of its secret hash, so it dies after use or
+    after any rotation). No separate code. Nothing is stored; no secret is recovered or created here."""
+    from django.core import signing
+    cred = IntegrationCredential.objects.filter(project=project, active=True).first()
+    if cred is None:
+        raise IntegrationError("NO_CREDENTIALS", "This project has no active Client ID. Issue credentials first.", 409)
+    token = signing.dumps({"c": cred.pk, "p": project.code, "h": cred.secret_hash[-16:]}, salt=HANDOFF_SALT)
+    return cred, token
+
+
+def redeem_handoff(token, ip=""):
+    """The developer opens the link and confirms: Nexus generates a NEW secret for the SAME Client ID, shows it once, and the previous secret
+    stops working. Expired, used, rotated, tampered or wrong-project links are refused."""
+    from django.core import signing
+    try:
+        data = signing.loads(str(token or ""), salt=HANDOFF_SALT, max_age=HANDOFF_HOURS * 3600)
+    except signing.SignatureExpired:
+        raise IntegrationError("HANDOFF_EXPIRED", "This credential link has expired. Ask the Nexus administrator to send a new one.", 400)
+    except signing.BadSignature:
+        raise IntegrationError("HANDOFF_INVALID", "This credential link is invalid.", 400)
+    with transaction.atomic():
+        cred = IntegrationCredential.objects.select_for_update().select_related("project").filter(pk=data.get("c"), active=True).first()
+        if cred is None or cred.project.code != data.get("p") or cred.secret_hash[-16:] != data.get("h"):
+            raise IntegrationError("HANDOFF_USED", "This credential link was already used or the credentials were rotated. Ask for a new link.", 400)
+        secret = "nxs_" + secrets.token_urlsafe(32)
+        cred.secret_hash, cred.secret_hint = _sha(secret), secret[-4:]
+        cred.save(update_fields=["secret_hash", "secret_hint"])
+        audit(cred.project, "credentials.handoff_redeemed", cred.client_id, ip=ip)  # never the secret or the token
+    return {"project_code": cred.project.code, "project_name": cred.project.name, "client_id": cred.client_id, "api_secret": secret,
+            "note": "Shown once. Store it in your backend's secret store. The previous secret no longer works."}
+
+
 def authenticate_client(client_id, secret):
     cred = IntegrationCredential.objects.select_related("project").filter(client_id=client_id or "", active=True).first()
     if not cred or not secret or not hmac.compare_digest(cred.secret_hash, _sha(secret)):
@@ -90,20 +127,56 @@ def authenticate_client(client_id, secret):
 PROJECT_FIELDS = (
     "name", "frontend_url", "backend_url", "auth_method", "framework", "health_path", "registration_method", "tally_serial_required",
     "serial_prefix", "serial_length", "activation_key_length", "device_limit", "default_license_type", "trial_days",
-    "transfer_policy", "auto_sync", "usage_tracking", "welcome_email_mode", "activation_email_mode",
+    "transfer_policy", "auto_sync", "usage_tracking", "welcome_email_mode", "activation_email_mode", "validity_years",
 )
 
 
 def validate_project_data(data, creating=True):
     errors, clean = {}, {}
     code = str(data.get("code", "")).strip().upper()
-    if creating:
+    auto = creating and not code  # the Add Project form never sends a code: the server allocates PREFIX001 atomically
+    if auto:
+        name = normalize_project_name(data.get("name", ""))
+        if not name:
+            errors["name"] = ["Project Name is required."]
+        elif not re.fullmatch(r"[A-Z0-9][A-Z0-9 &.\-_/()]{1,119}", name):
+            errors["name"] = ["Use 2-120 letters, digits, spaces and & . - _ / ( )."]
+        elif IntegrationProject.objects.filter(name__iexact=name).exists():
+            errors["name"] = ["A project with this name already exists."]
+        clean["name"] = name
+        email = str(data.get("developer_email", "")).strip()
+        tally_on = str(data.get("tally_serial_required", "")).strip().lower() in ("true", "1", "yes", "on")
+        tally_sl = str(data.get("category", "")).lower() == "tally"  # created from Tally SL Projects: API integration whether Tally Required is Yes or No
+        if tally_on or tally_sl or email:  # Developer Email optional only for manual Non-Tally projects
+            try:
+                validate_email(email)
+            except DjangoValidationError:
+                errors["developer_email"] = ["Developer Email is invalid."]
+        if tally_sl and not tally_on:
+            clean["registration_method"] = "API_TALLY"  # Tally SL category, Tally verification not required; stays API-integrated, Setup Pending
+        elif not tally_on:  # new Non-Tally projects: customers are managed manually in Nexus, no API integration required
+            clean["registration_method"], clean["status"] = "MANUAL", IntegrationProject.ACTIVE
+        clean["_developer_email"] = email
+        clean["_auto_code"] = True
+        cp = str(data.get("customer_path", "")).strip()
+        if cp and not cp.startswith("/"):
+            errors["customer_path"] = ["The endpoint must start with /"]
+        clean["_customer_path"] = cp or "/customers"
+    elif creating:
         if not re.fullmatch(r"[A-Z][A-Z0-9_]{1,39}", code):
             errors["code"] = ["Project code must be 2-40 characters: capital letters, digits and underscore, starting with a letter."]
         elif IntegrationProject.objects.filter(code=code).exists():
             errors["code"] = ["A project with this code already exists."]
         clean["code"] = code
     for f in ("name", "frontend_url", "backend_url"):
+        if f == "name" and auto:
+            continue
+        if f == "frontend_url" and not creating and "frontend_url" in data:  # optional for backend-only integrations
+            clean[f] = str(data.get(f, "")).strip()
+            continue
+        if f in ("frontend_url", "backend_url") and auto:
+            clean[f] = str(data.get(f, "")).strip()  # may stay empty until the API workspace (project is saved as Setup Pending)
+            continue
         if f in data or creating:
             v = str(data.get(f, "")).strip()
             if not v:
@@ -111,16 +184,14 @@ def validate_project_data(data, creating=True):
             clean[f] = v
     for f in ("frontend_url", "backend_url"):
         if clean.get(f) and not re.match(r"^https?://[^\s/]+", clean[f]):
-            errors[f] = ["Enter a full URL starting with https://"]
+            errors[f] = ["Enter a valid backend API URL beginning with https://"]
     for f in PROJECT_FIELDS:
         if f in data and f not in clean:
             clean[f] = data[f]
     for f in ("tally_serial_required", "auto_sync", "usage_tracking"):
-        if f in clean:
-            clean[f] = bool(clean[f])
-    if clean.get("tally_serial_required"):
-        errors["tally_serial_required"] = ["Tally-serial projects use the Tally SL module; this universal API is for non-Tally products."]
-    for f, lo, hi in (("serial_length", 6, 18), ("activation_key_length", 6, 12), ("device_limit", 1, 20), ("trial_days", 1, 365)):
+        if f in clean:  # a form posts "true"/"false" strings: never treat the text "false" as True
+            clean[f] = clean[f].strip().lower() in ("true", "1", "yes", "on") if isinstance(clean[f], str) else bool(clean[f])
+    for f, lo, hi in (("serial_length", 6, 18), ("activation_key_length", 6, 12), ("device_limit", 1, 20), ("trial_days", 1, 365), ("validity_years", 1, 10)):
         if f in clean:
             try:
                 clean[f] = int(clean[f])
@@ -149,7 +220,55 @@ def validate_project_data(data, creating=True):
     return clean, errors
 
 
+def normalize_project_name(raw):
+    return re.sub(r"\s+", " ", str(raw or "")).strip().upper()
+
+
+def code_prefix(name):
+    """First meaningful alphabetic token of the name, at most 6 letters (GSTR2TALLY -> GSTR, MOTHYS INVENTORY -> MOTHYS, PMP RICE MILL -> PMP)."""
+    for token in re.split(r"[^A-Za-z]+", str(name or "")):
+        if token:
+            return token.upper()[:6]
+    return "PRJ"
+
+
+def next_project_code(name):
+    """The next free PREFIX### (preview; the authoritative value is allocated inside create_project). Continues past 999 as PREFIX1000."""
+    prefix = code_prefix(name)
+    used = [int(m.group(1)) for c in IntegrationProject.objects.filter(code__istartswith=prefix).values_list("code", flat=True)
+            if (m := re.fullmatch(rf"{prefix}(\d{{3,}})", c.upper()))]
+    return f"{prefix}{(max(used) + 1 if used else 1):03d}"
+
+
+def project_config_defaults(developer_email, customer_path="/customers"):
+    return {
+        "customer_path": customer_path,
+        "developer_email": developer_email,
+        "field_mapping": json.dumps({"external_customer_id": "id", "customer_name": "name", "email": "email", "contact_number": "phone"}),
+        "pagination": json.dumps({"type": "page", "page_param": "page", "size_param": "page_size", "page_size": 100, "results_path": "results"}),
+    }
+
+
 def create_project(clean, actor=""):
+    if clean.pop("_auto_code", False):
+        dev_email = clean.pop("_developer_email", "")
+        cust_path = clean.pop("_customer_path", "/customers")
+        for _ in range(8):  # unique constraint + retry = collision-free under concurrent creation
+            clean["code"] = next_project_code(clean["name"])
+            try:
+                with transaction.atomic():
+                    project, cred, secret = _create_project(clean, actor)
+                    IntegrationApiConfig.objects.get_or_create(project=project, defaults=project_config_defaults(dev_email, cust_path))
+                return project, cred, secret
+            except IntegrityError:
+                continue
+        raise IntegrationError("CODE_ALLOCATION_FAILED", "Generated Project Code already exists; retry allocation.", 409)
+    return _create_project(clean, actor)
+
+
+def _create_project(clean, actor=""):
+    clean.setdefault("license_policy", "CALENDAR")  # new Universal projects use exact calendar years; existing ones keep their rule
+    clean.setdefault("trial_days", 3)
     with transaction.atomic():
         project = IntegrationProject.objects.create(**clean)
         cred, secret = issue_credential(project)
@@ -198,16 +317,40 @@ def license_payload(lic):
     }
 
 
-def grant(lic, license_type, now=None, days=None):
+def add_calendar_years(moment, years):
+    """Exact calendar-year arithmetic. Leap-day rule: a licence starting on 29 February that ends in a non-leap year ends on 28 February."""
+    try:
+        return moment.replace(year=moment.year + years)
+    except ValueError:  # 29 Feb -> non-leap year
+        return moment.replace(year=moment.year + years, day=28)
+
+
+def record_term(lic, action, previous, actor="", years=None):
+    IntegrationRenewal.objects.create(license=lic, action=action, license_type=lic.license_type, years=years, previous_expires_at=previous,
+                                      new_expires_at=lic.expires_at, actor=actor[:80])
+
+
+def _years_expiry(lic, base, years=None):
+    project = lic.customer.project
+    if project.license_policy == "CALENDAR":
+        return add_calendar_years(base, years or project.validity_years)
+    return base + timedelta(days=365)  # LEGACY projects (Mothys): the existing rule, unchanged
+
+
+def grant(lic, license_type, now=None, days=None, years=None, actor=""):
     now = now or timezone.now()
+    previous = lic.expires_at
     lic.license_type, lic.status, lic.starts_at = license_type, IntegrationLicense.ACTIVE, now
     if license_type == IntegrationLicense.LIFETIME:
         lic.expires_at = None
     elif license_type == IntegrationLicense.TRIAL:
         lic.expires_at = now + timedelta(days=days or lic.customer.project.trial_days)
+    elif license_type == "CUSTOM":  # new Universal projects only: an approved number of days from the start date
+        lic.expires_at = now + timedelta(days=int(days))
     else:
-        lic.expires_at = now + timedelta(days=365)
+        lic.expires_at = _years_expiry(lic, now, years)
     lic.save()
+    record_term(lic, "GRANTED", previous, actor, years)
 
 
 # ------------------------------------------------------------------ validation
@@ -240,18 +383,39 @@ def _clean_customer(data, require_all=True):
 
 
 # ------------------------------------------------------------------ welcome email
+SHORT_NAMES = {"MOTHYS": "Mothys Inventory"}  # name used in customer e-mails
+PLAN_LABEL = {"TRIAL": "Trial", "ONE_YEAR": "1 Year", "LIFETIME": "Lifetime", "CUSTOM": "Custom"}
+
+
+def trial_days(lic):
+    """Length of a Trial in days (start -> expiry, so an extension is included); None for other types."""
+    if lic.license_type != IntegrationLicense.TRIAL or not lic.starts_at or not lic.expires_at:
+        return None
+    return max(round((lic.expires_at - lic.starts_at).total_seconds() / 86400), 1)
+
+
+def _validity_text(lic):
+    if lic.status == IntegrationLicense.PENDING:
+        return "Pending approval – application access starts once Sai Infosys approves your licence"
+    if lic.license_type == IntegrationLicense.LIFETIME:
+        return "No expiry"
+    when = timezone.localtime(lic.expires_at).strftime("%d/%m/%Y") if lic.expires_at else "—"
+    days = trial_days(lic)
+    return f"{days} days (expires {when})" if days else f"Expires {when}"
+
+
 def send_welcome(customer, password):
     """Sends the credentials once. The password is only ever held in memory here and is never stored or logged."""
-    project = customer.project
-    plan = {"TRIAL": "Trial", "ONE_YEAR": "Annual", "LIFETIME": "Lifetime"}.get(customer.license.license_type, customer.license.license_type)
-    rows = [("Product", project.name), ("User ID", customer.user_id), ("Serial Number", customer.serial_number),
-            ("Temporary Password", password), ("License Type", plan), ("Login URL", project.frontend_url)]
-    text = (f"Dear {customer.name},\n\nYour {project.name} account has been created successfully.\n\n"
-            f"Product: {project.name}\n\nUser ID: {customer.user_id}\n\nSerial Number: {customer.serial_number}\n\n"
-            f"Temporary Password: {password}\n\nLicense Type: {plan}\n\nLogin URL:\n{project.frontend_url}\n\n"
-            "Regards,\nSai Infosys\nConnect. Simplify. Succeed.")
-    subject = f"{project.name} – Login Credentials"
-    status = mailer.deliver(subject, text, customer.email, html=mailer.render_html(subject, f"Your {project.name} account has been created successfully.", rows),
+    project, lic = customer.project, customer.license
+    name = SHORT_NAMES.get(project.code, project.name)
+    plan, validity = PLAN_LABEL.get(lic.license_type, lic.license_type), _validity_text(lic)
+    label = "Trial Days / Expiry Date" if lic.license_type == IntegrationLicense.TRIAL else "Expiry Date"
+    rows = [("Serial Number", customer.serial_number), ("User ID", customer.user_id), ("Temporary Password", password), ("License Type", plan), (label, validity), ("Login", project.frontend_url)]
+    text = (f"Dear {customer.name},\n\nYour {name} account has been created successfully.\n\n"
+            f"Serial Number: {customer.serial_number}\n\nUser ID: {customer.user_id}\n\nTemporary Password: {password}\n\n"
+            f"License Type: {plan}\n\n{label}: {validity}\n\nLogin:\n{project.frontend_url}\n\nRegards,\nSai Infosys")
+    subject = f"{name} – Your Login Details"
+    status = mailer.deliver(subject, text, customer.email, html=mailer.render_html(subject, f"Your {name} account has been created successfully.", rows),
                             kind="int_welcome", project=project.code, event_id=f"int-welcome-{customer.pk}-{secrets.token_hex(3)}")
     customer.welcome_email_status = status
     customer.save(update_fields=["welcome_email_status", "updated_at"])
@@ -282,7 +446,7 @@ def idem_lookup(project, endpoint, key, payload):
 
 
 # ------------------------------------------------------------------ registration
-def register_customer(project, data, idem_key="", send_email=True, actor=""):
+def register_customer(project, data, idem_key="", send_email=True, actor="", serial_override=None, tally_info=None):
     """Creates customer + licence + credentials atomically, then emails the credentials. Returns (http_status, body)."""
     c = _clean_customer(data)
     payload = {k: c[k] for k in sorted(c)}
@@ -295,19 +459,23 @@ def register_customer(project, data, idem_key="", send_email=True, actor=""):
                                {"customer_id": existing.pk, "license_id": existing.license.pk, "serial_number": existing.serial_number})
     if IntegrationCustomer.objects.filter(project=project, email=c["email"]).exists():
         raise IntegrationError("DUPLICATE_EMAIL", "Another customer of this project already uses this email address.", 409)
+    if serial_override and IntegrationCustomer.objects.filter(serial_number=serial_override).exists():
+        raise IntegrationError("DUPLICATE_TALLY_SERIAL", "This Tally Serial Number is already registered in Nexus.", 409)
     password = generate_password()
     for attempt in range(5):
         try:
             with transaction.atomic():
                 customer = IntegrationCustomer.objects.create(
                     project=project, external_customer_id=c["external_customer_id"], name=c["customer_name"], email=c["email"],
-                    contact_number=c["contact_number"], serial_number=(serial := generate_serial(project)), user_id=serial,
+                    contact_number=c["contact_number"], serial_number=(serial := serial_override or generate_serial(project)), user_id=serial,
                     password_hash=make_password(password), must_change_password=True)
                 lic = IntegrationLicense(customer=customer, license_type=project.default_license_type, status=IntegrationLicense.PENDING)
                 if project.default_license_type == IntegrationLicense.TRIAL:  # a trial needs no payment: usable at once
                     now = timezone.now()
                     lic.status, lic.starts_at, lic.expires_at = IntegrationLicense.ACTIVE, now, now + timedelta(days=project.trial_days)
                 lic.save()  # paid types stay PENDING_APPROVAL until a Super Admin / verified entitlement approves them
+                if tally_info:
+                    IntegrationTallyInfo.objects.create(customer=customer, **tally_info)
                 body = {
                     "status": "REGISTERED", "customer_id": customer.pk, "license_id": lic.pk, "serial_number": serial, "user_id": serial,
                     "license_type": lic.license_type, "license_state": license_state(lic), "expires_at": lic.expires_at,
@@ -429,14 +597,14 @@ def _find_customer(project, user_id):
     return customer
 
 
-def verify_credentials(project, user_id, password, ip=""):
-    """Checks User ID + password with lock-out. Identical error for unknown user and wrong password."""
+def _verify(project, user_id, matches, ip=""):
+    """Lock-out aware identity check. Identical error for an unknown user and a wrong secret."""
     customer = _find_customer(project, user_id)
     now = timezone.now()
     if customer and customer.locked_until and customer.locked_until > now:
         audit(project, "auth.locked", user_id, ok=False, ip=ip)
-        raise IntegrationError("ACCOUNT_LOCKED", "Too many failed sign-ins. Try again later.", 423, {"retry_after_seconds": int((customer.locked_until - now).total_seconds())})
-    if not customer or not check_password(str(password or ""), customer.password_hash):
+        raise IntegrationError("ACCOUNT_LOCKED", "Too many failed attempts. Try again later.", 423, {"retry_after_seconds": int((customer.locked_until - now).total_seconds())})
+    if not customer or not matches(customer):
         if customer:
             customer.failed_logins += 1
             if customer.failed_logins >= MAX_LOGIN_FAILURES:
@@ -450,10 +618,36 @@ def verify_credentials(project, user_id, password, ip=""):
     return customer
 
 
+def verify_credentials(project, user_id, password, ip=""):
+    """Checks User ID + password with lock-out."""
+    return _verify(project, user_id, lambda c: bool(password) and check_password(str(password), c.password_hash), ip)
+
+
+def verify_identity(project, data, ip=""):
+    """Activate User: the customer proves who they are with the password OR with the e-mail address registered for the account
+    (the key is then sent only to that address). A wrong e-mail counts as a failed attempt, exactly like a wrong password."""
+    if data.get("password"):
+        return verify_credentials(project, data.get("user_id"), data.get("password"), ip)
+    email = str(data.get("email") or "").strip().lower()
+    return _verify(project, data.get("user_id"), lambda c: bool(email) and c.email.lower() == email, ip)
+
+
 def auth_verify(project, data, ip=""):
     customer = verify_credentials(project, data.get("user_id"), data.get("password"), ip)
     audit(project, "auth.verified", customer.user_id, ip=ip)
+    state = license_state(customer.license)
+    if state != "ACTIVE" and project.license_policy == "CALENDAR":
+        # New Universal projects: an unambiguous denial (HTTP 403, no session, no device authorisation) - never a 200 that looks like a success.
+        audit(project, "auth.license_denied", customer.user_id, ok=False, ip=ip, detail=state)
+        raise IntegrationError(f"LICENSE_{state}", {"EXPIRED": "License Expired - renewal required.", "PENDING_APPROVAL": "The licence is awaiting approval."}.get(state, f"The licence is {state.lower().replace('_', ' ')}."), 403,
+                               {"license_state": state, "authorized": False, "license": license_payload(customer.license)})
+    device_id = str(data.get("device_id") or "").strip()
+    mine = customer.license.sessions.filter(status="ACTIVE", device_id=device_id).first() if device_id else None
     return {
+        # additive for every project: credentials are proven (`verified`) but protected use is allowed ONLY when `authorized` is true
+        "authorized": state == "ACTIVE", "denial_reason": None if state == "ACTIVE" else state,
+        # logging in again on the device that already holds the licence: no activation key and no transfer are needed
+        "device_authorized": bool(mine), "session_id": mine.pk if mine else None,
         "verified": True, "customer_id": customer.pk, "external_customer_id": customer.external_customer_id, "user_id": customer.user_id,
         "name": customer.name, "email": customer.email, "must_change_password": customer.must_change_password,
         "license": license_payload(customer.license), "active_devices": customer.license.sessions.filter(status="ACTIVE").count(),
@@ -491,7 +685,9 @@ def validate_license(project, data):
 
 # ------------------------------------------------------------------ activation
 def request_activation_key(project, data, ip=""):
-    customer = verify_credentials(project, data.get("user_id"), data.get("password"), ip)
+    if project.license_policy == "CALENDAR":  # UNIVERSE: the activation key is internal and never issued to the customer; use devices/authorize
+        raise IntegrationError("USE_DEVICE_AUTHORIZE", "This project authorises devices with devices/authorize; no activation key is issued.", 403)
+    customer = verify_identity(project, data, ip)
     lic = customer.license
     if license_state(lic) not in ("ACTIVE",):
         raise IntegrationError("LICENSE_NOT_ACTIVE", f"The licence is {license_state(lic).lower().replace('_', ' ')}.", 403, {"license_state": license_state(lic)})
@@ -544,7 +740,7 @@ def verify_activation(project, data, ip=""):
     device_name = str(data.get("device_name") or "").strip()[:150]
     if not device_id or len(device_id) > 120:
         raise IntegrationError("VALIDATION_ERROR", "device_id is required.", 422, {"fields": {"device_id": ["Required (max 120 characters)."]}})
-    customer = verify_credentials(project, data.get("user_id"), data.get("password"), ip)
+    customer = verify_identity(project, data, ip)
     raw = re.sub(r"\D", "", str(data.get("activation_key") or ""))
     now, error, result = timezone.now(), None, None
     with transaction.atomic():
@@ -753,20 +949,22 @@ def renew_license(lic, actor=""):
         if lic.license_type != IntegrationLicense.ONE_YEAR or lic.status != IntegrationLicense.ACTIVE:
             raise IntegrationError("INVALID_STATE", "Only an Annual licence can be renewed.", 409)
         now = timezone.now()
-        lic.expires_at = max(lic.expires_at or now, now) + timedelta(days=365)
+        previous = lic.expires_at
+        lic.expires_at = _years_expiry(lic, max(lic.expires_at or now, now))
         lic.save(update_fields=["expires_at"])
+        record_term(lic, "RENEWED", previous, actor, lic.customer.project.validity_years if lic.customer.project.license_policy == "CALENDAR" else 1)
     audit(lic.customer.project, "license.renewed", lic.customer.user_id, actor=actor)
     return lic
 
 
-def set_license_type(lic, license_type, trial_days=None, actor=""):
+def set_license_type(lic, license_type, trial_days=None, actor="", years=None):
     if license_type not in (IntegrationLicense.TRIAL, IntegrationLicense.ONE_YEAR, IntegrationLicense.LIFETIME):
         raise IntegrationError("VALIDATION_ERROR", "Choose Trial, Annual or Lifetime.", 422)
     with transaction.atomic():
         lic = _lic_locked(lic)
         if lic.customer.active is False:
             raise IntegrationError("INVALID_STATE", "Reactivate the customer first.", 409)
-        grant(lic, license_type, days=int(trial_days) if trial_days else None)
+        grant(lic, license_type, days=int(trial_days) if trial_days else None, years=int(years) if years else None, actor=actor)
     audit(lic.customer.project, "license.type_set", lic.customer.user_id, actor=actor, detail=license_type)
     return lic
 

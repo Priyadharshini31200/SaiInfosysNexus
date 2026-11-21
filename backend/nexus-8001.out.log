@@ -1,7 +1,7 @@
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 16, 2026 - 12:31:05
+November 19, 2026 - 16:34:44
 Django version 5.2.18, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8001/
 Quit the server with CTRL-BREAK.
@@ -11,7 +11,7 @@ For more information on production servers see: https://docs.djangoproject.com/e
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 16, 2026 - 13:05:54
+November 19, 2026 - 16:43:43
 Django version 5.2.18, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8001/
 Quit the server with CTRL-BREAK.
@@ -21,7 +21,7 @@ For more information on production servers see: https://docs.djangoproject.com/e
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 16, 2026 - 13:51:23
+November 19, 2026 - 16:43:50
 Django version 5.2.18, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8001/
 Quit the server with CTRL-BREAK.
@@ -31,7 +31,7 @@ For more information on production servers see: https://docs.djangoproject.com/e
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 16, 2026 - 13:58:23
+November 19, 2026 - 16:44:55
 Django version 5.2.18, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8001/
 Quit the server with CTRL-BREAK.
@@ -41,7 +41,7 @@ For more information on production servers see: https://docs.djangoproject.com/e
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 16, 2026 - 13:58:34
+November 19, 2026 - 17:42:20
 Django version 5.2.18, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8001/
 Quit the server with CTRL-BREAK.
@@ -51,7 +51,7 @@ For more information on production servers see: https://docs.djangoproject.com/e
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 16, 2026 - 15:33:25
+November 19, 2026 - 17:43:04
 Django version 5.2.18, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8001/
 Quit the server with CTRL-BREAK.
@@ -61,7 +61,17 @@ For more information on production servers see: https://docs.djangoproject.com/e
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 16, 2026 - 15:48:50
+November 19, 2026 - 17:43:08
+Django version 5.2.18, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8001/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+November 19, 2026 - 17:45:41
 Django version 5.2.18, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8001/
 Quit the server with CTRL-BREAK.

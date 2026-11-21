@@ -4,10 +4,12 @@ import { integrationsApi } from '../../api/integrations';
 import Alert from '../../components/Alert';
 import { formatDateTime } from '../../utils/date';
 import { statusBadge } from './ProjectListPage';
+import { useIntegrationPaths } from './paths';
 import styles from './Integrations.module.css';
 
 /** Project Management → API Integration Status: verification progress, last sync and the Failed Sync Report. */
 export default function IntegrationStatusPage() {
+  const paths = useIntegrationPaths();
   const [projects, setProjects] = useState([]);
   const [failed, setFailed] = useState({ failed_syncs: [], failed_emails: [] });
   const [error, setError] = useState('');
@@ -39,7 +41,7 @@ export default function IntegrationStatusPage() {
                   <td>{p.name}</td><td>{statusBadge(p)}</td>
                   <td><div className={styles.steps}>{p.required_steps.map((s) => <span key={s} className={`${styles.badge} ${p.verified_steps.includes(s) ? styles.ok : styles.pending}`}>{s.replace('_', ' ')}</span>)}</div></td>
                   <td>{p.last_sync_status ? `${p.last_sync_status} · ${formatDateTime(p.last_sync_at)}` : '—'}</td>
-                  <td><Link to={`/project-management/${p.code}/integration`}>Open</Link></td>
+                  <td><Link to={paths.open(p.code)}>Open</Link></td>
                 </tr>
               ))}
               {!projects.length && <tr><td colSpan={5}>No projects connected yet.</td></tr>}

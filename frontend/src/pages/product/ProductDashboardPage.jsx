@@ -6,7 +6,7 @@ import styles from '../tally/Tally.module.css';
 const USAGE = [['speed_users', 'Speed Users', 'speed'], ['normal_users', 'Normal Users', 'normal'], ['new_users', 'New Users', 'new'], ['one_time_users', 'One-Time Users', 'one_time']];
 const METRICS = [
   ['total_customers', 'Total Customers', null], ['used', 'Used', 'used'], ['not_used', 'Not Used', 'not_used'], ['expired', 'Expired', 'expired'],
-  ['expiring_this_month', 'This Month Expiring', 'expiring'], ['trial_licenses', 'Trial Licenses', 'trial'], ['annual_licenses', 'Annual Licenses', 'annual'],
+  ['expiring_this_month', 'This Month Expiring', 'expiring'], ['trial_licenses', 'Trial Licenses', 'trial'], ['annual_licenses', '1 Year Licenses', 'annual'],
   ['lifetime_licenses', 'Lifetime Licenses', 'lifetime'], ['active_devices', 'Active Devices', 'active_devices'],
 ];
 

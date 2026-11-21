@@ -696,8 +696,8 @@
 .compact .count { margin: 0; font-size: 12px; white-space: nowrap; }
 .compact .tools { flex-wrap: wrap; flex: none; max-width: 100%; gap: 6px; margin-left: auto; }
 .compact .tools button, .compact .addBtn { height: 32px; padding: 0 8px; gap: 4px; font-size: 12px; white-space: nowrap; }
-.compact .scroll { overflow: auto; scrollbar-width: none; -ms-overflow-style: none; }
-.compact .scroll::-webkit-scrollbar { display: none; }
+.compact .scroll { overflow: auto; scrollbar-width: thin; }
+.compact .scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .compact .scroll:focus-visible { outline: 2px solid var(--navy-600); outline-offset: -2px; }
 .compact .table { display: table; width: 100% !important; min-width: 760px; font-size: 12px; }
 .compact .table tbody { display: table-row-group; }

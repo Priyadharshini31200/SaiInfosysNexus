@@ -1,6 +1,6 @@
 # Nexus Universal Licensing API v1.0.0
 
-Base URL: `https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/`  (HTTPS only in production; the secret is NEVER put in browser/React code)
+Base URL: `https://saitallyexpert.in/nexus/api/integrations/v1/`  (HTTPS only in production; the secret is NEVER put in browser/React code)
 Project code: `<PROJECT_CODE>`
 
 ## Authentication
@@ -35,7 +35,7 @@ Credentials are scoped: `project_code` must match the credentials. Rate limit: 3
 ```
 
 ## Register customer
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/customers/register`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/customers/register`
 
 Creates the Nexus customer, a 9-digit serial (= User ID), a temporary password, the licence and queues the welcome email. Repeat calls with the same Idempotency-Key replay the first answer. Paid licence types stay PENDING_APPROVAL until approved in Nexus.
 
@@ -70,7 +70,7 @@ Response (201):
 ```
 
 ## Sync customer updates
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/customers/update`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/customers/update`
 
 event: CUSTOMER_UPDATED | EMAIL_CHANGED | CONTACT_UPDATED | CUSTOMER_INACTIVATED | CUSTOMER_REACTIVATED | LICENSE_STATUS_UPDATED. license_status may only be SUSPENDED or ACTIVE (lifting a suspension); a project can never grant a licence.
 
@@ -99,7 +99,7 @@ Response (200):
 ```
 
 ## One-time bulk import (max 200 per call)
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/customers/import`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/customers/import`
 
 Registers many existing customers with the same rules as customers/register. Each row succeeds or fails independently; failures appear in the Failed Sync Report.
 
@@ -138,16 +138,17 @@ Response (200):
 ```
 
 ## Verify customer credentials
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/auth/verify`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/auth/verify`
 
-Checks User ID + password (5 failures lock the account for 15 minutes). Does not create a device session.
+Checks User ID + password (5 failures lock the account for 15 minutes). Does not create a device session. Send device_id to learn whether this device already holds the licence: device_authorized=true means log in again with no activation key and no transfer.
 
 Request:
 ```json
 {
   "project_code": "MOTHYS",
   "user_id": "912345678",
-  "password": "Temp-Pass-1"
+  "password": "Temp-Pass-1",
+  "device_id": "PC-A1B2"
 }
 ```
 Response (200):
@@ -156,6 +157,8 @@ Response (200):
   "ok": true,
   "data": {
     "verified": true,
+    "device_authorized": false,
+    "session_id": null,
     "customer_id": 12,
     "external_customer_id": "MOTHYS-1001",
     "user_id": "912345678",
@@ -178,7 +181,7 @@ Response (200):
 ```
 
 ## Change password (first login)
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/auth/change-password`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/auth/change-password`
 
 Request:
 ```json
@@ -200,7 +203,7 @@ Response (200):
 ```
 
 ## Validate license
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/licenses/validate`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/licenses/validate`
 
 Identify the customer with user_id, serial_number or external_customer_id. state: ACTIVE | EXPIRED | PENDING_APPROVAL | SUSPENDED | INACTIVE.
 
@@ -232,16 +235,16 @@ Response (200):
 ```
 
 ## Request activation key
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/activation/request`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/activation/request`
 
-Emails a one-time 9-digit key to the registered address (valid 15 minutes, 3 requests/hour). The key is never returned by the API.
+Identify the customer with user_id plus EITHER the registered email OR the password (a wrong email counts as a failed attempt). Emails a one-time 9-digit key to the registered address (valid 15 minutes, 3 requests/hour). The key is never returned by the API.
 
 Request:
 ```json
 {
   "project_code": "MOTHYS",
   "user_id": "912345678",
-  "password": "Temp-Pass-1"
+  "email": "kumar@example.com"
 }
 ```
 Response (200):
@@ -257,7 +260,7 @@ Response (200):
 ```
 
 ## Verify activation key / activate device
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/activation/verify`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/activation/verify`
 
 Success returns a session. If another device holds the licence the answer is HTTP 409 TRANSFER_CONFIRMATION_REQUIRED with a transfer_token; call devices/transfer/confirm next.
 
@@ -266,7 +269,7 @@ Request:
 {
   "project_code": "MOTHYS",
   "user_id": "912345678",
-  "password": "Temp-Pass-1",
+  "email": "kumar@example.com",
   "activation_key": "123456789",
   "device_id": "PC-A1B2",
   "device_name": "Office PC"
@@ -320,7 +323,7 @@ Transfer confirmation (409):
 ```
 
 ## Confirm or cancel device transfer
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/devices/transfer/confirm`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/devices/transfer/confirm`
 
 confirm=true revokes the old device's sessions immediately, activates this device and returns its session token. confirm=false changes nothing. Repeating a completed confirmation returns ALREADY_TRANSFERRED (the token is only ever returned once).
 
@@ -362,7 +365,7 @@ Response (200):
 ```
 
 ## Validate active session
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/sessions/introspect`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/sessions/introspect`
 
 Call on every protected request (or cache for <= 60 s). active=false means reject: reason is revoked-by-transfer, logout, license_expired, license_suspended, customer_inactivated or unknown_session.
 
@@ -390,7 +393,7 @@ Response (200):
 ```
 
 ## Revoke / logout session
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/sessions/logout`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/sessions/logout`
 
 Request:
 ```json
@@ -411,7 +414,7 @@ Response (200):
 ```
 
 ## Record application usage
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/usage/events`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/usage/events`
 
 event_type: APP_OPEN | LOGIN | HEARTBEAT | LOGOUT | DEVICE_ACTIVATION | DEVICE_TRANSFER. Send session_token or user_id. event_id makes retries safe. Up to 100 events via `events`.
 
@@ -437,7 +440,7 @@ Response (200):
 ```
 
 ## Retrieve safe integration configuration
-`GET https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/projects/{project_code}/config`
+`GET https://saitallyexpert.in/nexus/api/integrations/v1/projects/{project_code}/config`
 
 Never includes secrets.
 

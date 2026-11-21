@@ -1,0 +1,71 @@
+﻿.workspace { display: grid; gap: 10px; min-width: 0; color: #142d50; }
+.tabs { display: flex; gap: 22px; border-bottom: 1px solid #cedbea; overflow-x: auto; }
+.tabs button { appearance: none; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #526984; font: inherit; font-size: 13px; font-weight: 650; padding: 10px 5px; white-space: nowrap; cursor: pointer; }
+.tabs button[aria-pressed="true"] { color: #123b6d; border-color: #2563a6; }
+
+/* Row 2 - one horizontal filter row on desktop; flexible controls shrink before anything wraps. Applied automatically (no Apply button). */
+.filters { display: flex; flex-wrap: nowrap; gap: 8px; align-items: flex-end; padding: 8px 10px; border: 1px solid #d7e3f0; border-radius: 8px; background: #fff; min-width: 0; }
+.filters label { display: grid; gap: 3px; flex: 1 1 120px; min-width: 92px; color: #3f5979; font-size: 11.5px; font-weight: 650; }
+.filters .wideField { flex: 1.4 1 150px; }
+.filters .dateField { flex: 0.9 1 120px; min-width: 118px; }
+.filters .searchField { flex: 2 1 170px; min-width: 130px; }
+.filters :is(input, select) { width: 100%; min-width: 0; height: 36px; padding: 0 7px; border: 1px solid #c9d8e8; border-radius: 6px; color: #142d50; background: #f8fbff; font: inherit; font-size: 13px; font-weight: 450; }
+.filters input::placeholder { color: #5a718d; }
+.reset { flex: none; height: 36px; }
+
+.exportActions { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.secondary { height: 30px; padding: 0 10px; border: 1px solid #c9d9eb; border-radius: 6px; background: #fff; color: #173d69; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.secondary:hover:not(:disabled) { background: #edf5ff; }
+.secondary:disabled { opacity: .48; cursor: default; }
+.filters .reset { height: 36px; }
+.workspace :is(button, input, select):focus-visible { outline: 2px solid #3379bd; outline-offset: 2px; }
+
+/* Row 3 - compact summary + export toolbar (replaces the large KPI cards) */
+.tablePanel { min-width: 0; border: 1px solid #d7e3f0; border-radius: 8px; background: #fff; overflow: hidden; }
+.tableBar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; min-height: 42px; padding: 5px 10px; border-bottom: 1px solid #e3ebf5; }
+.resultCount { display: flex; align-items: center; flex-wrap: wrap; gap: 0; font-size: 12.5px; color: #36516f; }
+.resultCount > b { color: #142d50; font-size: 13px; }
+.kpi, .range, .spinner { padding-left: 10px; margin-left: 10px; border-left: 1px solid #d3dfec; }
+.kpi b { color: #142d50; font-variant-numeric: tabular-nums; }
+.range { color: #5a718d; }
+.spinner { color: #2563a6; font-style: italic; }
+.failed { color: #8b2525; font-weight: 650; }
+
+/* Row 4 - the data table is the main content */
+.tableScroll { overflow: auto; max-height: calc(100dvh - 260px); min-height: 160px; transition: opacity .15s; }
+.stale { opacity: .55; }
+.tableScroll table { border-collapse: collapse; width: 100%; text-align: left; font-size: 12.5px; }
+.tableScroll th { position: sticky; top: 0; z-index: 1; height: 38px; padding: 0 10px; background: #163d6b; color: #fff; white-space: nowrap; font-size: 12px; }
+.sortBtn { all: unset; cursor: pointer; font-weight: 650; }
+.sortBtn:focus-visible { outline: 2px solid #9cc5f0; outline-offset: 2px; }
+.tableScroll td { height: 38px; padding: 0 10px; border-bottom: 1px solid #e7eef7; white-space: nowrap; }
+.tableScroll tbody tr:nth-child(even) { background: #f8fbff; }
+.tableScroll tbody tr:hover { background: #eef5fd; }
+.tableScroll tbody tr:last-child td { border-bottom: 0; }
+.customer { font-weight: 650; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.overdue { color: #8b2525; }
+.na { color: #7a8ca3; font-style: italic; }
+.status { display: inline-block; border-radius: 12px; padding: 2px 8px; background: #edf2f8; color: #36516f; font-size: 11px; font-weight: 650; }
+.status[data-status="Active"] { background: #e4f5ec; color: #145538; }
+.status[data-status="Expired"] { background: #fce9e9; color: #8b2525; }
+.status[data-status="Expiring"], .status[data-status="Pending"], .status[data-status="Pending Approval"] { background: #fff4dc; color: #7a4b00; }
+.tableScroll td.empty { height: auto; padding: 24px 12px; text-align: center; color: #496584; white-space: normal; }
+
+/* Row 5 - pagination */
+.pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid #e7eef7; font-size: 12px; color: #526b87; }
+.error, .message { margin: 0; padding: 10px 12px; border-radius: 6px; background: #f4f8fd; font-size: 13px; }
+.error { display: flex; align-items: center; gap: 10px; background: #fcecec; color: #812c2c; }
+
+/* Narrower desktops: controls shrink first; below 1100px the row may wrap (never clipped, no page overflow) */
+@media (max-width: 1100px) {
+  .filters { flex-wrap: wrap; }
+  .filters label { flex-basis: 140px; }
+  .filters .searchField { flex-basis: 200px; }
+}
+@media (max-width: 620px) {
+  .tabs { gap: 11px; }
+  .filters label, .filters .wideField, .filters .searchField, .filters .dateField { flex: 1 1 calc(50% - 8px); min-width: 0; }
+  .filters .reset { flex: 1 1 100%; }
+  .kpi, .range, .spinner { padding-left: 0; margin-left: 0; border-left: 0; width: 100%; }
+}

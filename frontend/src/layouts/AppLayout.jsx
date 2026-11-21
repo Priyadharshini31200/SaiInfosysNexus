@@ -33,17 +33,17 @@ function useIsDesktop() {
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
-  const { pathname, search, key } = useLocation();
+  const { pathname, search, key, state } = useLocation();
   const navType = useNavigationType();
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
   const [collapsedPref, setCollapsedPref] = useState(readCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [drawer, setDrawer] = useState(null); // null | 'profile' | 'config'
+  const [drawer, setDrawer] = useState(null); // null | 'profile' | 'config' | 'addstaff'
   const closeDrawer = useCallback(() => setDrawer(null), []);
 
   const collapsed = isDesktop && collapsedPref;
-  const title = getPageTitle(pathname, search);
+  const title = state?.crumb && state?.project ? `${state.project} · ${state.page}` : getPageTitle(pathname, search);
 
   // How many in-app pages sit behind this one (PUSH adds one, back/POP removes one). The Back arrow only
   // uses browser history when there is one, so it never leaves the app or lands on Login.
@@ -97,14 +97,14 @@ export default function AppLayout() {
     <div className={styles.app}>
       <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onToggleCollapse={toggleCollapse} onCloseMobile={() => setMobileOpen(false)} />
       <div className={`${styles.main} ${collapsed ? styles.mainCollapsed : ''}`}>
-        <Header title={title} onBack={handleBack} user={user} onOpenMobileNav={() => setMobileOpen(true)} onOpenProfile={() => setDrawer('profile')} onOpenConfig={() => setDrawer('config')} onLogout={handleLogout} />
+        <Header title={title} onBack={handleBack} user={user} onOpenMobileNav={() => setMobileOpen(true)} onOpenProfile={() => setDrawer('profile')} onOpenConfig={() => setDrawer('config')} onOpenAddStaff={() => setDrawer('addstaff')} onLogout={handleLogout} />
         <main className={`${styles.content} ${isTallyFillPage(pathname) ? styles.contentFill : ''}`}>
           <Outlet />
         </main>
       </div>
       {user.role === 'SUPERADMIN' && <ApprovalGate />}
       <ProfileDrawer open={drawer === 'profile'} onClose={closeDrawer} />
-      {user.role === 'SUPERADMIN' && <ConfigurationDrawer open={drawer === 'config'} onClose={closeDrawer} />}
+      {(user.role === 'SUPERADMIN' || user.visibility_projects?.length > 0) && <ConfigurationDrawer open={drawer === 'config' || drawer === 'addstaff'} mode={drawer === 'addstaff' ? 'create' : 'directory'} onClose={closeDrawer} />}
     </div>
   );
 }

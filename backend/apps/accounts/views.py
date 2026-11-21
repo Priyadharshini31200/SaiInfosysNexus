@@ -14,7 +14,7 @@ from apps.registrations import audit
 
 from . import services
 from .models import AdminPermission
-from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
+from .permissions import IsAdminOrSuperAdmin, IsAnyStaff, IsSuperAdmin
 from .serializers import (
     AdminPermissionAddSerializer,
     AdminPermissionToggleSerializer,
@@ -56,7 +56,7 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [IsAnyStaff]
 
     def post(self, request):
         logout(request)
@@ -64,7 +64,7 @@ class LogoutView(APIView):
 
 
 class MeView(APIView):
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [IsAnyStaff]
 
     def get(self, request):
         return Response({"user": CurrentUserSerializer(request.user).data})

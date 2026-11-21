@@ -51,7 +51,8 @@ async function getCsrfToken() {
  */
 export async function request(path, { method = 'GET', body, skipExpiry = false, timeoutMs, timeoutMessage } = {}) {
   const headers = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData; // multipart: the browser sets the boundary
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (method !== 'GET') headers['X-CSRFToken'] = await getCsrfToken();
 
   // Optional upper bound, so a slow mail server can never leave a "Sending…" button spinning indefinitely.
@@ -64,7 +65,7 @@ export async function request(path, { method = 'GET', body, skipExpiry = false, 
       headers,
       credentials: 'same-origin',
       cache: 'no-store',
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
       signal: controller?.signal,
     });
   } catch {

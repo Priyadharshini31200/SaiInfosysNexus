@@ -8,21 +8,21 @@ import { formatDate, formatDateTime } from '../../utils/date';
 import { Filter, ListPanel, REPORT_MAX_ROWS, SearchBox, useAllRows, useDebounced, useToast } from '../tally/TallyShared';
 import styles from '../tally/Tally.module.css';
 
-const COLS = ['S.No', 'Customer Name', 'Email', 'Contact Number', 'Serial Number / User ID', 'License Type', 'License Status', 'Activation Date', 'Expiry Date', 'Last Login', 'Usage Category'];
-export const TYPE_LABEL = { TRIAL: 'Trial', ONE_YEAR: 'Annual', LIFETIME: 'Lifetime' };
+const COLS = ['S.No', 'Customer Name', 'Email', 'Contact Number', 'Serial Number / User ID', 'License Type', 'Trial Days', 'License Status', 'Expiry Date', 'Active Device', 'Activation Date', 'Last Login', 'Usage Category'];
+export const TYPE_LABEL = { TRIAL: 'Trial', ONE_YEAR: '1 Year', LIFETIME: 'Lifetime' };
 export const STATUS_LABEL = { pending: 'Pending Approval', not_activated: 'Not Activated', active: 'Active', expired: 'Expired', cancelled: 'Cancelled', inactive: 'Inactive' };
 const USAGE_LABEL = { speed: 'Speed', normal: 'Normal', new: 'New', one_time: 'One-Time', not_used: 'Not Used' };
 const TYPES = [{ value: 'all', label: 'All' }, ...Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label }))];
 const STATUSES = [{ value: 'all', label: 'All' }, ...Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }))];
-const FILTER_NAMES = { used: 'Used', not_used: 'Not Used', expired: 'Expired', expiring: 'This Month Expiring', trial: 'Trial', annual: 'Annual', lifetime: 'Lifetime', active_devices: 'Active Devices', pending: 'Pending Approval' };
+const FILTER_NAMES = { used: 'Used', not_used: 'Not Used', expired: 'Expired', expiring: 'This Month Expiring', trial: 'Trial', annual: '1 Year', lifetime: 'Lifetime', active_devices: 'Active Devices', pending: 'Pending Approval' };
 
 const Row = memo(function Row({ code, r, n, onOpen }) {
   return (
     <tr className={styles.row} tabIndex={0} onClick={() => onOpen(r.id)} onKeyDown={(e) => e.key === 'Enter' && onOpen(r.id)}>
       <td>{n}</td><td className={styles.name}>{r.name}</td><td>{r.email}</td><td>{r.contact_number}</td>
       <td><Link className={styles.link} to={`/product/${code}/customers/${r.id}`} onClick={(e) => e.stopPropagation()}>{r.serial_number}</Link></td>
-      <td>{TYPE_LABEL[r.license_type]}</td><td>{STATUS_LABEL[r.status]}</td><td>{r.activated_at ? formatDate(r.activated_at) : '—'}</td>
-      <td>{r.license_type === 'LIFETIME' ? 'Never' : r.expires_at ? formatDate(r.expires_at) : '—'}</td><td>{r.last_login ? formatDateTime(r.last_login) : '—'}</td>
+      <td>{TYPE_LABEL[r.license_type]}</td><td>{r.trial_days ?? '—'}</td><td>{STATUS_LABEL[r.status]}</td>
+      <td>{r.license_type === 'LIFETIME' ? 'Never' : r.expires_at ? formatDate(r.expires_at) : '—'}</td><td>{r.active_device || '—'}</td><td>{r.activated_at ? formatDate(r.activated_at) : '—'}</td><td>{r.last_login ? formatDateTime(r.last_login) : '—'}</td>
       <td>{USAGE_LABEL[r.usage_category] || '—'}</td>
     </tr>
   );

@@ -241,3 +241,7 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+# Public Nexus API base used in developer API documentation (e.g. https://saitallyexpert.in/nexus/api).
+# When unset, the request host is used - which is the Vite dev server (localhost:5173) for requests sent through it.
+NEXUS_PUBLIC_API_BASE = env("NEXUS_PUBLIC_API_BASE", "")

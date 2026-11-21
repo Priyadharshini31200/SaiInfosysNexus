@@ -1,5 +1,7 @@
 # Mothys Inventory Management (FastAPI) – Nexus Integration Handoff
 
+**Scope:** Mothys Inventory only (Project Management in Nexus is on hold and was not changed). Reuses the verified Universal Integration APIs.
+
 **Status:** all 12 APIs below passed an automated end-to-end run against the Nexus local test database (SQL Server). That run is `backend/apps/integrations/test_handoff.py`; every request/response in this document was captured from it.
 
 **Not yet verified:** the Mothys FastAPI side (not built), a real SMTP delivery of the welcome email, browser verification of the Nexus screens, and production deployment. Do not treat this as production-ready until those are done.
@@ -14,8 +16,9 @@
 | Serial number | Nexus generated, exactly 9 digits, starts with 9, unique | ✅ automated test |
 | User ID | = Serial Number | ✅ automated test |
 | Password | Nexus generated temporary password, stored hashed, emailed once, change at first login | ✅ automated test |
-| Licence types | Trial (default 3 days, editable) · Annual · Lifetime. Annual/Lifetime are never auto-granted: they wait for Super Admin approval | ✅ automated test |
-| Activation key | 9 digits, emailed only when requested, one-time, expires in 15 min, max 3 requests/hour, 5 wrong tries | ✅ automated test |
+| Licence types | Trial (default 3 days, editable) · 1 Year · Lifetime. 1 Year/Lifetime are never auto-granted: they wait for Super Admin approval | ✅ automated test |
+| Activation key | 9 digits, emailed only when the customer asks (Activate User screen: User ID + registered email), one-time, expires in 15 min, max 3 requests/hour, 5 wrong tries; a wrong email is rejected and nothing is sent | ✅ automated test |
+| Welcome email | Subject `Mothys Inventory – Your Login Details`: Serial Number, User ID, Temporary Password, License Type, Trial Days / Expiry Date, Login URL; no activation key | ✅ automated test |
 | Devices | 1 active device; a second device needs customer confirmation (no Super Admin step, no extra email OTP) | ✅ automated test |
 | Framework / auth | FastAPI · JWT Bearer (existing `POST /auth/login`, `GET /auth/me`, `GET /health`) | ✅ automated test |
 
@@ -24,7 +27,7 @@
 | Environment | Base URL |
 |---|---|
 | Local Nexus | `http://127.0.0.1:8001/api/integrations/v1` |
-| Production Nexus | `https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1` (replace `<NEXUS_PRODUCTION_HOST>` with the real Nexus host; the live proxy mounts Nexus under `/nexus`) |
+| Production Nexus | `https://saitallyexpert.in/nexus/api/integrations/v1` (the live proxy mounts Nexus under `/nexus`) |
 
 Every call is **server-to-server over HTTPS** from the Mothys FastAPI backend (never from React/browser code):
 
@@ -46,10 +49,10 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 | 1 | Customer Registration | POST | `/customers/register` | **PASS** (3 cases) |
 | 2 | Customer Update | POST | `/customers/update` | **PASS** (2 cases) |
 | 3 | Customer Bulk Import | POST | `/customers/import` | **PASS** (1 cases) |
-| 4 | Login Verification | POST | `/auth/verify` | **PASS** (2 cases) |
+| 4 | Login Verification | POST | `/auth/verify` | **PASS** (3 cases) |
 | 5 | Password Change | POST | `/auth/change-password` | **PASS** (1 cases) |
 | 6 | License Validation | POST | `/licenses/validate` | **PASS** (1 cases) |
-| 7 | Activation Key Request | POST | `/activation/request` | **PASS** (1 cases) |
+| 7 | Activation Key Request | POST | `/activation/request` | **PASS** (2 cases) |
 | 8 | Activation Key Verification | POST | `/activation/verify` | **PASS** (3 cases) |
 | 9 | Device Transfer Confirmation | POST | `/devices/transfer/confirm` | **PASS** (2 cases) |
 | 10 |  Session Introspection | POST | `/sessions/introspect` | **PASS** (2 cases) |
@@ -60,7 +63,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ### 1. Customer Registration
 
 `POST http://127.0.0.1:8001/api/integrations/v1/customers/register`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/customers/register`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/customers/register`
 
 **Required fields:** project_code, external_customer_id, customer_name, email, contact_number (header Idempotency-Key recommended)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -83,14 +86,14 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "status": "REGISTERED",
     "customer_id": 1,
     "license_id": 1,
-    "serial_number": "925100221",
-    "user_id": "925100221",
+    "serial_number": "985492467",
+    "user_id": "985492467",
     "license_type": "TRIAL",
     "license_state": "ACTIVE",
-    "expires_at": "2026-11-20T07:00:09.577228Z",
+    "expires_at": "2026-11-20T07:38:18.576863Z",
     "welcome_email": "accepted"
   },
-  "request_id": "b789552fa03e4b7fa4dc639c3486b1f5"
+  "request_id": "7072084718eb46de9f24d307e5b60eeb"
 }
 ```
 
@@ -113,9 +116,9 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "message": "This external customer id is already registered.",
     "customer_id": 1,
     "license_id": 1,
-    "serial_number": "925100221"
+    "serial_number": "985492467"
   },
-  "request_id": "6b7ccbab7f094d3394cd2e7bb8fc32d9"
+  "request_id": "9337c56bba5041ecb5920a886d460821"
 }
 ```
 
@@ -145,14 +148,14 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
       ]
     }
   },
-  "request_id": "c8a8e59c0dd048d99ac85d4649ab7fa5"
+  "request_id": "101b2be4151c47b19d2a28b95ada080a"
 }
 ```
 
 ### 2. Customer Update
 
 `POST http://127.0.0.1:8001/api/integrations/v1/customers/update`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/customers/update`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/customers/update`
 
 **Required fields:** project_code, external_customer_id; event; plus the changed fields (customer_name / email / contact_number / active / license_status)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -178,7 +181,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     ],
     "license_state": "ACTIVE"
   },
-  "request_id": "261748953f30433ebb6f4f844d951531"
+  "request_id": "8d960a05570542d9a2ed78611276aa35"
 }
 ```
 
@@ -199,14 +202,14 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "code": "CUSTOMER_NOT_FOUND",
     "message": "No customer is registered for this external customer id."
   },
-  "request_id": "d816744fc18a49cfae4f89da243f3881"
+  "request_id": "94649473b06a42e0b9b9589a9bf4e9d1"
 }
 ```
 
 ### 3. Customer Bulk Import
 
 `POST http://127.0.0.1:8001/api/integrations/v1/customers/import`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/customers/import`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/customers/import`
 
 **Required fields:** project_code, customers[] (1-200, each with the register fields); optional send_welcome_email (default true)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -238,27 +241,27 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
         "index": 0,
         "external_customer_id": "MOTHYS-2001",
         "ok": true,
-        "serial_number": "927017187"
+        "serial_number": "967942316"
       }
     ]
   },
-  "request_id": "e9d30d163d5841ed840f80b41c3efde4"
+  "request_id": "3abc134d69f74ebbaf9fbc07d30a6b8b"
 }
 ```
 
 ### 4. Login Verification
 
 `POST http://127.0.0.1:8001/api/integrations/v1/auth/verify`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/auth/verify`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/auth/verify`
 
-**Required fields:** project_code, user_id, password  
+**Required fields:** project_code, user_id, password; optional device_id (to learn whether this device already holds the licence)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
 
 **Wrong password – request**
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
+  "user_id": "985492467",
   "password": "wrong"
 }
 ```
@@ -270,7 +273,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "code": "INVALID_CREDENTIALS",
     "message": "The User ID or password is incorrect."
   },
-  "request_id": "2597f8ed514e49869c1304dbda3d954f"
+  "request_id": "a80d2a5ac625403e929d46d9f3dbae8e"
 }
 ```
 
@@ -278,7 +281,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
+  "user_id": "985492467",
   "password": "<temporary-password-from-welcome-email>"
 }
 ```
@@ -287,10 +290,12 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 {
   "ok": true,
   "data": {
+    "device_authorized": false,
+    "session_id": null,
     "verified": true,
     "customer_id": 1,
     "external_customer_id": "MOTHYS-1001",
-    "user_id": "925100221",
+    "user_id": "985492467",
     "name": "Kumar",
     "email": "kumar@example.com",
     "must_change_password": true,
@@ -299,21 +304,60 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
       "customer_id": 1,
       "license_type": "TRIAL",
       "state": "ACTIVE",
-      "starts_at": "2026-11-17T07:00:09.577228Z",
-      "expires_at": "2026-11-20T07:00:09.577228Z",
-      "serial_number": "925100221",
-      "user_id": "925100221"
+      "starts_at": "2026-11-17T07:38:18.576863Z",
+      "expires_at": "2026-11-20T07:38:18.576863Z",
+      "serial_number": "985492467",
+      "user_id": "985492467"
     },
     "active_devices": 0
   },
-  "request_id": "4cc8ef447f134278b9d48a1f7e189534"
+  "request_id": "dbccbb773311401487e670c87d387372"
+}
+```
+
+**Login again on the authorised device – request**
+```json
+{
+  "project_code": "MOTHYS",
+  "user_id": "985492467",
+  "password": "MyNewPass#9",
+  "device_id": "PC-A"
+}
+```
+**Login again on the authorised device – response (HTTP 200)**
+```json
+{
+  "ok": true,
+  "data": {
+    "device_authorized": true,
+    "session_id": 1,
+    "verified": true,
+    "customer_id": 1,
+    "external_customer_id": "MOTHYS-1001",
+    "user_id": "985492467",
+    "name": "Kumar",
+    "email": "kumar@example.com",
+    "must_change_password": false,
+    "license": {
+      "license_id": 1,
+      "customer_id": 1,
+      "license_type": "TRIAL",
+      "state": "ACTIVE",
+      "starts_at": "2026-11-17T07:38:18.576863Z",
+      "expires_at": "2026-11-20T07:38:18.576863Z",
+      "serial_number": "985492467",
+      "user_id": "985492467"
+    },
+    "active_devices": 1
+  },
+  "request_id": "a4d47991134e4b9cb6e230076f835ef8"
 }
 ```
 
 ### 5. Password Change
 
 `POST http://127.0.0.1:8001/api/integrations/v1/auth/change-password`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/auth/change-password`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/auth/change-password`
 
 **Required fields:** project_code, user_id, current_password, new_password (min 8 characters)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -322,7 +366,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
+  "user_id": "985492467",
   "current_password": "<temporary-password-from-welcome-email>",
   "new_password": "MyNewPass#9"
 }
@@ -334,14 +378,14 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
   "data": {
     "changed": true
   },
-  "request_id": "336cd9c66e0949baad7800522f43d49d"
+  "request_id": "6934b94cd561468f892c28caf5dd759a"
 }
 ```
 
 ### 6. License Validation
 
 `POST http://127.0.0.1:8001/api/integrations/v1/licenses/validate`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/licenses/validate`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/licenses/validate`
 
 **Required fields:** project_code and one of user_id / serial_number / external_customer_id  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -350,7 +394,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221"
+  "user_id": "985492467"
 }
 ```
 **Success – response (HTTP 200)**
@@ -362,32 +406,52 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "customer_id": 1,
     "license_type": "TRIAL",
     "state": "ACTIVE",
-    "starts_at": "2026-11-17T07:00:09.577228Z",
-    "expires_at": "2026-11-20T07:00:09.577228Z",
-    "serial_number": "925100221",
-    "user_id": "925100221",
+    "starts_at": "2026-11-17T07:38:18.576863Z",
+    "expires_at": "2026-11-20T07:38:18.576863Z",
+    "serial_number": "985492467",
+    "user_id": "985492467",
     "valid": true,
     "active_devices": 0,
     "device_limit": 1
   },
-  "request_id": "f338d73d18e54d62a6662523f753035f"
+  "request_id": "8fa5eb5db5e74680ad879848af1239fc"
 }
 ```
 
 ### 7. Activation Key Request
 
 `POST http://127.0.0.1:8001/api/integrations/v1/activation/request`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/activation/request`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/activation/request`
 
-**Required fields:** project_code, user_id, password  
+**Required fields:** project_code, user_id and the registered email (or the password instead of the email)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
+
+**Email not registered to this account – request**
+```json
+{
+  "project_code": "MOTHYS",
+  "user_id": "985492467",
+  "email": "someone.else@example.com"
+}
+```
+**Email not registered to this account – response (HTTP 401)**
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "The User ID or password is incorrect."
+  },
+  "request_id": "45c5990a520047819bcdb54048c3b0e6"
+}
+```
 
 **Success – request**
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
-  "password": "MyNewPass#9"
+  "user_id": "985492467",
+  "email": "Kumar@Example.com"
 }
 ```
 **Success – response (HTTP 200)**
@@ -399,24 +463,24 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "expires_in_seconds": 900,
     "email_status": "accepted"
   },
-  "request_id": "6ebb9fc9dc864e04b46100342b5f6237"
+  "request_id": "3285e68cfe6f4cabbd4234df427c3d09"
 }
 ```
 
 ### 8. Activation Key Verification
 
 `POST http://127.0.0.1:8001/api/integrations/v1/activation/verify`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/activation/verify`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/activation/verify`
 
-**Required fields:** project_code, user_id, password, activation_key (9 digits), device_id; optional device_name  
+**Required fields:** project_code, user_id, the registered email (or password), activation_key (9 digits), device_id; optional device_name  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
 
 **Wrong key – request**
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
-  "password": "MyNewPass#9",
+  "user_id": "985492467",
+  "email": "kumar@example.com",
   "activation_key": "000000000",
   "device_id": "PC-A",
   "device_name": "Office PC"
@@ -430,7 +494,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "code": "ACTIVATION_KEY_INVALID",
     "message": "The activation key is invalid or has expired. Request a new one."
   },
-  "request_id": "46f0981993c6454bbc5017fcc5081ffc"
+  "request_id": "ace7848e5d8d446185e3203af1291755"
 }
 ```
 
@@ -438,9 +502,9 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
-  "password": "MyNewPass#9",
-  "activation_key": "212712969",
+  "user_id": "985492467",
+  "email": "kumar@example.com",
+  "activation_key": "954109119",
   "device_id": "PC-A",
   "device_name": "Office PC"
 }
@@ -450,7 +514,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 {
   "ok": true,
   "data": {
-    "session_token": "nxt_WvVfpWTzvt-4aQgPh51jRhTEn1DPPUT4y3su4Zcsw-E",
+    "session_token": "nxt_UUPtbUK_9-vwjIqBUMjyInZT3QQs4l-wkfL62VGsY5U",
     "session_id": 1,
     "device_id": "PC-A",
     "license": {
@@ -458,15 +522,15 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
       "customer_id": 1,
       "license_type": "TRIAL",
       "state": "ACTIVE",
-      "starts_at": "2026-11-17T07:00:09.577228Z",
-      "expires_at": "2026-11-20T07:00:09.577228Z",
-      "serial_number": "925100221",
-      "user_id": "925100221"
+      "starts_at": "2026-11-17T07:38:18.576863Z",
+      "expires_at": "2026-11-20T07:38:18.576863Z",
+      "serial_number": "985492467",
+      "user_id": "985492467"
     },
     "authorization": "ACTIVE",
     "revocation": "Server-side revocation is immediate; an offline client only learns of it when it next reconnects."
   },
-  "request_id": "f552d66fa43048ebab9eeedee6b80883"
+  "request_id": "4e31321f621342a1917de7065b52bf3f"
 }
 ```
 
@@ -474,9 +538,9 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
-  "password": "MyNewPass#9",
-  "activation_key": "965514124",
+  "user_id": "985492467",
+  "email": "kumar@example.com",
+  "activation_key": "070035217",
   "device_id": "PC-B",
   "device_name": "Home Laptop"
 }
@@ -499,18 +563,18 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
         "label": "OK – Activate This Device"
       }
     ],
-    "transfer_token": "nxx_DUDQNPyDQEMG-CoAd6wcwaEA2ZpnMCWk",
+    "transfer_token": "nxx_zlucDznIJvgBAkN4zONapQRV5s1JDZfB",
     "expires_in_seconds": 600,
     "active_device_name": "Office PC"
   },
-  "request_id": "b1cef32c75e94a6e919734a6a79d737c"
+  "request_id": "3e61a72809a645a4a576a9982990f737"
 }
 ```
 
 ### 9. Device Transfer Confirmation
 
 `POST http://127.0.0.1:8001/api/integrations/v1/devices/transfer/confirm`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/devices/transfer/confirm`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/devices/transfer/confirm`
 
 **Required fields:** project_code, user_id, transfer_token (from the 409 answer), confirm (true = OK – Activate This Device, false = Cancel)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -519,8 +583,8 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
-  "transfer_token": "nxx_DUDQNPyDQEMG-CoAd6wcwaEA2ZpnMCWk",
+  "user_id": "985492467",
+  "transfer_token": "nxx_zlucDznIJvgBAkN4zONapQRV5s1JDZfB",
   "confirm": false
 }
 ```
@@ -533,7 +597,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "transferred": false,
     "previous_device_still_authorized": true
   },
-  "request_id": "e9b2a0b963ae4ecfb14a57eaa0683835"
+  "request_id": "95903bcf97954c9d81750f2ec5243d3b"
 }
 ```
 
@@ -541,8 +605,8 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "user_id": "925100221",
-  "transfer_token": "nxx_M2w5B4NoI5jqDqZR8gPllKa-iPE-7ANZ",
+  "user_id": "985492467",
+  "transfer_token": "nxx_D5t_dgtBcAxtSBNB2-eCF3haYMkk3K4e",
   "confirm": true
 }
 ```
@@ -551,7 +615,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 {
   "ok": true,
   "data": {
-    "session_token": "nxt_vv9P31OF31YeJfaVYmBjiOY5zr2Et63TedeucdflTd4",
+    "session_token": "nxt_CrkMLBlMw5NsuXDnH5SCEoUWt5KQZrHshOnIJD0gvcE",
     "session_id": 2,
     "device_id": "PC-B",
     "license": {
@@ -559,10 +623,10 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
       "customer_id": 1,
       "license_type": "TRIAL",
       "state": "ACTIVE",
-      "starts_at": "2026-11-17T07:00:09.577228Z",
-      "expires_at": "2026-11-20T07:00:09.577228Z",
-      "serial_number": "925100221",
-      "user_id": "925100221"
+      "starts_at": "2026-11-17T07:38:18.576863Z",
+      "expires_at": "2026-11-20T07:38:18.576863Z",
+      "serial_number": "985492467",
+      "user_id": "985492467"
     },
     "authorization": "ACTIVE",
     "revocation": "Server-side revocation is immediate; an offline client only learns of it when it next reconnects.",
@@ -572,14 +636,14 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
       1
     ]
   },
-  "request_id": "eea5ebd66e93412cbc3cfa529300afc4"
+  "request_id": "23c952bba1a34cb5a96e5f05762f1000"
 }
 ```
 
 ### 10. Session Introspection
 
 `POST http://127.0.0.1:8001/api/integrations/v1/sessions/introspect`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/sessions/introspect`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/sessions/introspect`
 
 **Required fields:** project_code, session_token  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -588,7 +652,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "session_token": "nxt_WvVfpWTzvt-4aQgPh51jRhTEn1DPPUT4y3su4Zcsw-E"
+  "session_token": "nxt_UUPtbUK_9-vwjIqBUMjyInZT3QQs4l-wkfL62VGsY5U"
 }
 ```
 **Success – response (HTTP 200)**
@@ -599,12 +663,12 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "active": true,
     "session_id": 1,
     "device_id": "PC-A",
-    "user_id": "925100221",
+    "user_id": "985492467",
     "customer_id": 1,
     "license_state": "ACTIVE",
-    "expires_at": "2026-11-20T07:00:09.577228Z"
+    "expires_at": "2026-11-20T07:38:18.576863Z"
   },
-  "request_id": "629711e9c85a49acbaa963e1c19079fe"
+  "request_id": "167104b3883844ddacab1ea6b9d05c89"
 }
 ```
 
@@ -612,7 +676,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "session_token": "nxt_WvVfpWTzvt-4aQgPh51jRhTEn1DPPUT4y3su4Zcsw-E"
+  "session_token": "nxt_UUPtbUK_9-vwjIqBUMjyInZT3QQs4l-wkfL62VGsY5U"
 }
 ```
 **Old device after transfer – response (HTTP 200)**
@@ -622,16 +686,16 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
   "data": {
     "active": false,
     "reason": "device_transfer",
-    "revoked_at": "2026-11-17T07:00:19.804529Z"
+    "revoked_at": "2026-11-17T07:38:22.399171Z"
   },
-  "request_id": "fd6f25b9b7544d50ab02cad121cc3176"
+  "request_id": "3b9778d8a93f49c9be1a45b5fb042110"
 }
 ```
 
 ### 11. Logout
 
 `POST http://127.0.0.1:8001/api/integrations/v1/sessions/logout`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/sessions/logout`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/sessions/logout`
 
 **Required fields:** project_code, session_token  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -640,7 +704,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "session_token": "nxt_vv9P31OF31YeJfaVYmBjiOY5zr2Et63TedeucdflTd4"
+  "session_token": "nxt_CrkMLBlMw5NsuXDnH5SCEoUWt5KQZrHshOnIJD0gvcE"
 }
 ```
 **Success – response (HTTP 200)**
@@ -651,14 +715,14 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "revoked": true,
     "session_id": 2
   },
-  "request_id": "d8ee05c3d6f1422ab7d09c82c22538e5"
+  "request_id": "da60d53a9c4c45dbb4d55576780f59b4"
 }
 ```
 
 ### 12. Usage Tracking
 
 `POST http://127.0.0.1:8001/api/integrations/v1/usage/events`  
-`POST https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1/usage/events`
+`POST https://saitallyexpert.in/nexus/api/integrations/v1/usage/events`
 
 **Required fields:** project_code, event_type (APP_OPEN | LOGIN | HEARTBEAT | LOGOUT | DEVICE_ACTIVATION | DEVICE_TRANSFER) and session_token or user_id; optional event_id, occurred_at, device_id; or events[] (max 100)  
 **Permission:** MOTHYS client credentials (`X-Client-Id` + `X-Client-Secret`).
@@ -667,7 +731,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "session_token": "nxt_vv9P31OF31YeJfaVYmBjiOY5zr2Et63TedeucdflTd4",
+  "session_token": "nxt_CrkMLBlMw5NsuXDnH5SCEoUWt5KQZrHshOnIJD0gvcE",
   "event_type": "LOGIN",
   "event_id": "evt-1"
 }
@@ -680,7 +744,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "recorded": 1,
     "duplicates": 0
   },
-  "request_id": "79bfbd7928eb4b2da7885f8ed3fa968e"
+  "request_id": "5070027582984336a000e4c3e3e0ebe3"
 }
 ```
 
@@ -688,7 +752,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
 ```json
 {
   "project_code": "MOTHYS",
-  "session_token": "nxt_vv9P31OF31YeJfaVYmBjiOY5zr2Et63TedeucdflTd4",
+  "session_token": "nxt_CrkMLBlMw5NsuXDnH5SCEoUWt5KQZrHshOnIJD0gvcE",
   "event_type": "HEARTBEAT",
   "event_id": "evt-2"
 }
@@ -701,7 +765,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
     "recorded": 1,
     "duplicates": 0
   },
-  "request_id": "4beb41f6ecc2415a80853be52601de28"
+  "request_id": "686051c7709f477fb79b5561a6247573"
 }
 ```
 
@@ -740,7 +804,7 @@ Response envelope: success `{"ok": true, "data": {…}, "request_id": "…"}`; e
       "usage_event"
     ]
   },
-  "request_id": "a0b11d3757274244832d03ffe57f829b"
+  "request_id": "9a9dff70abf6462d98e150f698c1dc4e"
 }
 ```
 
@@ -790,13 +854,14 @@ Mothys code must trigger Nexus; nobody types customers into Nexus.
 
 ## 6. Activation, device transfer, licence checks and JWT revocation
 
-1. App asks for activation → `activation/request` (credentials) → Nexus emails a 9-digit key.
-2. `activation/verify` with the key, `device_id`, `device_name`.
+0. **Same device, logging in again:** call `auth/verify` with `device_id`. If `device_authorized` is true this device already holds the licence: no activation key and no transfer are needed. Mothys re-issues its JWT for the session it already stored for that device (`session_id` tells you which).
+1. **Activate User screen** (fields: User ID / Serial Number, Registered Email Address, Send Activation Key, Activation Key, Verify & Activate). *Send Activation Key* → `activation/request` with `user_id` + `email`. Nexus checks the email belongs to that account and emails the 9-digit key **only to the registered address**; a wrong email returns `401 INVALID_CREDENTIALS` and nothing is sent. No separate email OTP exists.
+2. *Verify & Activate* → `activation/verify` with `user_id`, `email`, the key, `device_id`, `device_name`.
    * **200** → session created. Issue your JWT with the returned `session_token` in `nsid`.
    * **409 `TRANSFER_CONFIRMATION_REQUIRED`** → another device holds the licence. Show the dialog from the response (`title`, `message`, buttons **Cancel** / **OK – Activate This Device**) and keep `transfer_token`.
 3. `devices/transfer/confirm` with `confirm:false` (Cancel – old device stays authorised) or `confirm:true` (OK). On true Nexus revokes the old device's session **immediately**, creates the new session and returns its `session_token`; issue a JWT for it. No Super Admin approval and no extra OTP.
 4. **Every protected Mothys request** must call `sessions/introspect` with the JWT's `nsid` (cache the result ≤ 30–60 s). `active:false` → reject with 401 and the `reason` (`device_transfer`, `logout`, `license_expired`, `license_suspended`, `trial_cancelled`, `customer_inactivated`, `unknown_session`). This is how the old device's JWT dies after a transfer even though the JWT itself has not expired.
-5. `licenses/validate` returns `state` (`ACTIVE`, `EXPIRED`, `PENDING_APPROVAL`, `SUSPENDED`, `CANCELLED`, `INACTIVE`) and `expires_at` for screens that show licence status; enforcement itself comes from `introspect`.
+5. Expired, cancelled, inactive, suspended or **pending-approval** licences are denied: `activation/verify` returns `403 LICENSE_NOT_ACTIVE` and `introspect` returns `active:false`. `licenses/validate` returns `state` (`ACTIVE`, `EXPIRED`, `PENDING_APPROVAL`, `SUSPENDED`, `CANCELLED`, `INACTIVE`) and `expires_at` for screens that show licence status; enforcement itself comes from `introspect`.
 6. Logout → `sessions/logout`. Report usage with `usage/events` (APP_OPEN on start, LOGIN after login, HEARTBEAT ≈ every 5 min, LOGOUT); `DEVICE_ACTIVATION` / `DEVICE_TRANSFER` are recorded by Nexus. Send an `event_id` so retries are safe. Fire-and-forget; never block the user on it.
 7. **Offline clients:** Nexus revocation is immediate, but an offline desktop client keeps its local login until it reconnects. On reconnect it must call a protected endpoint (which calls introspect) before trusting the session.
 
@@ -818,7 +883,7 @@ async def nexus(path, body=None, idem=None):
 
 ## 7. Environment configuration (Mothys server)
 ```
-NEXUS_API_BASE=https://<NEXUS_PRODUCTION_HOST>/nexus/api/integrations/v1
+NEXUS_API_BASE=https://saitallyexpert.in/nexus/api/integrations/v1
 NEXUS_CLIENT_ID=<issued in Nexus>
 NEXUS_CLIENT_SECRET=<delivered securely, never committed>
 NEXUS_PROJECT_CODE=MOTHYS
