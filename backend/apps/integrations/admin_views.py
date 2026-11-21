@@ -490,7 +490,8 @@ class NotificationsView(AdminView):
         from apps.accounts.constants import Role
         from apps.accounts.permissions import get_role, user_can
         from .models import IntegrationNotification
-        qs = IntegrationNotification.objects.all()
+        from apps.dashboard.models import NotificationDismissal, dismissed_ids
+        qs = IntegrationNotification.objects.exclude(pk__in=dismissed_ids(request.user, NotificationDismissal.UNIVERSE))  # this user's X
         if get_role(request.user) == Role.ADMIN:  # project-scoped: only projects this Admin may view
             allowed = [p.pk for p in IntegrationProject.objects.all() if user_can(request.user, p.code, "view")]
             qs = qs.filter(project_id__in=allowed)
@@ -511,6 +512,19 @@ class NotificationReadView(NotificationsView):
     def post(self, request, pk):
         self._visible(request).filter(pk=pk).update(read=True)
         return Response({"ok": True})
+
+
+class NotificationDismissView(NotificationsView):
+    """X on a bell row: hides it for the CURRENT user only (stored per user). The notification and its registration / sync / audit data stay."""
+
+    def post(self, request, pk):
+        from apps.dashboard.models import NotificationDismissal as D
+        if D.objects.filter(user=request.user, source=D.UNIVERSE, notification_id=pk).exists():
+            return Response({"ok": True, "dismissed": pk})  # repeat click: already hidden
+        if not self._visible(request).filter(pk=pk).exists():
+            raise NotFound("Notification not found.")
+        D.objects.get_or_create(user=request.user, source=D.UNIVERSE, notification_id=pk)
+        return Response({"ok": True, "dismissed": pk})
 
 
 class ValidateApiView(AdminView):

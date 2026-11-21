@@ -43,6 +43,11 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
   const [acct, setAcct] = useState(() => ({ user_id: '', password: genPassword(), show: false, copied: '' })); // pre-approval credentials (memory only)
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
+  const [resetPw, setResetPw] = useState(null); // one-time temporary password from an explicit reset; memory only, gone on close/refresh
+  const [extOpen, setExtOpen] = useState(false);
+  const [suspendOpen, setSuspendOpen] = useState(false);
+  const [toast, setToast] = useState('');
+  const showToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1800); };
   const [errors, setErrors] = useState({});
   const [secret, setSecret] = useState(null);   // one-time credentials, kept in memory only
   const [extend, setExtend] = useState('3');
@@ -77,8 +82,8 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
 
   const saveEdit = run('save', async () => {
     const res = await integrationsApi.patchUniverseCustomer(code, curKind, curId, { customer_name: edit.name, company_name: edit.company_name, email: edit.email, contact_number: edit.contact_number, address: edit.address, gstin: edit.gstin });
-    setRec(res.record); setEdit(null);
-  }, 'Changes saved.');
+    setRec(res.record); setEdit(null); setErrors({});
+  }, 'Changes saved successfully.');
 
   const approve = run('approve', async () => {
     const res = await act('approve', { license_type: lic.license_type, trial_days: lic.trial_days, years: lic.years, custom_days: lic.custom_days, user_id: acct.user_id.trim(), password: acct.password });
@@ -91,18 +96,15 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
   return (
 <>
         <Drawer open onClose={onClose} wide flush titleId="universe-customer-title" closeLabel="Close customer"
-      title={<span style={{ display: 'grid', lineHeight: 1.25 }}><span>{title}</span><small style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted)' }}>{r ? `${r.project.name} · ${isReg ? 'Registration review' : 'Customer details'}` : 'Loading…'}</small></span>}>
+      title={isReg || !r
+        ? <span style={{ display: 'grid', lineHeight: 1.25 }}><span>{title}</span><small style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted)' }}>{r ? `${r.project.name} · Registration review` : 'Loading…'}</small></span>
+        : edit ? <span className={styles.hdr}><span className={styles.hdrName}>Edit Customer – {r.registration.name}</span></span>
+        : <span className={styles.hdr}><span className={styles.hdrName}>{r.registration.name}</span><span className={styles.hdrSep}>·</span><span className={styles.mono}>{r.project.code}</span><span className={styles.hdrSep}>|</span><Badge tone={TONE[r.registration.approval_status] || 'info'}>{r.registration.approval_status}</Badge></span>}>
       {!r && <p className={styles.body}>{msg || 'Loading…'}</p>}
       {r && (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-          {!isReg && (
-            <div className={styles.tabs} role="tablist">
-              {[['customer', 'Customer'], ['license', 'License'], ['usage', 'Usage & Devices'], ['history', 'History']].map(([k, l]) => (
-                <button key={k} type="button" role="tab" aria-selected={tab === k} className={`${styles.tab} ${tab === k ? styles.tabOn : ''}`} onClick={() => setTab(k)}>{l}</button>
-              ))}
-            </div>
-          )}
-          <div className={`${styles.body} ${isReg ? '' : styles.cardBody}`} style={{ flex: 1, overflowY: 'auto' }}>
+          {/* One unified card (no tabs): Customer Information -> Nexus Account & License -> Usage & Devices -> License & Activity History */}
+          <div className={`${styles.body} ${isReg ? '' : `${styles.cardBody} ${styles.unified}`}`} style={{ flex: 1, overflowY: 'auto' }}>
             {secret && (
               <div className={styles.secret} role="status">
                 <b>One-time credentials — copy now</b>
@@ -113,9 +115,9 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
             )}
 
             {/* ---- A. Customer registration information (both modes) ---- */}
-            {(isReg || tab === 'customer') && (
+            {(
               <section className={styles.section} aria-label="Customer information">
-                <h3>{isReg ? 'Customer Information' : 'Customer Details'}
+                <h3>Customer Information
                   {can.edit && !edit && isReg && r.registration.approval_key !== 'APPROVED' && <button className={`${styles.btn} ${styles.ghost}`} onClick={() => setEdit({ ...r.registration })}>Edit Customer</button>}
                 </h3>
                 {edit ? (
@@ -137,7 +139,7 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
                   <div className={styles.grid}>
                     <KV k="Customer Name">{r.registration.name}</KV><KV k="Company Name">{r.registration.company_name}</KV><KV k="Email Address">{r.registration.email}</KV>
                     <KV k="Contact Number">{r.registration.contact_number}</KV><KV k="GSTIN">{r.registration.gstin || "—"}</KV><KV k="Address">{r.registration.address}</KV><KV k="External Customer ID" mono>{r.registration.external_customer_id}</KV>
-                    <KV k="Project">{r.project.name}</KV><KV k="Registration Date">{dt(r.registration.registered_at)}</KV><KV k="Registration Source">{r.registration.source}</KV>
+                    <KV k="Project Code" mono>{r.project.code}</KV><KV k="Registration">{dt(r.registration.registered_at)}{r.registration.source ? ` · ${r.registration.source}` : ''}</KV>
                     <KV k="Approval Status"><Badge tone={TONE[r.registration.approval_status] || 'info'}>{r.registration.approval_status}</Badge></KV>
                     {!isReg && <KV k="Approved">{r.registration.approved_by ? `${r.registration.approved_by} · ${dt(r.registration.approved_at)}` : '—'}</KV>}
                   </div>)
@@ -146,7 +148,7 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
             )}
 
             {/* ---- B. Tally ---- */}
-            {(isReg || tab === 'customer') && r.tally && (
+            {r.tally && (
               <section className={styles.section} aria-label="Tally license information">
                 <h3>{isReg ? 'Tally License Information' : 'Tally Details'}<Badge tone={r.tally.verified ? 'ok' : 'bad'}>{r.tally.verified ? 'Verified' : 'Verification required'}</Badge></h3>
                 {!r.tally.verified && (
@@ -165,11 +167,10 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
             )}
 
             {/* ---- C. Nexus credentials / account ---- */}
-            {(isReg || tab === 'customer') && (
-              <section className={styles.section} aria-label="Nexus credentials">
-                <h3>{isReg ? 'Nexus Credentials' : 'Nexus Account Details'}
-                  {!isReg && can.reset_password && <button className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={run('resend', async () => { const res = await act('resend-setup'); setRec(res.record); }, 'Setup link email requested.')}>Resend Setup Link</button>}
-                  {!isReg && can.reset_password && <button className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={() => window.confirm('Generate a NEW temporary password? Existing sessions are signed out and the customer must change it at next login.') && run('reset', async () => { const res = await act('reset-password'); setRec(res.record); setSecret({ ...res.result, user_id: r.account.user_id }); }, 'New temporary password issued. Copy it now; it is not emailed.')()}>Reset Temporary Password</button>}
+            {(
+              <section className={styles.section} aria-label={isReg ? 'Nexus credentials' : 'Nexus account and license'}>
+                <h3>{isReg ? 'Nexus Credentials' : 'Nexus Account & License'}
+                  {!isReg && r.license && <Badge tone={TONE[r.license.status] || 'info'}>{r.license.status}</Badge>}
                 </h3>
                 {isReg && r.registration.approval_key !== 'APPROVED' && r.registration.approval_key !== 'REJECTED' ? (
                   <div className={`${styles.grid} ${styles.credGrid}`}>
@@ -198,10 +199,54 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
                 ) : (
                 <div className={styles.grid}>
                   <KV k="User ID / Serial Number" mono>{r.account.user_id || 'Assigned on approval'}</KV>
-                  <KV k="Password">{r.account.password_status}</KV>
-                  <KV k="Activation Key">{r.account.activation_key_status}</KV>
                   {!isReg && <KV k="Account Status"><Badge tone={r.account.account_status === 'Active' ? 'ok' : 'bad'}>{r.account.account_status}</Badge>{r.account.locked ? ' (locked)' : ''}</KV>}
+                  <KV k="Password Setup">{r.account.password_status}</KV>
+                  <KV k="Activation">{r.account.activation_key_status}</KV>
+                  {!isReg && r.license && <>
+                    <KV k="License Type">{r.license.type_label}</KV>
+                    <KV k="License Duration">{r.license.type_label === 'Yearly' ? `${r.license.years} year(s)` : r.license.type_label === 'Lifetime' ? 'No expiry' : `${r.license.trial_days ?? '—'} day(s)`}</KV>
+                    <KV k="Start Date">{dt(r.license.starts_at)}</KV><KV k="Expiry Date">{r.license.expires_at ? dt(r.license.expires_at) : 'No fixed expiry'}</KV>
+                    <KV k="Remaining Days">{r.license.remaining_days === null ? '—' : r.license.remaining_days}</KV>{r.license.last_renewal_at && <KV k="Last Renewal">{dt(r.license.last_renewal_at)}</KV>}
+                  </>}
                 </div>)}
+                {!isReg && r.license?.renewal_required && <div className={styles.alert} role="alert" style={{ marginTop: 8 }}><b>License Expired — Renewal Required</b>Protected software access is denied until an authorised renewal.</div>}
+                {!isReg && (can.reset_password || can.extend_trial || can.renew || can.inactivate || can.set_license) && (
+                  <div className={styles.actMenu} role="group" aria-label="Account / License Actions">
+                    <h4 className={styles.sub}>Account / License Actions</h4>
+                    <div className={styles.actRow}>
+                      {can.reset_password && <div className={styles.col}><span className={styles.lbl}>Password</span><span className={styles.inline}>
+                        <input readOnly title="Temporary password - shown once after Reset" className={`${styles.mono} ${styles.pwOut}`} type={resetPw?.show ? 'text' : 'password'} value={resetPw?.value || ''} placeholder="Password" aria-label="Temporary password (shown once after reset)" onFocus={(e) => e.target.select()} />
+                        <button type="button" className={styles.regenBtn} disabled={!!busy} title="Reset Temporary Password" aria-label="Reset Temporary Password"
+                          onClick={() => window.confirm('Generate a NEW temporary password? Existing sessions are signed out and the customer must change it at next login.') && run('reset', async () => { const res = await act('reset-password'); setRec(res.record); setResetPw({ value: res.result.temporary_password, show: false }); }, '')()}><RefreshIcon size={18} aria-hidden="true" /></button>
+                        <button type="button" className={styles.iconLite} disabled={!resetPw?.value} title={resetPw?.show ? 'Hide Password' : 'Show Password'} aria-label={resetPw?.show ? 'Hide Password' : 'Show Password'} aria-pressed={!!resetPw?.show} onClick={() => setResetPw({ ...resetPw, show: !resetPw.show })}>{resetPw?.show ? <EyeOffIcon size={18} aria-hidden="true" /> : <EyeIcon size={18} aria-hidden="true" />}</button>
+                        <button type="button" className={styles.iconLite} disabled={!resetPw?.value} title="Copy Password" aria-label="Copy Password" onClick={async () => { try { await navigator.clipboard.writeText(resetPw.value); showToast('Copied'); } catch { setResetPw({ ...resetPw, show: true }); showToast('Clipboard unavailable - select and press Ctrl+C'); } }}><CopyIcon size={18} aria-hidden="true" /></button>
+                      </span></div>}
+                      {can.extend_trial && r.license.type_label === 'Trial' && <div className={styles.col}><span className={styles.lbl}>Trial</span><span className={styles.inline}>
+                        {!extOpen
+                          ? <button type="button" className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} title="Add days to the current trial" onClick={() => { setExtend(''); setExtOpen(true); }}>Extend Trial</button>
+                          : <>
+                            <input aria-label="Additional days" placeholder="Additional days" type="text" inputMode="numeric" value={extend} onChange={(e) => setExtend(e.target.value.replace(/\D/g, ''))} className={styles.daysIn} autoFocus />
+                            <button type="button" className={styles.tickBtn} title="Extend Trial" aria-label="Confirm trial extension" disabled={!!busy || !/^[1-9]\d*$/.test(String(extend))} onClick={run('extend', async () => { const res = await act('extend-trial', { days: Number(extend) }); setRec(res.record); setExtOpen(false); }, 'Trial extended.')}>
+                              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
+                            <button type="button" className={styles.iconLite} title="Cancel" aria-label="Cancel trial extension" disabled={!!busy} onClick={() => setExtOpen(false)}>
+                              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
+                          </>}
+                      </span></div>}
+                      {can.renew && r.license.type_label === 'Yearly' && <button className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={run('renew', async () => { const res = await act('renew'); setRec(res.record); }, 'License renewed.')}>Renew License</button>}
+                      {can.inactivate && (r.account.account_status === 'Active'
+                        ? <button title="Suspend this customer's license" className={`${styles.btn} ${styles.danger}`} disabled={!!busy} onClick={() => setSuspendOpen(true)}>Suspend License</button>
+                        : <button className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={run('react', async () => { const res = await act('reactivate'); setRec(res.record); }, 'License reactivated.')}>Reactivate License</button>)}
+                      {can.set_license && <>
+                        <label className={`${styles.field} ${styles.fLic}`}>License Type<select value={lic.license_type} onChange={(e) => setLic({ ...lic, license_type: e.target.value })}><option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="ONE_YEAR">Yearly</option><option value="CUSTOM">Custom (Days)</option></select></label>
+                        {lic.license_type === 'TRIAL' && <label className={`${styles.field} ${styles.fDur}`} title="Trial duration in days">Trial Days<input type="number" min="1" value={lic.trial_days} onChange={(e) => setLic({ ...lic, trial_days: e.target.value })} /></label>}
+                        {lic.license_type === 'ONE_YEAR' && <label className={`${styles.field} ${styles.fDur}`} title="Duration in years">Years<input type="number" min="1" max="10" value={lic.years} onChange={(e) => setLic({ ...lic, years: e.target.value })} /></label>}
+                        {lic.license_type === 'CUSTOM' && <label className={`${styles.field} ${styles.fDur}`} title="Custom duration in days">Days<input type="number" min="1" max="3650" value={lic.custom_days} onChange={(e) => setLic({ ...lic, custom_days: e.target.value.replace(/\D/g, '') })} /></label>}
+                        <button type="button" title="Apply License Change" aria-label="Apply License Change" className={styles.regenBtn} disabled={!!busy || (lic.license_type !== 'LIFETIME' && !/^[1-9]\d*$/.test(String(lic.license_type === 'ONE_YEAR' ? lic.years : lic.license_type === 'CUSTOM' ? lic.custom_days : lic.trial_days)))}
+                          onClick={() => window.confirm('Apply this licence change now?') && run('type', async () => { const res = await act('set-license', { license_type: lic.license_type, trial_days: lic.trial_days, years: lic.years, custom_days: lic.custom_days }); setRec(res.record); }, 'License updated.')()}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
+                      </>}
+                    </div>
+                  </div>
+                )}
               </section>
             )}
 
@@ -211,7 +256,7 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
                 <h3>License Configuration</h3>
                 <div className={`${styles.grid} ${styles.licGrid}`}>
                   <label className={styles.field}><span>License Type <b style={{ color: '#c62828' }}>*</b></span>
-                    <select value={lic.license_type} onChange={(e) => setLic({ ...lic, license_type: e.target.value })}><option value="TRIAL">Trial</option><option value="ONE_YEAR">Yearly</option><option value="LIFETIME">Lifetime</option><option value="CUSTOM">Custom</option></select>
+                    <select value={lic.license_type} onChange={(e) => setLic({ ...lic, license_type: e.target.value })}><option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="ONE_YEAR">Yearly</option><option value="CUSTOM">Custom (Days)</option></select>
                   </label>
                   {lic.license_type === 'TRIAL' && <label className={styles.field}><span>Trial Days <b style={{ color: '#c62828' }}>*</b></span><input type="number" min="1" max="3650" value={lic.trial_days} onChange={(e) => setLic({ ...lic, trial_days: e.target.value })} />{errors.trial_days && <span className={styles.err}>{errors.trial_days[0]}</span>}</label>}
                   {lic.license_type === 'ONE_YEAR' && <label className={styles.field}><span>Number of Years <b style={{ color: '#c62828' }}>*</b></span><input type="number" min="1" max="10" value={lic.years} onChange={(e) => setLic({ ...lic, years: e.target.value })} />{errors.years && <span className={styles.err}>{errors.years[0]}</span>}</label>}
@@ -222,69 +267,38 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
               </section>
             )}
 
-            {/* ---- License tab ---- */}
-            {!isReg && tab === 'license' && (
-              <section className={styles.section} aria-label="License details">
-                <h3>License Details<Badge tone={TONE[r.license.status] || 'info'}>{r.license.status}</Badge></h3>
+            {/* ---- Section 3: Usage & Devices ---- */}
+            {!isReg && (
+              <section className={styles.section} aria-label="Usage and devices">
+                <h3>Usage &amp; Devices<span className={styles.badges}><Badge tone="info">{USAGE[r.usage.category] || '—'}</Badge><Badge tone={r.devices.active_session ? 'ok' : 'warn'}>{r.devices.active_session ? 'Active session' : 'No active session'}</Badge></span></h3>
                 <div className={styles.grid}>
-                  <KV k="License Type">{r.license.type_label}</KV>
-                  <KV k={r.license.type_label === 'Yearly' ? 'Validity (years)' : 'Trial Days'}>{r.license.type_label === 'Yearly' ? r.license.years : r.license.trial_days}</KV>
-                  <KV k="Start Date">{dt(r.license.starts_at)}</KV><KV k="Expiry Date">{r.license.expires_at ? dt(r.license.expires_at) : 'No fixed expiry'}</KV>
-                  <KV k="Remaining Days">{r.license.remaining_days === null ? '—' : r.license.remaining_days}</KV><KV k="Last Renewal">{dt(r.license.last_renewal_at)}</KV>
+                  <KV k="Last Login">{dt(r.usage.last_login)}</KV><KV k="Last Used">{dt(r.usage.last_used)}</KV><KV k="Total Logins">{r.usage.total_logins}</KV>
+                  <KV k="Active Days">{r.usage.active_days}</KV><KV k="Software Opens">{r.usage.total_opens}</KV>
+                  <KV k="Today / This Month">{r.usage.duration_available ? `${r.usage.daily_minutes ?? 0} min / ${r.usage.monthly_minutes} min` : 'Data Unavailable'}</KV>
+                  <KV k="Authorized Device">{r.devices.current || 'No device authorized yet.'}</KV>
+                  <KV k="Device Status">{r.devices.active_session ? 'Active session' : r.devices.current ? 'No active session' : 'Not authorized'}</KV>
+                  <KV k="Last Seen">{dt(r.devices.last_seen_at)}</KV><KV k="Last Device Transfer">{dt(r.devices.last_transfer_at)}</KV>
                 </div>
-                {r.license.renewal_required && <div className={styles.alert} role="alert" style={{ marginTop: 8 }}><b>License Expired — Renewal Required</b>Protected software access is denied until an authorised renewal.</div>}
-                <div className={styles.actions} style={{ marginTop: 10 }}>
-                  {can.extend_trial && r.license.type_label === 'Trial' && <><input aria-label="Days to extend" type="number" min="1" value={extend} onChange={(e) => setExtend(e.target.value)} style={{ width: 70, padding: 6 }} /><button className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={run('extend', async () => { const res = await act('extend-trial', { days: Number(extend) }); setRec(res.record); }, 'Trial extended.')}>Extend Trial</button></>}
-                  {can.renew && r.license.type_label === 'Yearly' && <button className={styles.btn} disabled={!!busy} onClick={run('renew', async () => { const res = await act('renew'); setRec(res.record); }, 'License renewed.')}>Renew License</button>}
-                  {can.inactivate && (r.account.account_status === 'Active'
-                    ? <button className={`${styles.btn} ${styles.danger}`} disabled={!!busy} onClick={() => window.confirm('Suspend this customer? Protected access is denied immediately.') && run('sus', async () => { const res = await act('inactivate'); setRec(res.record); }, 'Customer suspended.')()}>Suspend</button>
-                    : <button className={styles.btn} disabled={!!busy} onClick={run('react', async () => { const res = await act('reactivate'); setRec(res.record); }, 'Customer reactivated.')}>Reactivate</button>)}
-                </div>
-                {can.set_license && (
-                  <div className={styles.grid} style={{ marginTop: 12 }}>
-                    <label className={styles.field}>Change License Type<select value={lic.license_type} onChange={(e) => setLic({ ...lic, license_type: e.target.value })}><option value="TRIAL">Trial</option><option value="ONE_YEAR">Yearly</option><option value="LIFETIME">Lifetime</option></select></label>
-                    {lic.license_type === 'TRIAL' && <label className={styles.field}>Trial Days<input type="number" min="1" value={lic.trial_days} onChange={(e) => setLic({ ...lic, trial_days: e.target.value })} /></label>}
-                    {lic.license_type === 'ONE_YEAR' && <label className={styles.field}>Validity (years)<input type="number" min="1" max="10" value={lic.years} onChange={(e) => setLic({ ...lic, years: e.target.value })} /></label>}
-                    <div style={{ alignSelf: 'end' }}><button className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={() => window.confirm('Apply this licence change now?') && run('type', async () => { const res = await act('set-license', { license_type: lic.license_type, trial_days: lic.trial_days || 3, years: lic.years }); setRec(res.record); }, 'License updated.')()}>Apply License Change</button></div>
-                  </div>
-                )}
+                {r.usage.note && <p className={styles.muted} style={{ marginTop: 6 }}>{r.usage.note}</p>}
+                <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Device</th><th>Status</th><th>Authorized</th><th>Ended</th><th>Reason</th></tr></thead>
+                  <tbody>{r.devices.history.map((d, i) => <tr key={i}><td>{d.device}</td><td>{d.status}</td><td>{dt(d.authorized_at)}</td><td>{dt(d.ended_at)}</td><td>{d.reason || '—'}</td></tr>)}
+                    {r.devices.history.length === 0 && <tr><td colSpan={5}>No device authorized yet.</td></tr>}</tbody></table></div>
               </section>
             )}
 
-            {/* ---- Usage & devices ---- */}
-            {!isReg && tab === 'usage' && (
-              <>
-                <section className={styles.section} aria-label="Usage summary">
-                  <h3>Usage Summary<Badge tone="info">{USAGE[r.usage.category] || '—'}</Badge></h3>
-                  <div className={styles.grid}>
-                    <KV k="Last Login">{dt(r.usage.last_login)}</KV><KV k="Last Used">{dt(r.usage.last_used)}</KV><KV k="Total Logins">{r.usage.total_logins}</KV>
-                    <KV k="Active Days">{r.usage.active_days}</KV><KV k="Software Opens">{r.usage.total_opens}</KV>
-                    <KV k="Today (active)">{r.usage.duration_available ? `${r.usage.daily_minutes ?? 0} min` : 'Data Unavailable'}</KV>
-                    <KV k="This Month (active)">{r.usage.duration_available ? `${r.usage.monthly_minutes} min` : 'Data Unavailable'}</KV>
-                  </div>
-                  {r.usage.note && <p className={styles.muted} style={{ marginTop: 6 }}>{r.usage.note}</p>}
-                </section>
-                <section className={styles.section} aria-label="Device information">
-                  <h3>Device Information<Badge tone={r.devices.active_session ? 'ok' : 'warn'}>{r.devices.active_session ? 'Active session' : 'No active session'}</Badge></h3>
-                  <div className={styles.grid}><KV k="Authorized Device">{r.devices.current}</KV><KV k="Last Seen">{dt(r.devices.last_seen_at)}</KV><KV k="Last Device Transfer">{dt(r.devices.last_transfer_at)}</KV></div>
-                  <table className={styles.table} style={{ marginTop: 8 }}><thead><tr><th>Device</th><th>Status</th><th>Authorized</th><th>Ended</th><th>Reason</th></tr></thead>
-                    <tbody>{r.devices.history.map((d, i) => <tr key={i}><td>{d.device}</td><td>{d.status}</td><td>{dt(d.authorized_at)}</td><td>{dt(d.ended_at)}</td><td>{d.reason || '—'}</td></tr>)}
-                      {r.devices.history.length === 0 && <tr><td colSpan={5}>No device has been authorised yet.</td></tr>}</tbody></table>
-                </section>
-              </>
-            )}
-
-            {/* ---- History ---- */}
-            {!isReg && tab === 'history' && (
-              <>
-                <section className={styles.section}><h3>License Changes, Renewals &amp; Extensions</h3>
-                  <table className={styles.table}><thead><tr><th>When</th><th>Action</th><th>Type</th><th>Years</th><th>From</th><th>To</th><th>By</th></tr></thead>
-                    <tbody>{r.history.terms.map((t, i) => <tr key={i}><td>{dt(t.at)}</td><td>{t.action}</td><td>{t.type}</td><td>{t.years || '—'}</td><td>{dt(t.from)}</td><td>{t.to ? dt(t.to) : 'No expiry'}</td><td>{t.by || '—'}</td></tr>)}
-                      {r.history.terms.length === 0 && <tr><td colSpan={7}>No changes recorded.</td></tr>}</tbody></table></section>
-                <section className={styles.section}><h3>Approval, Activation &amp; Transfer Audit</h3>
-                  <table className={styles.table}><thead><tr><th>When</th><th>Event</th><th>Result</th><th>Detail</th><th>By</th></tr></thead>
-                    <tbody>{r.history.audit.map((a, i) => <tr key={i}><td>{dt(a.at)}</td><td>{a.action}</td><td>{a.ok ? 'OK' : 'Failed'}</td><td>{a.detail}</td><td>{a.by || '—'}</td></tr>)}</tbody></table></section>
-              </>
+            {/* ---- Section 4: License & Activity History (read-only) ---- */}
+            {!isReg && (
+              <section className={styles.section} aria-label="License and activity history">
+                <h3>License &amp; Activity History</h3>
+                <h4 className={styles.sub}>License Changes, Renewals &amp; Extensions</h4>
+                <div className={`${styles.tableWrap} ${styles.scroll5}`}><table className={styles.table}><thead><tr><th>When</th><th>Action</th><th>Type</th><th>Years</th><th>From</th><th>To</th><th>By</th></tr></thead>
+                  <tbody>{r.history.terms.map((t, i) => <tr key={i}><td>{dt(t.at)}</td><td>{t.action}</td><td>{t.type}</td><td>{t.years || '—'}</td><td>{dt(t.from)}</td><td>{t.to ? dt(t.to) : 'No expiry'}</td><td>{t.by || '—'}</td></tr>)}
+                    {r.history.terms.length === 0 && <tr><td colSpan={7}>No changes recorded.</td></tr>}</tbody></table></div>
+                <h4 className={styles.sub}>Approval, Activation &amp; Device Transfer Audit</h4>
+                <div className={`${styles.tableWrap} ${styles.scroll5}`}><table className={styles.table}><thead><tr><th>When</th><th>Event</th><th>Result</th><th>Detail</th><th>By</th></tr></thead>
+                  <tbody>{r.history.audit.map((a, i) => <tr key={i}><td>{dt(a.at)}</td><td>{a.action}</td><td>{a.ok ? 'OK' : 'Failed'}</td><td>{a.detail}</td><td>{a.by || '—'}</td></tr>)}
+                    {r.history.audit.length === 0 && <tr><td colSpan={5}>No events recorded.</td></tr>}</tbody></table></div>
+              </section>
             )}
             {msg && <p role="status" className={styles.muted}>{msg}</p>}
           </div>
@@ -293,7 +307,7 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
           {!isReg && !edit && (can.edit || can.delete) && (
             <div className={styles.cardActions}>
               {can.edit && <button type="button" className={styles.iconAct} title="Edit Customer" aria-label="Edit Customer" disabled={!!busy}
-                onClick={() => navigate(`/universe/projects/${code}/customers/${curId}/edit`, { state: { crumb: 'Customers', project: r.project.name, page: 'Edit Customer', tab } })}><PencilIcon size={18} aria-hidden="true" /></button>}
+                onClick={() => { setErrors({}); setMsg(''); setEdit({ ...r.registration }); }}><PencilIcon size={18} aria-hidden="true" /></button>}
               {can.delete && <button type="button" className={`${styles.iconAct} ${styles.iconDanger}`} title="Delete Customer" aria-label="Delete Customer" disabled={!!busy}
                 onClick={() => { setDelError(''); setDelOpen(true); }}><TrashIcon size={18} aria-hidden="true" /></button>}
             </div>
@@ -316,6 +330,16 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
         </div>
       )}
     </Drawer>
+      {toast && <div role="status" aria-live="polite" className={styles.toast}>{toast}</div>}
+      {suspendOpen && (
+        <Modal title="Suspend Customer License" onClose={busy === 'sus' ? () => {} : () => setSuspendOpen(false)}>
+          <p>Are you sure you want to suspend this customer&apos;s license? The customer will lose access to the software while the license is suspended. You can reactivate the license later.</p>
+          <div className={styles.actions} style={{ justifyContent: 'flex-end', marginTop: 12 }}>
+            <button type="button" className={`${styles.btn} ${styles.ghost}`} disabled={busy === 'sus'} onClick={() => setSuspendOpen(false)}>Cancel</button>
+            <button type="button" className={`${styles.btn} ${styles.danger}`} disabled={busy === 'sus'} onClick={run('sus', async () => { const res = await act('inactivate'); setRec(res.record); setSuspendOpen(false); }, 'License suspended.')}>{busy === 'sus' ? 'Suspending…' : 'Confirm Suspension'}</button>
+          </div>
+        </Modal>
+      )}
     {delOpen && (
       <Modal title="Delete Customer" onClose={delBusy ? () => {} : () => setDelOpen(false)}>
         <p>Delete <strong>{r?.registration?.name}</strong>? This cannot be undone. A customer with device, usage or licence history is protected; Inactivate it instead.</p>

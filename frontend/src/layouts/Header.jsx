@@ -41,7 +41,7 @@ export default function Header({ title, onBack, user, onOpenMobileNav, onOpenPro
         </button>
         <Link to="/dashboard" className={styles.brand}>
           <span className={styles.iconBox}>
-            {company.has_logo ? <img src={logoUrl(company)} alt={company.name || 'Company logo'} className={styles.mark} style={{ objectFit: 'contain' }} /> : <Logo variant="mark-brand" className={styles.mark} />}
+            {company.has_logo ? <img src={logoUrl(company)} alt={company.name || 'Company logo'} className={`${styles.mark} ${styles.companyMark}`} width={32} height={32} /> : <Logo variant="mark-brand" className={styles.mark} />}
           </span>
           <span className={styles.brandName}>
             {company.name

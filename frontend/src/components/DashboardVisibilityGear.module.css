@@ -1,0 +1,6 @@
+.wrap { position: relative; display: inline-flex; flex: none; }
+.gear { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--navy-900, #002b49); border-radius: 7px; background: var(--navy-900, #002b49); color: #fff; cursor: pointer; }
+.gear:hover { background: #0b3d66; }
+.gear:focus-visible { outline: 2px solid #2b7bd6; outline-offset: 2px; }
+.pop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: min(340px, calc(100vw - 32px)); border: 1px solid #c9daee; border-radius: 10px; background: var(--surface, #fff); box-shadow: 0 8px 24px rgba(18, 48, 90, .18); overflow: hidden; }
+.bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }

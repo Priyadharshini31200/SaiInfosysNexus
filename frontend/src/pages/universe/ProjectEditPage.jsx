@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { integrationsApi } from '../../api/integrations';
+import CustomerPicker from '../CustomerPicker';
 import styles from '../ProjectDirectory.module.css';
 
 export default function ProjectEditPage() {
@@ -10,6 +11,7 @@ export default function ProjectEditPage() {
   const [project, setProject] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [picking, setPicking] = useState(false); // Edit Customer -> Select Customer popup (this project only)
   useEffect(() => {
     let active = true;
     Promise.all([integrationsApi.universeProject(code), integrationsApi.project(code)]).then(([scope, record]) => {
@@ -41,7 +43,8 @@ export default function ProjectEditPage() {
       <label>Status<input readOnly value={{ ACTIVE: 'Active', DISABLED: 'Disabled', ARCHIVED: 'Archived', SETUP_PENDING: 'Setup Pending' }[project.status] || project.status} /></label>
       <label>Project Category<input readOnly value={manual ? 'Non-Tally SL Project (manual customers)' : project.tally_serial_required ? 'Tally SL Project (Tally verification required)' : 'Tally SL Project (API, no Tally verification)'} /></label>
       <label>Developer Email<input required={!manual} type="email" maxLength={150} value={project.developer_email} onChange={(e) => setProject({ ...project, developer_email: e.target.value })} /></label>
-      <div className={styles.editActions}><button className={styles.manage} type="button" onClick={() => navigate(`/universe/projects/${encodeURIComponent(code)}/customers`)}>Manage Customers</button>{!manual && <button className={styles.manage} type="button" onClick={() => navigate(`/universe/api?project=${encodeURIComponent(code)}`)}>API Settings</button>}<button className={styles.manage} type="button" onClick={() => navigate(back)}>Cancel</button><button className={styles.add} disabled={busy}>{busy ? 'Saving…' : 'Save Changes'}</button></div>
+      <div className={styles.editActions}><button className={styles.manage} type="button" onClick={() => setPicking(true)}>Edit Customer</button>{!manual && <button className={styles.manage} type="button" onClick={() => navigate(`/universe/api?project=${encodeURIComponent(code)}`)}>API Settings</button>}<button className={styles.manage} type="button" onClick={() => navigate(back)}>Cancel</button><button className={styles.add} disabled={busy}>{busy ? 'Saving…' : 'Save Changes'}</button></div>
     </form>}
+    {picking && <CustomerPicker kind="universe" code={code} mode="edit" onClose={() => setPicking(false)} />}
   </section>;
 }

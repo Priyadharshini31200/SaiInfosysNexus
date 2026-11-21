@@ -12,6 +12,7 @@ class ProjectDashboardVisibility(models.Model):
     project_code = models.CharField(max_length=64, unique=True)
     visibility_mode = models.CharField(max_length=10, choices=MODES, default=SHOW)
     visible_from_utc = models.DateTimeField(null=True, blank=True)
+    visible_until_utc = models.DateTimeField(null=True, blank=True)  # optional end of a scheduled window (hidden again from this instant)
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
     updated_at_utc = models.DateTimeField(auto_now=True)
     concurrency_version = models.PositiveIntegerField(default=1)
@@ -21,7 +22,7 @@ class ProjectDashboardVisibility(models.Model):
             return True
         if self.visibility_mode == self.HIDDEN:
             return False
-        return self.visible_from_utc is not None and now >= self.visible_from_utc
+        return self.visible_from_utc is not None and now >= self.visible_from_utc and (self.visible_until_utc is None or now < self.visible_until_utc)
 
 
 class ProjectDashboardVisibilityAudit(models.Model):
@@ -42,3 +43,22 @@ class ProjectDashboardVisibilityAudit(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError("Visibility audit entries are append-only.")
+
+
+class NotificationDismissal(models.Model):
+    """Per-user 'X' on a bell notification. Hides that notification for THIS user only; the notification and the business record
+    behind it (registration, sync error, transfer, audit) are never deleted or changed."""
+    UNIVERSE, TALLY = "universe", "tally"
+    SOURCES = [(UNIVERSE, "UNIVERSE / integrations"), (TALLY, "Tally SL transfers")]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+")
+    source = models.CharField(max_length=10, choices=SOURCES)
+    notification_id = models.PositiveIntegerField()
+    dismissed_at_utc = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "source", "notification_id"], name="uniq_notification_dismissal")]
+
+
+def dismissed_ids(user, source):
+    return NotificationDismissal.objects.filter(user=user, source=source).values_list("notification_id", flat=True)

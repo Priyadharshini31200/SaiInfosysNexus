@@ -37,6 +37,7 @@ export const integrationsApi = {
   registrationAction: (id, action, body = {}) => request(`${A}/registrations/${id}/${action}/`, { method: 'POST', body }),
   notifications: () => request(`${A}/notifications/`),
   readNotification: (id) => request(`${A}/notifications/${id}/read/`, { method: 'POST', body: {} }),
+  dismissNotification: (id) => request(`${A}/notifications/${id}/dismiss/`, { method: 'POST', body: {} }),
   validateApi: (code, kind, body = {}) => request(`${A}/projects/${code}/validate/${kind}/`, { method: 'POST', body }),
   detectFields: (code, sample) => request(`${A}/projects/${code}/detect-fields/`, { method: 'POST', body: sample ? { sample } : {} }),
   activateIntegration: (code) => request(`${A}/projects/${code}/activate/`, { method: 'POST', body: {} }),

@@ -41,7 +41,7 @@ export default function CompanyProfileSection() {
   async function save(e) {
     e.preventDefault();
     const x = {};
-    if (name.trim().length < 2) x.name = 'Company Name is required.';
+    if (name.trim().length === 1) x.name = 'Company Name must be at least 2 characters.';
     if (gstin.trim() && !GSTIN.test(gstin.trim().toUpperCase())) x.gstin = 'Enter a valid 15-character GSTIN';
     setErrors(x); setMessage('');
     if (Object.keys(x).length) return;
@@ -82,7 +82,7 @@ export default function CompanyProfileSection() {
             {errors.logo && <p role="alert" className={styles.error}>{errors.logo}</p>}
           </div>
         </div>
-        <TextField compact required label="Company Name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} readOnly={!edit} maxLength={150} autoComplete="organization" />
+        <TextField compact label="Company Name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} readOnly={!edit} maxLength={150} autoComplete="organization" />
         <TextField compact label="GSTIN" value={gstin} onChange={(e) => setGstin(e.target.value.toUpperCase())} error={errors.gstin} readOnly={!edit} maxLength={15} placeholder={edit ? 'Optional' : '—'} style={{ textTransform: 'uppercase' }} />
         {edit
           ? <div className={styles.actions}><Button type="submit" loading={busy} loadingLabel="Saving…">Save Changes</Button></div>

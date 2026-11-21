@@ -957,9 +957,26 @@ def renew_license(lic, actor=""):
     return lic
 
 
-def set_license_type(lic, license_type, trial_days=None, actor="", years=None):
-    if license_type not in (IntegrationLicense.TRIAL, IntegrationLicense.ONE_YEAR, IntegrationLicense.LIFETIME):
-        raise IntegrationError("VALIDATION_ERROR", "Choose Trial, Annual or Lifetime.", 422)
+def set_license_type(lic, license_type, trial_days=None, actor="", years=None, custom_days=None, allow_custom=False):
+    """allow_custom: UNIVERSE projects only (Trial | Lifetime | Yearly | Custom days). Legacy callers keep Trial / Annual / Lifetime."""
+    allowed = (IntegrationLicense.TRIAL, IntegrationLicense.ONE_YEAR, IntegrationLicense.LIFETIME) + (("CUSTOM",) if allow_custom else ())
+    if license_type not in allowed:
+        raise IntegrationError("VALIDATION_ERROR", "Choose Trial, Lifetime, Yearly or Custom (Days)." if allow_custom else "Choose Trial, Annual or Lifetime.", 422)
+
+    def _pos(v, name, top):
+        try:
+            n = int(str(v).strip())
+            if not 1 <= n <= top:
+                raise ValueError
+            return n
+        except (TypeError, ValueError):
+            raise IntegrationError("VALIDATION_ERROR", f"{name} must be a whole number from 1 to {top}.", 422)
+    if license_type == "CUSTOM":
+        trial_days = _pos(custom_days, "Number of days", 3650)
+    elif license_type == IntegrationLicense.TRIAL and trial_days not in (None, ""):
+        trial_days = _pos(trial_days, "Trial days", 3650)
+    elif license_type == IntegrationLicense.ONE_YEAR and years not in (None, ""):
+        years = _pos(years, "Number of years", 10)
     with transaction.atomic():
         lic = _lic_locked(lic)
         if lic.customer.active is False:

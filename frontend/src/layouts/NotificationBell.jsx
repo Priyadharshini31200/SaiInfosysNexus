@@ -62,6 +62,19 @@ export default function NotificationBell() {
     }
   }
 
+  /** X: remove the row at once (and from the bell count if unread); the server stores the dismissal for this user only. */
+  function dismiss(e, kind, n) {
+    e.stopPropagation();
+    const drop = (f) => ({ unread_count: n.read ? f.unread_count : Math.max(f.unread_count - 1, 0), results: f.results.filter((x) => x.id !== n.id) });
+    if (kind === 'uni') { setUni(drop); integrationsApi.dismissNotification(n.id).catch(load); }
+    else { setFeed(drop); tallyApi.dismissNotification(n.id).catch(load); }
+  }
+  const closeBtn = (kind, n) => (
+    <button type="button" className={styles.dismiss} title="Dismiss Notification" aria-label={`Dismiss notification: ${n.title}`} onClick={(e) => dismiss(e, kind, n)}>
+      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+    </button>
+  );
+
   async function openItem(n) {
     setOpen(false);
     navigate(`/tally/${n.product}/customers/${n.customer_id}?transfer=${n.id}`);
@@ -85,19 +98,23 @@ export default function NotificationBell() {
         <div className={styles.panel} role="menu" aria-label="Notifications">
           <p className={styles.head}>Notifications</p>
           {uni.results.slice(0, 8).map((n) => (
-            <button key={`u${n.id}`} type="button" role="menuitem" className={styles.item} onClick={() => openUni(n)} style={n.read ? undefined : { fontWeight: 700 }}>
-              <span>{n.title}</span><small>{n.customer ? `${n.customer} · ` : ''}{formatDateTime(n.created_at)}</small>
-            </button>
+            <div key={`u${n.id}`} className={styles.row}>
+              <button type="button" role="menuitem" className={styles.item} onClick={() => openUni(n)} style={n.read ? undefined : { fontWeight: 700 }}>
+                <span>{n.title}</span><small>{n.customer ? `${n.customer} · ` : ''}{formatDateTime(n.created_at)}</small>
+              </button>
+              {closeBtn('uni', n)}
+            </div>
           ))}
           {feed.results.length === 0 && uni.results.length === 0 && <p className={styles.empty}>No notifications.</p>}
           <ul className={styles.list}>
             {feed.results.map((n) => (
-              <li key={n.id}>
+              <li key={n.id} className={styles.row}>
                 <button type="button" role="menuitem" className={`${styles.item} ${n.read ? '' : styles.unread}`} onClick={() => openItem(n)}>
                   <span className={styles.title}>{n.title}</span>
                   <span className={styles.msg}>{n.message}</span>
                   <span className={styles.meta}>{n.customer_name} · {n.tally_serial} · Completed · {formatDateTime(n.occurred_at)}</span>
                 </button>
+                {closeBtn('tally', n)}
               </li>
             ))}
           </ul>

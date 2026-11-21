@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import DashboardVisibilityGear from '../../components/DashboardVisibilityGear';
+import gearStyles from '../../components/DashboardVisibilityGear.module.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import { tallyApi } from '../../api/tallysl';
 import { useTallyAccess } from '../../context/TallyAccessContext';
@@ -31,6 +33,7 @@ export default function TallyDashboardPage() {
   const reg = data.registrations;
   return (
     <div className={styles.page}>
+      <div className={gearStyles.bar}><DashboardVisibilityGear code={product} /></div>
       <div className={styles.cards} role="list" aria-label="Customers by usage category">
         {data.categories.map((c) => (
           <button key={c.key} type="button" role="listitem" className={styles.card} onClick={() => navigate(`/tally/${product}/usage/${c.key}`)}>

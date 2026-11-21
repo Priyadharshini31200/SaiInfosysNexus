@@ -436,7 +436,8 @@ class NotificationListView(StaffView):
     """Bell feed: completed GSTR2Tally device transfers the caller may view (per-product `view`), newest first."""
 
     def get(self, request):
-        qs = events.visible_events(request.user)
+        from apps.dashboard.models import NotificationDismissal, dismissed_ids
+        qs = events.visible_events(request.user).exclude(pk__in=dismissed_ids(request.user, NotificationDismissal.TALLY))  # this user's X only
         return Response({"unread_count": qs.filter(read_at__isnull=True).count(),
                          "results": [events.event_data(e) for e in qs[:30]]})
 
@@ -449,6 +450,19 @@ class NotificationReadView(StaffView):
         if e.read_at is None:
             TallyTransferEvent.objects.filter(pk=pk, read_at__isnull=True).update(read_at=timezone.now(), read_by=services.actor_name(request.user))
         return Response({"id": e.pk, "read": True})
+
+
+class NotificationDismissView(StaffView):
+    """X on a bell row: hidden for the current user only. The transfer event itself is never deleted or changed."""
+
+    def post(self, request, pk):
+        from apps.dashboard.models import NotificationDismissal as D
+        if D.objects.filter(user=request.user, source=D.TALLY, notification_id=pk).exists():
+            return Response({"ok": True, "dismissed": pk})  # repeat click: already hidden
+        if not events.visible_events(request.user).filter(pk=pk).exists():
+            raise NotFound("Notification not found.")
+        D.objects.get_or_create(user=request.user, source=D.TALLY, notification_id=pk)
+        return Response({"ok": True, "dismissed": pk})
 
 
 class TransferListView(StaffView):

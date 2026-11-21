@@ -16,6 +16,7 @@ export const tallyApi = {
   savePermissions: (user_id, grants) => request(`${A}/permissions/`, { method: 'PUT', body: { user_id, grants } }),
   notifications: () => request(`${A}/notifications/`),
   markNotificationRead: (id) => request(`${A}/notifications/${id}/read/`, { method: 'POST' }),
+  dismissNotification: (id) => request(`${A}/notifications/${id}/dismiss/`, { method: 'POST' }),
   transfers: (product, params) => request(`${A}/products/${product}/transfers/${qs(params)}`),
   dashboard: (product) => request(`${A}/dashboard/${qs({ product })}`),
   usageList: (category, params) => request(`${A}/usage/${category}/${qs(params)}`),

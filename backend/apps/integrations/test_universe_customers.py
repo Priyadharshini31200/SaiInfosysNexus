@@ -223,9 +223,12 @@ class ProjectDashboard(CustomerCentric):
 
 
 class OverallDashboardCards(CustomerCentric):
-    def test_only_activated_enabled_universe_projects_get_cards(self):
+    def test_enabled_universe_projects_get_cards_even_while_setup_pending(self):
         cards = self.staff.get(ADM + "universe/cards/").data
-        self.assertEqual(cards["cards"], [])  # integration not activated yet
+        self.assertEqual([c["code"] for c in cards["cards"]], [self.code])  # SETUP_PENDING still gets a card; Dashboard Visibility decides if it shows
+        IntegrationProject.objects.filter(pk=self.project.pk).update(status="ARCHIVED")
+        self.assertEqual(self.staff.get(ADM + "universe/cards/").data["cards"], [])  # archived: no card
+        IntegrationProject.objects.filter(pk=self.project.pk).update(status=IntegrationProject.SETUP_PENDING)
         with mock.patch("apps.integrations.pull._get", return_value=RICH):
             for kind in ("customer", "mapping"):
                 self.staff.post(f"{ADM}projects/{self.code}/validate/{kind}/")
@@ -409,3 +412,39 @@ class SimpleTemporaryPassword(CustomerCentric):
         c = IntegrationCustomer.objects.get(project=self.project, external_customer_id="C1")
         self.assertTrue(check_password("123", c.password_hash) and c.password_hash != "123" and c.must_change_password)
         self.assertTrue(any("123" in m.body for m in mail.outbox))
+
+
+class NotificationDismiss(CustomerCentric):
+    def test_dismiss_is_per_user_persistent_and_keeps_business_data(self):
+        feed = self.staff.get(ADM + "notifications/").data
+        self.assertTrue(feed["results"])
+        n = feed["results"][0]
+        before = feed["unread_count"]
+        self.assertEqual(self.staff.post(f"{ADM}notifications/{n['id']}/dismiss/").status_code, 200)
+        again = self.staff.get(ADM + "notifications/").data  # a fresh request = after refresh / re-login
+        self.assertNotIn(n["id"], [x["id"] for x in again["results"]])
+        self.assertEqual(again["unread_count"], before - (0 if n["read"] else 1))  # bell count drops
+        self.assertTrue(IntegrationNotification.objects.filter(pk=n["id"]).exists())  # nothing deleted
+        self.assertTrue(IntegrationRegistration.objects.filter(project=self.project).exists())
+        self.assertEqual(self.staff.post(f"{ADM}notifications/{n['id']}/dismiss/").status_code, 200)  # repeat is harmless
+        other = self.admin_client({self.code: ["view"]}, name="adm2")
+        self.assertIn(n["id"], [x["id"] for x in other.get(ADM + "notifications/").data["results"]])  # other users unaffected
+        self.assertEqual(self.staff.post(f"{ADM}notifications/999999/dismiss/").status_code, 404)
+
+
+class CustomDaysLicenseChange(CustomerCentric):
+    def test_set_license_custom_days_persists_and_validates(self):
+        self.approve(self.reg().pk, trial_days=5)
+        c = IntegrationCustomer.objects.get(project=self.project, external_customer_id="C1")
+        url = f"{self.base}customer/{c.pk}/set-license/"
+        self.assertEqual(self.staff.post(url, {"license_type": "CUSTOM", "custom_days": "0"}, format="json").status_code, 422)
+        self.assertEqual(self.staff.post(url, {"license_type": "CUSTOM", "custom_days": "abc"}, format="json").status_code, 422)
+        r = self.staff.post(url, {"license_type": "CUSTOM", "custom_days": "45"}, format="json")
+        self.assertEqual(r.status_code, 200)
+        lic = IntegrationLicense.objects.get(customer=c)
+        self.assertEqual(lic.license_type, "CUSTOM")
+        self.assertAlmostEqual((lic.expires_at - lic.starts_at).days, 45, delta=1)
+        self.assertEqual(self.staff.get(f"{self.base}customer/{c.pk}/").data["record"]["license"]["type_label"], "Custom")
+        self.assertEqual(self.staff.post(url, {"license_type": "ONE_YEAR", "years": "2"}, format="json").status_code, 200)
+        self.assertEqual(self.staff.post(url, {"license_type": "LIFETIME"}, format="json").status_code, 200)
+        self.assertIsNone(IntegrationLicense.objects.get(customer=c).expires_at)

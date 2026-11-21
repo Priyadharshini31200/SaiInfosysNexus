@@ -79,6 +79,7 @@ urlpatterns = [
     path(f"{ADMIN}/registrations/<int:pk>/<slug:action>/", av.RegistrationActionView.as_view()),
     path(f"{ADMIN}/notifications/", av.NotificationsView.as_view()),
     path(f"{ADMIN}/notifications/<int:pk>/read/", av.NotificationReadView.as_view()),
+    path(f"{ADMIN}/notifications/<int:pk>/dismiss/", av.NotificationDismissView.as_view()),
     path(f"{ADMIN}/licenses/<int:license_id>/approve/", av.ApproveView.as_view()),
     path(f"{ADMIN}/customers/<int:customer_id>/resend-welcome/", av.ResendWelcomeView.as_view()),
     path(f"{ADMIN}/failed-sync/", av.FailedSyncView.as_view()),
