@@ -22,6 +22,13 @@ class IsAdminOrSuperAdmin(BasePermission):
         return get_role(request.user) in {Role.SUPERADMIN, Role.ADMIN}
 
 
+class IsAnyStaff(BasePermission):
+    """Any signed-in Nexus staff role. Used only by the session endpoints (me / logout); every data endpoint stays deny-by-default."""
+
+    def has_permission(self, request, view):
+        return get_role(request.user) in {Role.SUPERADMIN, Role.ADMIN, Role.USER, Role.DEVELOPER}
+
+
 def user_can(user, module, action):
     """Superadmin has full access; Admin needs an explicit per-account module grant."""
     role = get_role(user)

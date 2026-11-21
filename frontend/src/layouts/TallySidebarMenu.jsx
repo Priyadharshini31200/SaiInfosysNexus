@@ -23,7 +23,7 @@ export default function TallySidebarMenu({ collapsed, onNavigate }) {
   // API-connected products (Mothys) sit in the same group, directly below the Tally products. Registry-driven, Super Admin only.
   useEffect(() => {
     if (user?.role !== 'SUPERADMIN') return;
-    integrationsApi.projects().then((d) => setApiProducts(d.projects.filter((p) => p.enabled).map((p) => ({
+    integrationsApi.projects().then((d) => setApiProducts(d.projects.filter((p) => p.enabled && p.license_policy !== 'CALENDAR').map((p) => ({
       code: p.code, name: p.code === 'MOTHYS' ? 'Mothys Inventory' : p.name, prefix: `/product/${p.code}/`,
       pages: [{ label: 'Dashboard', path: `/product/${p.code}/dashboard` }, { label: 'Customers', path: `/product/${p.code}/customers` }],
     }))), () => {});

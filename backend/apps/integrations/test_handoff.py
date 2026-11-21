@@ -45,9 +45,10 @@ class HandoffVerification(Base):
         self.assertEqual(len(mail.outbox), 1)
         body = mail.outbox[0].body
         pw = re.search(r"Temporary Password: (\S+)", body).group(1)
-        self.assertEqual(mail.outbox[0].subject, "Mothys Inventory Management – Login Credentials")
         self.assertIn(f"User ID: {user}", body)
         self.assertIn("License Type: Trial", body)
+        self.assertIn("Trial Days / Expiry Date: 3 days", body)
+        self.assertEqual(mail.outbox[0].subject, "Mothys Inventory – Your Login Details")
         self.assertNotRegex(body, r"[Aa]ctivation [Kk]ey: \d")
         cust = IntegrationCustomer.objects.get(user_id=user)
         self.assertNotEqual(cust.password_hash, pw)  # only a hash is stored
@@ -73,29 +74,39 @@ class HandoffVerification(Base):
 
         # 7 activation key request (only now; none was sent at registration)
         mail.outbox.clear()
-        self.post("activation/request", "activation/request", {"user_id": user, "password": newpw})
+        self.post("activation/request", "activation/request", {"user_id": user, "email": "someone.else@example.com"}, "email not registered to this account", 401)
+        self.assertEqual(len(mail.outbox), 0)  # nothing is sent to anyone else
+        self.post("activation/request", "activation/request", {"user_id": user, "email": "Kumar@Example.com"})
         self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["kumar@example.com"])
         key = re.search(r"is: (\d{9})", mail.outbox[0].body).group(1)
 
         # 8 activation verify on device A; wrong key
-        self.post("activation/verify", "activation/verify", {"user_id": user, "password": newpw, "activation_key": "000000000", "device_id": "PC-A", "device_name": "Office PC"}, "wrong key", 400)
-        a = self.post("activation/verify", "activation/verify", {"user_id": user, "password": newpw, "activation_key": key, "device_id": "PC-A", "device_name": "Office PC"})["data"]
+        self.post("activation/verify", "activation/verify", {"user_id": user, "email": "kumar@example.com", "activation_key": "000000000", "device_id": "PC-A", "device_name": "Office PC"}, "wrong key", 400)
+        a = self.post("activation/verify", "activation/verify", {"user_id": user, "email": "kumar@example.com", "activation_key": key, "device_id": "PC-A", "device_name": "Office PC"})["data"]
 
         # 10 introspect (device A active)
         self.post("sessions/introspect", "sessions/introspect", {"session_token": a["session_token"]})
 
+        # logging in again on the authorised device: no key, no transfer
+        again = self.post("auth/verify", "auth/verify", {"user_id": user, "password": newpw, "device_id": "PC-A"}, "login again on the authorised device")["data"]
+        self.assertEqual((again["device_authorized"], again["session_id"]), (True, 1 if False else again["session_id"]))
+        self.assertTrue(again["device_authorized"])
+        other = self.call("auth/verify", {"user_id": user, "password": newpw, "device_id": "PC-B"}).json()["data"]
+        self.assertFalse(other["device_authorized"])
+
         # second device: key -> confirmation required -> cancel -> again -> confirm
         mail.outbox.clear()
-        self.call("activation/request", {"user_id": user, "password": newpw})
+        self.call("activation/request", {"user_id": user, "email": "kumar@example.com"})
         key2 = re.search(r"is: (\d{9})", mail.outbox[0].body).group(1)
-        conf = self.post("activation/verify", "activation/verify", {"user_id": user, "password": newpw, "activation_key": key2, "device_id": "PC-B", "device_name": "Home Laptop"}, "second device: confirmation required", 409)
+        conf = self.post("activation/verify", "activation/verify", {"user_id": user, "email": "kumar@example.com", "activation_key": key2, "device_id": "PC-B", "device_name": "Home Laptop"}, "second device: confirmation required", 409)
         tok = conf["error"]["transfer_token"]
         self.post("devices/transfer/confirm", "devices/transfer/confirm", {"user_id": user, "transfer_token": tok, "confirm": False}, "cancel")
         self.assertTrue(self.call("sessions/introspect", {"session_token": a["session_token"]}).json()["data"]["active"])  # A still authorised
         mail.outbox.clear()
-        self.call("activation/request", {"user_id": user, "password": newpw})
+        self.call("activation/request", {"user_id": user, "email": "kumar@example.com"})
         key3 = re.search(r"is: (\d{9})", mail.outbox[0].body).group(1)
-        tok = self.call("activation/verify", {"user_id": user, "password": newpw, "activation_key": key3, "device_id": "PC-B", "device_name": "Home Laptop"}).json()["error"]["transfer_token"]
+        tok = self.call("activation/verify", {"user_id": user, "email": "kumar@example.com", "activation_key": key3, "device_id": "PC-B", "device_name": "Home Laptop"}).json()["error"]["transfer_token"]
         t = self.post("devices/transfer/confirm", "devices/transfer/confirm", {"user_id": user, "transfer_token": tok, "confirm": True}, "confirm")["data"]
         old = self.post("sessions/introspect", "sessions/introspect", {"session_token": a["session_token"]}, "old device after transfer")["data"]
         self.assertEqual((old["active"], old["reason"]), (False, "device_transfer"))
@@ -115,7 +126,7 @@ class HandoffVerification(Base):
         lst = self.staff.get(ADM + "projects/MOTHYS/product-customers/").data
         self.assertEqual(lst["total"], 2)
         mine = next(r for r in lst["results"] if r["serial_number"] == user)
-        self.assertEqual((mine["name"], mine["license_type"], mine["contact_number"], mine["status"]), ("Kumar", "TRIAL", "9876500000", "active"))
+        self.assertEqual((mine["name"], mine["license_type"], mine["contact_number"], mine["status"], mine["trial_days"]), ("Kumar", "TRIAL", "9876500000", "active", 3))
         dash = self.staff.get(ADM + "projects/MOTHYS/dashboard/").data
         self.assertEqual((dash["total_customers"], dash["trial_licenses"], dash["used"], dash["active_devices"]), (2, 2, 1, 0))  # logged out -> no active device
         for kind in ("expiry", "details", "performance"):

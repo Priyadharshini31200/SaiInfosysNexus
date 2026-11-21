@@ -4,6 +4,8 @@ from django.db import models
 class Role(models.TextChoices):
     SUPERADMIN = "SUPERADMIN", "Super Admin"
     ADMIN = "ADMIN", "Admin"
+    USER = "USER", "User (Report Viewer)"
+    DEVELOPER = "DEVELOPER", "Project Developer"
 
 
 class Action(models.TextChoices):

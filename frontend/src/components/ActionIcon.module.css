@@ -1,0 +1,8 @@
+/* Shared Edit / Delete icon buttons: one size, one colour per action, everywhere. */
+.btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; box-sizing: border-box; border: 1px solid transparent; border-radius: 8px; background: transparent; cursor: pointer; text-decoration: none; transition: background .15s, color .15s, border-color .15s; }
+.btn:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.edit { color: #0056b3; }
+.edit:hover:not(.off) { color: #00418a; background: #e6f0fb; border-color: #cfe0f5; }
+.delete { color: #dc2626; }
+.delete:hover:not(.off) { color: #b91c1c; background: #fdecec; border-color: #f7caca; }
+.off, .off:hover { color: #9aa7bb; opacity: .55; background: transparent; border-color: transparent; cursor: not-allowed; }

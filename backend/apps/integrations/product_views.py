@@ -1,19 +1,23 @@
 """Staff API behind the product pages (Dashboard / Customers) of an API-connected product such as Mothys.
 Everything is scoped by the project code in the URL; the customer and licence rules are the ones in `services` (the same ones the
-product's own backend triggers through /integrations/v1/). Super Admin only."""
+product's own backend triggers through /integrations/v1/). Super Admin: everything; Admin: only explicitly granted project permissions."""
 from django.http import HttpResponse
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
+
+from apps.accounts.constants import Role
+from apps.accounts.permissions import get_role, user_can
 
 from apps.registrations import exports
 
 from . import services as s
 from . import usage
 from .admin_views import AdminView
-from .models import IntegrationAudit, IntegrationCustomer, IntegrationSession, IntegrationUsageEvent
+from .models import IntegrationAudit, IntegrationCustomer, IntegrationProject, IntegrationSession, IntegrationUsageEvent
 
 PAGE_SIZES = (10, 25, 50, 100)
-TYPE_LABEL = {"TRIAL": "Trial", "ONE_YEAR": "Annual", "LIFETIME": "Lifetime"}
+TYPE_LABEL = {"TRIAL": "Trial", "ONE_YEAR": "1 Year", "LIFETIME": "Lifetime", "CUSTOM": "Custom"}
 STATUS_LABEL = {"pending": "Pending Approval", "not_activated": "Not Activated", "active": "Active", "expired": "Expired", "cancelled": "Cancelled", "inactive": "Inactive"}
 CATEGORY_LABEL = {"speed": "Speed", "normal": "Normal", "new": "New", "one_time": "One-Time"}
 
@@ -36,12 +40,42 @@ def _filtered(project, params):
 
 def _row_out(r):
     out = {k: r[k] for k in ("id", "license_id", "external_customer_id", "name", "email", "contact_number", "serial_number", "user_id", "license_type", "status",
-                             "activated_at", "expires_at", "last_login", "active_devices", "welcome_email_status", "created_at")}
+                             "activated_at", "expires_at", "last_login", "active_devices", "active_device", "welcome_email_status", "created_at")}
+    out["starts_at"] = r["starts_at"]
+    out["trial_days"] = r["trial_days"]
     out["usage_category"] = r["usage_category"] or ("not_used" if not r["used"] else None)
     return out
 
 
+class ProductAccess(BasePermission):
+    """Superadmin: everything (unchanged). Admin: only what was explicitly granted for the project named in the URL
+    (UserModulePermission rows `<CODE>`, `<CODE>:dashboard`, `<CODE>:expiry`, `<CODE>:usage`). Anything else: 403."""
+
+    message = "You do not have permission to perform this action."
+
+    def has_permission(self, request, view):
+        role = get_role(request.user)
+        if role == Role.SUPERADMIN:
+            return True
+        if role != Role.ADMIN:
+            return False
+        code = str(view.kwargs.get("code", "")).upper()
+        needed = view.required(request, code) if hasattr(view, "required") else None
+        if not needed or not IntegrationProject.objects.filter(code=code).exists():
+            return False
+        return all(user_can(request.user, module, action) for module, action in needed)
+
+
+def _report_module(code, kind):
+    return f"{code}:expiry" if kind == "expiry" else f"{code}:usage"
+
+
 class ProductView(AdminView):
+    permission_classes = [ProductAccess]
+
+    def required(self, request, code):
+        return None  # deny by default for Admins; each view declares what it needs
+
     def customer(self, code, pk):
         c = IntegrationCustomer.objects.select_related("license", "project").filter(project=self.project(code), pk=pk).first()
         if not c:
@@ -50,11 +84,17 @@ class ProductView(AdminView):
 
 
 class ProductDashboardView(ProductView):
+    def required(self, request, code):
+        return [(f"{code}:dashboard", "view")]
+
     def get(self, request, code):
         return Response(usage.project_stats(self.project(code)))
 
 
 class ProductCustomersView(ProductView):
+    def required(self, request, code):
+        return [(code, "view")]
+
     def get(self, request, code):
         rows = _filtered(self.project(code), request.query_params)
         try:
@@ -67,6 +107,9 @@ class ProductCustomersView(ProductView):
 
 
 class ProductExportView(ProductView):
+    def required(self, request, code):
+        return [(code, "view"), (code, "export_print")]
+
     def post(self, request, code):
         rows = _filtered(self.project(code), request.data.get("filters") or {})
         fmt = request.data.get("fmt")
@@ -93,6 +136,9 @@ class ProductExportView(ProductView):
 
 
 class ProductCustomerDetailView(ProductView):
+    def required(self, request, code):
+        return [(code, "view" if request.method == "GET" else "edit")]
+
     """Customer + licence + device activation history + device transfer history + usage history."""
 
     def get(self, request, code, pk):
@@ -120,6 +166,13 @@ class ProductCustomerDetailView(ProductView):
 
 
 class ProductCustomerActionView(ProductView):
+    NEEDS = {"extend-trial": "extend_trial", "cancel-trial": "cancel_trial", "renew": "renew", "set-license": "edit", "approve": "approve",
+             "inactivate": "inactivate", "reactivate": "inactivate", "resend-credentials": "edit"}
+
+    def required(self, request, code):
+        action = self.NEEDS.get(self.kwargs.get("action"))
+        return [(code, action)] if action else None
+
     ACTIONS = ("extend-trial", "cancel-trial", "renew", "set-license", "approve", "inactivate", "reactivate", "resend-credentials")
 
     def post(self, request, code, pk, action):
@@ -132,7 +185,7 @@ class ProductCustomerActionView(ProductView):
         elif action == "renew":
             s.renew_license(lic, who)
         elif action == "set-license":
-            s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who)
+            s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"))
         elif action == "approve":
             s.approve_license(lic, body.get("license_type"), who)
         elif action == "inactivate":
@@ -204,6 +257,9 @@ def _report_rows(project, kind, p):
 
 
 class ProductReportView(ProductView):
+    def required(self, request, code):
+        return [(_report_module(code, self.kwargs.get("kind")), "reports")]
+
     def get(self, request, code, kind):
         if kind not in REPORTS:
             raise NotFound("Unknown report.")
@@ -219,6 +275,10 @@ class ProductReportView(ProductView):
 
 
 class ProductReportExportView(ProductView):
+    def required(self, request, code):
+        module = _report_module(code, self.kwargs.get("kind"))
+        return [(module, "reports"), (module, "export_print")]
+
     def post(self, request, code, kind):
         if kind not in REPORTS:
             raise NotFound("Unknown report.")
@@ -237,3 +297,21 @@ class ProductReportExportView(ProductView):
         resp["Content-Disposition"] = f'attachment; filename="{name}"'
         resp["X-Filename"] = name
         return resp
+
+
+class UsageReportView(ProductView):
+    def required(self, request, code):
+        return [(f"{code}:usage", "reports")]
+
+    def get(self, request, code):
+        from . import usage_reports
+        return Response(usage_reports.usage_report(self.project(code), request.query_params))
+
+
+class DeviceTransferReportView(ProductView):
+    def required(self, request, code):
+        return [(f"{code}:usage", "reports")]
+
+    def get(self, request, code):
+        from . import usage_reports
+        return Response(usage_reports.device_transfer_history(self.project(code), request.query_params))

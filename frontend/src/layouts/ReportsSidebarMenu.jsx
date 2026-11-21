@@ -1,77 +1,27 @@
-import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDownIcon } from '../components/Icons';
+﻿import { useEffect, useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { request } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { useTallyAccess } from '../context/TallyAccessContext';
-import { PROJECT_ITEMS, REPORT_PAGES, REPORTS_MENU } from './navigation';
+import { REPORTS_MENU } from './navigation';
 import styles from './Sidebar.module.css';
 
-const GSTR_REPORTS = [
-  { label: 'License Expiry Report', path: '/tally/reports/license-expiry' },
-  { label: 'Tally Details Report', path: '/tally/reports/tally-details' },
-  { label: 'User Performance Report', path: '/tally/reports/user-performance' },
-];
+export default function ReportsSidebarMenu({ onNavigate }) {
+  const { user } = useAuth();
+  const [allowed, setAllowed] = useState(false);
+  useEffect(() => {
+    if (user?.role !== 'ADMIN') return undefined;
+    let active = true;
+    request('/reports/consolidated/?meta=1').then((data) => {
+      if (active) setAllowed(data.reports.length > 0);
+    }, () => { if (active) setAllowed(false); });
+    return () => { active = false; };
+  }, [user]);
 
-const MOTHYS_REPORTS = [
-  { label: 'License Expiry Report', path: '/mothys/reports/license-expiry' },
-  { label: 'Customer Details Report', path: '/mothys/reports/customer-details' },
-  { label: 'User Performance Report', path: '/mothys/reports/user-performance' },
-];
-
-/** REPORTS: "GSTR Reports" (Tally SL, per-product Reports permission) and "PRN Reports" (the existing reports, unchanged). */
-export default function ReportsSidebarMenu({ collapsed, onNavigate }) {
-  const { can, user } = useAuth();
-  const { anyCan } = useTallyAccess();
-  const { pathname } = useLocation();
-  const [toggled, setToggled] = useState({});
-  const { label, icon: Icon } = REPORTS_MENU;
-  // A user's manual expand/collapse lasts for the current page only: on every navigation the group holding the active report opens and the rest close.
-  useEffect(() => setToggled({}), [pathname]);
-
-  const prnPages = REPORT_PAGES.filter((p) => PROJECT_ITEMS.some(({ slug }) => can('reports', `${slug}:${p.path.endsWith('usage') ? 'usage' : 'expiry'}`)));
-  const groups = [
-    anyCan('reports') && { key: 'gstr', title: 'GSTR Reports', pages: GSTR_REPORTS, active: pathname.startsWith('/tally/reports/') },
-    user?.role === 'SUPERADMIN' && { key: 'mothys', title: 'Mothys Reports', pages: MOTHYS_REPORTS, active: pathname.startsWith('/mothys/reports/') },
-    prnPages.length > 0 && { key: 'prn', title: 'PRN Reports', pages: prnPages, active: pathname.startsWith('/reports/') },
-  ].filter(Boolean);
-  if (!groups.length) return null;
-
-  if (collapsed) {
-    return (
-      <ul className={styles.list}>
-        <li>
-          <NavLink to={groups[0].pages[0].path} onClick={onNavigate} title={label} className={() => `${styles.link} ${groups.some((g) => g.active) ? styles.active : ''}`}>
-            <Icon size={20} />
-            <span className={styles.linkLabel}>{label}</span>
-          </NavLink>
-        </li>
-      </ul>
-    );
-  }
-  return (
-    <ul className={styles.list}>
-      {groups.map((g) => {
-        const open = toggled[g.key] ?? g.active;
-        return (
-          <li key={g.key}>
-            <button type="button" className={`${styles.link} ${styles.parent} ${g.active ? styles.parentActive : ''}`}
-              onClick={() => setToggled((t) => ({ ...t, [g.key]: !open }))} aria-expanded={open} aria-controls={`submenu-reports-${g.key}`}>
-              <Icon size={20} />
-              <span className={styles.linkLabel}>{g.title}</span>
-              <ChevronDownIcon size={16} className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`} />
-            </button>
-            {open && (
-              <ul id={`submenu-reports-${g.key}`} className={styles.sub}>
-                {g.pages.map((page) => (
-                  <li key={page.path}>
-                    <NavLink to={page.path} onClick={onNavigate} className={({ isActive }) => `${styles.subLink} ${isActive ? styles.subActive : ''}`}>{page.label}</NavLink>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
+  if (user?.role !== 'SUPERADMIN' && !allowed) return null;
+  const { icon: Icon, label } = REPORTS_MENU;
+  return <ul className={styles.list}><li>
+    <NavLink to="/reports" onClick={onNavigate} title={label} className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}>
+      <Icon size={20} /><span className={styles.linkLabel}>{label}</span>
+    </NavLink>
+  </li></ul>;
 }

@@ -59,3 +59,76 @@ class AdminPermission(models.Model):
             ),
         ]
         ordering = ["id"]
+
+
+class StaffProfile(models.Model):
+    """Extra identity details of a staff account (Admin / User). Staff accounts are never customer identities."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="staff_profile")
+    full_name = models.CharField(max_length=120)
+    phone = models.CharField(max_length=20, blank=True, default="")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DashboardVisibilityGrant(models.Model):
+    """dashboard_visibility.manage for one project. Superadmin always has it; an Admin only with a row here."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="visibility_grants")
+    project_code = models.CharField(max_length=64)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "project_code"], name="uniq_visibility_grant")]
+
+
+class StaffReportProject(models.Model):
+    """Projects a restricted User (Report Viewer) may report on."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="report_projects")
+    project_code = models.CharField(max_length=64)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "project_code"], name="uniq_staff_report_project")]
+
+
+class StaffPermissionAudit(models.Model):
+    """Append-only history of staff creation and every privilege change."""
+
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    target_username = models.CharField(max_length=150)
+    action = models.CharField(max_length=40)
+    detail = models.TextField(blank=True, default="")
+    at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValueError("Staff permission audit entries are append-only.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("Staff permission audit entries are append-only.")
+
+
+class DeveloperProjectAccess(models.Model):
+    """A project developer (external integrator) may configure ONLY the integration of the projects listed here."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="developer_projects")
+    project_code = models.CharField(max_length=64)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "project_code"], name="uniq_developer_project")]
+
+
+class CompanyProfile(models.Model):
+    """Company branding shown in the header and My Profile. A single row (pk=1); an empty name means the default Sai Infosys Nexus branding."""
+    name = models.CharField(max_length=150, blank=True, default="")
+    gstin = models.CharField(max_length=15, blank=True, default="")
+    logo = models.BinaryField(null=True, blank=True)
+    logo_type = models.CharField(max_length=20, blank=True, default="")
+    logo_version = models.CharField(max_length=16, blank=True, default="")
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def load(cls):
+        return cls.objects.get_or_create(pk=1)[0]

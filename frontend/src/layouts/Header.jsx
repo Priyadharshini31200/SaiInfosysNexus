@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
+import useCompany, { logoUrl, resetCompany } from '../components/useCompany';
 import NotificationBell from './NotificationBell';
-import { ArrowLeftIcon, ChevronDownIcon, LogoutIcon, MenuIcon, SettingsIcon, UserIcon } from '../components/Icons';
+import { ArrowLeftIcon, ChevronDownIcon, LogoutIcon, MenuIcon, SettingsIcon, UserIcon, UserPlusIcon } from '../components/Icons';
 import styles from './Header.module.css';
 
-export default function Header({ title, onBack, user, onOpenMobileNav, onOpenProfile, onOpenConfig, onLogout }) {
+export default function Header({ title, onBack, user, onOpenMobileNav, onOpenProfile, onOpenConfig, onOpenAddStaff, onLogout }) {
+  const company = useCompany(Boolean(user));
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
@@ -39,10 +41,12 @@ export default function Header({ title, onBack, user, onOpenMobileNav, onOpenPro
         </button>
         <Link to="/dashboard" className={styles.brand}>
           <span className={styles.iconBox}>
-            <Logo variant="mark-brand" className={styles.mark} />
+            {company.has_logo ? <img src={logoUrl(company)} alt={company.name || 'Company logo'} className={styles.mark} style={{ objectFit: 'contain' }} /> : <Logo variant="mark-brand" className={styles.mark} />}
           </span>
           <span className={styles.brandName}>
-            <span className={styles.brandMain}>Sai Infosys</span> <span className={styles.brandAccent}>Nexus</span>
+            {company.name
+              ? <span className={styles.brandMain}>{company.name}</span>
+              : <><span className={styles.brandMain}>Sai Infosys</span> <span className={styles.brandAccent}>Nexus</span></>}
           </span>
         </Link>
         <span className={styles.titleSep} aria-hidden="true" />
@@ -82,7 +86,7 @@ export default function Header({ title, onBack, user, onOpenMobileNav, onOpenPro
             >
               <UserIcon size={17} /> My Profile
             </button>
-            {user.role === 'SUPERADMIN' && (
+            {(user.role === 'SUPERADMIN' || user.visibility_projects?.length > 0) && (
               <button
                 role="menuitem"
                 type="button"
@@ -95,6 +99,19 @@ export default function Header({ title, onBack, user, onOpenMobileNav, onOpenPro
                 <SettingsIcon size={17} /> Configuration
               </button>
             )}
+            {user.role === 'SUPERADMIN' && (
+              <button
+                role="menuitem"
+                type="button"
+                className={styles.item}
+                onClick={() => {
+                  setOpen(false);
+                  onOpenAddStaff();
+                }}
+              >
+                <UserPlusIcon size={17} /> Add Staff
+              </button>
+            )}
             <div className={styles.divider} />
             <button
               role="menuitem"
@@ -102,6 +119,7 @@ export default function Header({ title, onBack, user, onOpenMobileNav, onOpenPro
               className={`${styles.item} ${styles.danger}`}
               onClick={() => {
                 setOpen(false);
+                resetCompany();
                 onLogout();
               }}
             >

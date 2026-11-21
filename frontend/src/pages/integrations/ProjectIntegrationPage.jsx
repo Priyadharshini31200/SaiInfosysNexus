@@ -2,23 +2,28 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { integrationsApi } from '../../api/integrations';
 import Alert from '../../components/Alert';
+import CopyValue from '../../components/CopyValue';
 import { formatDateTime } from '../../utils/date';
 import { statusBadge } from './ProjectListPage';
+import CustomerSyncPanel from './CustomerSyncPanel';
+import { TallyPanel, UsagePanel } from './TallyUsagePanels';
+import { useIntegrationPaths } from './paths';
+import { useProjectSecret } from './useProjectSecret';
 import styles from './Integrations.module.css';
 
 const json = (v) => JSON.stringify(v, null, 2);
 
 /** Project Management → <Project> → API Integration. The API secret is shown once (only right after create / rotate). */
 export default function ProjectIntegrationPage() {
+  const paths = useIntegrationPaths();
   const { code } = useParams();
   const location = useLocation();
   const [data, setData] = useState(null);
   const [customers, setCustomers] = useState([]);
-  const [creds, setCreds] = useState(location.state?.credentials || null); // kept in memory only
+  const { secret, clear: clearSecret, consume: consumeSecret, rotate: revealRotation } = useProjectSecret(code);
   const [info, setInfo] = useState('');
   const [error, setError] = useState('');
   const [test, setTest] = useState(null);
-  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -34,12 +39,10 @@ export default function ProjectIntegrationPage() {
   };
   const rotate = async () => {
     if (!window.confirm('Rotate credentials? The current secret stops working immediately and the project backend must be updated.')) return;
-    const r = await run(() => integrationsApi.rotate(code), 'New credentials generated. Copy the secret now – it is shown only once.')();
-    if (r) setCreds(r.credentials);
+    await revealRotation(() => run(() => integrationsApi.rotate(code), 'New credentials generated. Copy the secret now – it is shown only once.')());
   };
   const toggle = run(() => integrationsApi.updateProject(code, { enabled: !data.project.enabled }), 'Integration updated.');
   const doTest = async () => { setTest(null); setError(''); try { setTest(await integrationsApi.testConnection(code)); } catch (e) { setError(e.message); } };
-  const copy = async () => { try { await navigator.clipboard.writeText(creds.api_secret); setCopied(true); } catch { /* clipboard may be blocked */ } };
 
   if (!data) return <section className={styles.page}>{error ? <Alert type="error">{error}</Alert> : <p className={styles.note} role="status">Loading…</p>}</section>;
   const p = data.project;
@@ -69,12 +72,11 @@ export default function ProjectIntegrationPage() {
         <dl className={styles.kv}>
           <dt>Nexus API Base URL</dt><dd className={styles.mono}>{base}</dd>
           <dt>Project Code</dt><dd className={styles.mono}>{p.code}</dd>
-          <dt>Client ID</dt><dd className={styles.mono}>{creds?.client_id || p.client_id}</dd>
+          <dt>Client ID</dt><dd className={styles.mono}>{p.client_id}</dd>
           <dt>API Secret</dt>
-          <dd>{creds ? (
-            <div className={styles.secret}><strong>Copy now – this secret is never shown again</strong><span className={styles.mono}>{creds.api_secret}</span>{' '}
-              <button className={`${styles.btn} ${styles.ghost}`} onClick={copy}>{copied ? 'Copied' : 'Copy'}</button>
-              {' '}<button className={`${styles.btn} ${styles.ghost}`} onClick={() => setCreds(null)}>Hide</button></div>
+          <dd>{secret ? (
+            <div className={styles.secret}><strong>Copy now – this secret is never shown again</strong><CopyValue value={secret} label="API secret" onCopied={consumeSecret} />
+              {' '}<button className={`${styles.btn} ${styles.ghost}`} onClick={clearSecret}>Hide</button></div>
           ) : <span className={styles.mono}>{p.secret_hint ? `••••••••${p.secret_hint}` : '—'} (hidden – rotate to get a new one)</span>}</dd>
           <dt>Integration Status</dt>
           <dd><div className={styles.steps}>{p.required_steps.map((s) => <span key={s} className={`${styles.badge} ${p.verified_steps.includes(s) ? styles.ok : styles.pending}`}>{s.replace('_', ' ')}</span>)}</div>
@@ -82,10 +84,14 @@ export default function ProjectIntegrationPage() {
         </dl>
       </div>
 
+      <CustomerSyncPanel code={code} tallyRequired={!!p.tally_serial_required} />
+      <TallyPanel code={code} project={p} onChanged={load} />
+      <UsagePanel code={code} />
+
       <div className={styles.panel}>
         <h3 className={styles.title}>Authentication Instructions</h3>
         <p className={styles.note}>Server-to-server only (never from React/browser code). Every request carries the project credentials and <span className={styles.mono}>project_code</span>; calls are rate limited to 300/min.</p>
-        <pre className={styles.code}>{`X-Client-Id: ${creds?.client_id || p.client_id}\nX-Client-Secret: <your API secret>\nContent-Type: application/json\n\nSuccess: {"ok": true, "data": {...}, "request_id": "..."}\nError:   {"ok": false, "error": {"code": "...", "message": "..."}, "request_id": "..."}`}</pre>
+        <pre className={styles.code}>{`X-Client-Id: ${p.client_id}\nX-Client-Secret: <your API secret>\nContent-Type: application/json\n\nSuccess: {"ok": true, "data": {...}, "request_id": "..."}\nError:   {"ok": false, "error": {"code": "...", "message": "..."}, "request_id": "..."}`}</pre>
       </div>
 
       <div className={styles.panel}>
@@ -125,7 +131,7 @@ export default function ProjectIntegrationPage() {
           </table>
         </div>
       </div>
-      <p className={styles.note}><Link to="/project-management/status">API Integration Status</Link> · <Link to="/project-management">Project List</Link></p>
+      <p className={styles.note}><Link to={paths.status}>Integration Logs</Link> · <Link to={paths.list}>Project List</Link></p>
     </section>
   );
 }

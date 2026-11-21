@@ -1,175 +1,85 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { configApi } from '../api/config';
-import { tallyApi } from '../api/tallysl';
 import { useAuth } from '../context/AuthContext';
 import Drawer from './Drawer';
-import Alert from './Alert';
-import { PasswordField } from './Field';
-import { SettingsIcon, FolderIcon, KeyIcon, UserIcon } from './Icons';
-import styles from './ConfigurationDrawer.module.css';
+import AccessTab from './config/AccessTab';
+import StaffCreateForm from './config/StaffCreateForm';
+import StaffDirectoryTab from './config/StaffDirectoryTab';
+import VisibilityTab from './config/VisibilityTab';
+import { SettingsIcon } from './Icons';
+import styles from './config/Config.module.css';
 
-export default function ConfigurationDrawer({ open, onClose }) {
-  const { user, refresh } = useAuth();
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const TABS = [['directory', 'Staff Directory'], ['access', 'Access & Permissions'], ['visibility', 'Dashboard Visibility']];
+
+/** Configuration workspace (Superadmin): a wide drawer with three separate tabs. `mode="create"` opens Add Staff directly.
+ *  All permission writes go through the existing staff API, which stores the existing per-project grant tables. */
+export default function ConfigurationDrawer({ open, mode, onClose }) {
+  const { user } = useAuth();
+  const isSuper = user?.role === 'SUPERADMIN';
+  const allowed = isSuper || (user?.role === 'ADMIN' && user.visibility_projects?.length > 0); // an Admin sees only Dashboard Visibility, for granted projects
+  const [view, setView] = useState('directory'); // directory | access | visibility | create
   const [data, setData] = useState(null);
-  const [adminId, setAdminId] = useState('');
-  const [grants, setGrants] = useState({});
-  const [tally, setTally] = useState(null); // Tally SL products + per-product grants (apps/tallysl); PRN grants above are untouched
+  const [selected, setSelected] = useState(null);
+  const [dirty, setDirty] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmation, setConfirmation] = useState('');
-  const locked = useRef(false);
-  const requestId = useRef(0);
-  const allowed = user?.role === 'SUPERADMIN';
-  const close = useCallback(() => { if (!locked.current) onClose(); }, [onClose]);
+  const [notice, setNotice] = useState(null);
 
+  const load = useCallback(async () => {
+    try { setData(await configApi.staff()); setError(''); } catch (e) { setError(e.message); }
+  }, []);
   useEffect(() => {
     if (!open || !allowed) return;
-    const token = ++requestId.current;
-    setData(null); setGrants({}); setAdminId(''); setLoading(true);
-    setError(''); setMessage(''); setPassword(''); setConfirmation('');
-    tallyApi.permissions().then((t) => token === requestId.current && setTally(t)).catch(() => token === requestId.current && setTally(null));
-    configApi.projectPermissions().then((result) => {
-      if (token !== requestId.current) return;
-      setData(result); setAdminId(String(result.admins[0]?.id || ''));
-      setGrants(result.admins[0]?.grants || {});
-    }).catch((e) => { if (token === requestId.current) setError(e.message); })
-      .finally(() => { if (token === requestId.current) setLoading(false); });
-    return () => { requestId.current++; };
-  }, [open, allowed]);
+    setView(!isSuper ? 'visibility' : mode === 'create' ? 'create' : 'directory');
+    setSelected(null); setDirty(false); setNotice(null);
+    if (isSuper) load();
+  }, [open, mode, allowed, isSuper, load]);
 
-  async function choose(id) {
-    if (locked.current) return;
-    const token = ++requestId.current;
-    setAdminId(id); setGrants({}); setLoading(true);
-    setPassword(''); setConfirmation(''); setMessage(''); setError('');
-    try {
-      const result = await configApi.projectPermissions();
-      if (token !== requestId.current) return;
-      const admin = result.admins.find((a) => String(a.id) === id);
-      setData(result); setGrants(admin?.grants || {});
-      if (!admin) { setAdminId(''); setError('This Admin account is no longer available.'); }
-    } catch (e) {
-      if (token === requestId.current) { setError(e.message); setAdminId(''); }
-    } finally { if (token === requestId.current) setLoading(false); }
-  }
+  const projectNames = useMemo(() => Object.fromEntries((data?.projects || []).map((p) => [p.code, p.name])), [data]);
+  const confirmLeave = () => !dirty || window.confirm('You have unsaved permission changes. Discard them?');
+  const go = (v) => { if (v !== view && !confirmLeave()) return; setDirty(false); setView(v); };
+  const close = () => { if (confirmLeave()) onClose(); };
 
-  async function toggle(module, action, checked) {
-    if (locked.current || loading || !adminId || !allowed) return;
-    locked.current = true;
-    const previous = grants;
-    const next = { ...grants, [module]: { ...grants[module], [action]: checked } };
-    setGrants(next); setBusy(true); setError(''); setMessage('');
+  const edit = (u) => { if (!confirmLeave()) return; setDirty(false); setSelected(u.id); setView('access'); };
+  const toggle = async (u) => {
     try {
-      const result = await configApi.saveProjectPermissions(Number(adminId), Object.entries(next).map(([scope, actions]) => ({
-        module: scope, actions: Object.entries(actions).filter(([, enabled]) => enabled).map(([name]) => name),
-      })));
-      const saved = result.admins.find((a) => String(a.id) === adminId);
-      if (!saved) throw new Error('Admin account is no longer available. Reopen permissions to reload.');
-      setData(result); setGrants(saved.grants || {});
-      setMessage('Saved');
-      await refresh();
-    } catch (e) { setGrants(previous); setError(`Could not save permissions. ${e.message}`); }
-    finally { locked.current = false; setBusy(false); }
-  }
-
-  const tallyAdmin = tally?.admins.find((a) => String(a.id) === adminId);
-  async function toggleTally(code, action, checked) {
-    if (locked.current || loading || !adminId || !allowed) return;
-    locked.current = true;
-    const current = tallyAdmin?.grants[code] || {};
-    const actions = Object.keys(tally.actions).filter((k) => (k === action ? checked : current[k]));
-    setBusy(true); setError(''); setMessage('');
+      await configApi.updateStaff(u.id, { full_name: u.full_name, email: u.email, phone: u.phone, is_active: !u.is_active, module_grants: u.module_grants, tally_grants: u.tally_grants, visibility_projects: u.visibility_projects, report_projects: u.report_projects });
+      await load();
+    } catch (e) { setError(e.message); }
+  };
+  const link = async (u) => {
     try {
-      setTally(await tallyApi.savePermissions(Number(adminId), { [code]: actions }));
-      setMessage('Saved');
-    } catch (e) { setError(`Could not save permissions. ${e.message}`); }
-    finally { locked.current = false; setBusy(false); }
-  }
-
-  async function resetPassword() {
-    if (locked.current || loading || !adminId || !allowed) return;
-    if (!password.trim() || password !== confirmation) { setError('Enter a new password and matching confirmation.'); return; }
-    locked.current = true;
-    setBusy(true); setError(''); setMessage('');
-    try {
-      await configApi.resetAdminPassword(adminId, password, confirmation);
-      setPassword(''); setConfirmation(''); setMessage('Password changed. The Admin must sign in again.');
-    } catch (e) { setError(e.message); } finally { locked.current = false; setBusy(false); }
-  }
+      const r = await configApi.staffSetupLink(u.id);
+      setNotice({ message: `One-time setup link for ${u.username}. Share it securely; it stops working once used.`, link: `${window.location.origin}${BASE}${r.setup_link}` });
+    } catch (e) { setError(e.message); }
+  };
 
   if (!allowed) return null;
-  return <Drawer open={open} onClose={close} title={<span className={styles.heading}><SettingsIcon size={21} /><span>Admin Permissions<small>Manage project-wise access</small></span></span>} titleId="config-drawer-title" closeLabel={busy ? 'Please wait for saving to finish' : 'Close configuration'} flush>
-    <div className={styles.block}>
-      {error && <Alert type="error">{error}</Alert>}
-      <div className={styles.account}>
-        <label htmlFor="permission-admin">Select Admin</label>
-        <div className={styles.selectWrap}><UserIcon size={18} /><select id="permission-admin" value={adminId} onChange={(e) => choose(e.target.value)} disabled={busy || loading || !data?.admins.length}>
-          {!adminId && <option value="">{loading ? 'Loading Admin accounts...' : 'Choose an Admin'}</option>}
-          {data?.admins.map((a) => <option key={a.id} value={a.id}>{a.username}</option>)}
-        </select></div>
-        <p>Access is saved automatically for the selected Admin.</p>
-      </div>
-      {loading && <div className={styles.loading} role="status"><span className={styles.spinner} /> Loading saved permissions...</div>}
-      {!loading && data && !data.admins.length && <p className={styles.empty}>No active Admin accounts.</p>}
-      {!loading && adminId && data?.projects.filter((p) => !tally?.products.some((t) => t.code === p.code)).map((project) => {
-        const enabled = project.menus.reduce((count, menu) => count + menu.actions.filter((action) => grants[menu.module]?.[action]).length, 0);
-        const total = project.menus.reduce((count, menu) => count + menu.actions.length, 0);
-        return <details className={styles.project} key={project.code}>
-          <summary><span className={styles.projectIcon}><FolderIcon size={18} /></span><span className={styles.projectName}>{project.label}</span><span className={styles.count}>{enabled}/{total}</span><span className={styles.chevron} aria-hidden="true" /></summary>
-          <div className={styles.matrix}>
-            <div className={styles.columns}><span>Menu / page</span><span>Allowed actions</span></div>
-            {project.menus.map((menu) => {
-              const parts = menu.label.split(' / ');
-              const nested = parts[0] === 'Reports';
-              return <div className={styles.menu} key={menu.module}>
-                <div className={styles.menuName}>{nested && <small>{parts[0]}</small>}<span>{nested ? `\u21b3 ${parts.slice(1).join(' / ')}` : menu.label}</span></div>
-                <fieldset disabled={busy} className={styles.actions}>
-                  <legend className={styles.srOnly}>{project.label}: {menu.label}</legend>
-                  {menu.actions.map((action) => <label key={action} className={styles.permission}>
-                    <input type="checkbox" checked={Boolean(grants[menu.module]?.[action])} onChange={(e) => toggle(menu.module, action, e.target.checked)} />
-                    <span>{data.actions[action] || action}</span>
-                  </label>)}
-                </fieldset>
-              </div>;
-            })}
+  return (
+    <Drawer open={open} onClose={close} wide flush titleId="config-drawer-title" closeLabel="Close configuration"
+      title={<span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><SettingsIcon size={21} /><span>{view === 'create' ? 'Add Staff' : 'Configuration'}<small style={{ display: 'block', fontSize: 11, fontWeight: 400, color: 'var(--muted)' }}>{view === 'create' ? 'Create an Admin or restricted User account' : 'Manage staff access, permissions and dashboard settings.'}</small></span></span>}>
+      <div className={styles.workspace}>
+        {view !== 'create' && (
+          <div className={styles.tabs} role="tablist" aria-label="Configuration sections">
+            {TABS.filter(([id]) => isSuper || id === 'visibility').map(([id, label]) => (
+              <button key={id} type="button" role="tab" aria-selected={view === id} className={`${styles.tab} ${view === id ? styles.tabOn : ''}`} onClick={() => go(id)}>{label}</button>
+            ))}
           </div>
-        </details>;
-      })}
-      {!loading && adminId && tally?.products.map((product) => {
-        const g = tallyAdmin?.grants[product.code] || {};
-        const total = Object.keys(tally.actions).length;
-        return <details className={styles.project} key={`tally-${product.code}`}>
-          <summary><span className={styles.projectIcon}><FolderIcon size={18} /></span><span className={styles.projectName}>{product.name}</span><span className={styles.count}>{Object.values(g).filter(Boolean).length}/{total}</span><span className={styles.chevron} aria-hidden="true" /></summary>
-          <div className={styles.matrix}>
-            <div className={styles.columns}><span>Product</span><span>Allowed actions</span></div>
-            <div className={styles.menu}>
-              <div className={styles.menuName}><span>{product.name}</span></div>
-              <fieldset disabled={busy} className={styles.actions}>
-                <legend className={styles.srOnly}>{product.name} permissions</legend>
-                {Object.entries(tally.actions).map(([action, label]) => <label key={action} className={styles.permission}>
-                  <input type="checkbox" checked={Boolean(g[action])} onChange={(e) => toggleTally(product.code, action, e.target.checked)} />
-                  <span>{label}</span>
-                </label>)}
-              </fieldset>
+        )}
+        <div className={styles.body}>
+          {error && <p role="alert" className={styles.err}>{error}</p>}
+          {notice && (
+            <div className={styles.notice} role="status">
+              {notice.message}
+              <input readOnly value={notice.link} onFocus={(e) => e.target.select()} aria-label="One-time setup link" />
             </div>
-          </div>
-        </details>;
-      })}
-      {!loading && adminId && <details className={styles.password}>
-        <summary><KeyIcon size={18} /><span>Reset Admin Password</span><span className={styles.chevron} aria-hidden="true" /></summary>
-        <div className={styles.passwordBody}>
-          <p>Changing the password signs this Admin out of existing sessions.</p>
-          <PasswordField compact label="New Password" value={password} maxLength={128} disabled={busy} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
-          <PasswordField compact label="Confirm New Password" value={confirmation} maxLength={128} disabled={busy} onChange={(e) => setConfirmation(e.target.value)} autoComplete="new-password" />
-          <button className={styles.reset} type="button" onClick={resetPassword} disabled={busy || !password || !confirmation}><KeyIcon size={15} /> Reset password</button>
+          )}
+          {view === 'directory' && <StaffDirectoryTab staff={data?.staff} projectNames={projectNames} onEdit={edit} onToggle={toggle} onLink={link} onAdd={() => go('create')} />}
+          {view === 'access' && data && <AccessTab staff={data.staff} catalog={data.catalog} labels={data.action_labels} selectedId={selected} onSelect={setSelected} onSaved={load} onDirty={setDirty} />}
+          {view === 'visibility' && <VisibilityTab active />}
+          {view === 'create' && data && <StaffCreateForm catalog={data.catalog} labels={data.action_labels} onCreated={load} onCancel={() => (mode === 'create' ? onClose() : setView('directory'))} />}
         </div>
-      </details>}
-    </div>
-    <div className={styles.footer} role="status" aria-live="polite">
-      {busy ? <><span className={styles.spinner} /> Saving... Please keep this drawer open.</> : message ? <span className={styles.success}>{'\u2713'} {message}</span> : 'Only explicitly assigned actions are allowed.'}
-    </div>
-  </Drawer>;
+      </div>
+    </Drawer>
+  );
 }

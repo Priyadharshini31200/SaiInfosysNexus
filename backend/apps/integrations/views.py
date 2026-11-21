@@ -9,7 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import services as s
+from . import universe
 from .spec import VERSION
+from .models import IntegrationCredential
 from .services import IntegrationError
 
 
@@ -26,7 +28,10 @@ class V1View(APIView):
     def _client(self, request):
         cred = s.authenticate_client(request.headers.get("X-Client-Id"), request.headers.get("X-Client-Secret"))
         if not cred:
-            s.audit(None, "api.unauthenticated", request.headers.get("X-Client-Id", "")[:40], ok=False, ip=client_ip(request))
+            cid = request.headers.get("X-Client-Id", "")[:40]
+            known = IntegrationCredential.objects.filter(client_id=cid).select_related("project").first() if cid else None
+            # a known Client ID with a wrong/missing secret is shown in that project's Sync Logs (the secret itself is never logged)
+            s.audit(known.project if known else None, "api.unauthenticated", cid, ok=False, ip=client_ip(request))
             raise IntegrationError("UNAUTHENTICATED", "Missing or invalid API credentials.", 401)
         if not cred.project.enabled:
             raise IntegrationError("INTEGRATION_DISABLED", "This integration is disabled in Nexus.", 403)
@@ -72,7 +77,37 @@ class RegisterView(V1View):
     step = "register"
 
     def process(self, project, data, request):
-        return s.register_customer(project, data, idem_key=(request.headers.get("Idempotency-Key") or str(data.get("idempotency_key") or ""))[:100])
+        key = (request.headers.get("Idempotency-Key") or str(data.get("idempotency_key") or ""))[:100]
+        if universe.is_universe(project):  # UNIVERSE: queue for review; nothing is issued before Save & Allow
+            try:
+                reg, _ = universe.ingest(project, data, data.get("tally") or {}, actor="push")
+            except IntegrationError as exc:  # a rejected registration is visible in Sync Logs (code only - no personal data, no secrets)
+                s.audit(project, "registration.rejected", str(data.get("external_customer_id") or "")[:60], ok=False, ip=client_ip(request), detail=exc.code)
+                raise
+            return universe.ingest_response(reg)
+        if project.tally_serial_required:  # Tally-integrated project: Tally verification first (isolated service)
+            from . import tally
+            return tally.register_tally_customer(project, data, data.get("tally") or {}, idem_key=key)
+        return s.register_customer(project, data, idem_key=key)
+
+
+class DeviceAuthorizeView(V1View):
+    """UNIVERSE: Nexus authorises (or refuses) a device for a customer; the project backend enforces the answer."""
+    step = "activation_verify"
+
+    def process(self, project, data, request):
+        if not universe.is_universe(project):
+            raise IntegrationError("NOT_AVAILABLE", "devices/authorize is available to UNIVERSE projects only.", 404)
+        return universe.authorize_device(project, data, client_ip(request))
+
+
+class TallySubmitView(V1View):
+    """UNIVERSE: secure connector path - the project backend submits Tally details for a pending registration."""
+
+    def process(self, project, data, request):
+        if not universe.is_universe(project):
+            raise IntegrationError("NOT_AVAILABLE", "tally/submit is available to UNIVERSE projects only.", 404)
+        return universe.submit_tally(project, data)
 
 
 class UpdateView(V1View):
@@ -85,7 +120,16 @@ class ImportView(V1View):
         items = data.get("customers")
         if not isinstance(items, list) or not 1 <= len(items) <= 200:
             raise IntegrationError("VALIDATION_ERROR", "customers must be a list of 1-200 customers.", 422)
-        results = s.bulk_import(project, [i for i in items if isinstance(i, dict)], send_email=data.get("send_welcome_email", True) is not False)
+        if universe.is_universe(project):
+            results = []
+            for i in [x for x in items if isinstance(x, dict)]:
+                try:
+                    reg, _ = universe.ingest(project, i, i.get("tally") or {}, actor="push")
+                    results.append({"external_customer_id": reg.external_customer_id, "ok": True, "status": reg.status})
+                except IntegrationError as exc:
+                    results.append({"external_customer_id": str(i.get("external_customer_id") or ""), "ok": False, "error": exc.code})
+        else:
+            results = s.bulk_import(project, [i for i in items if isinstance(i, dict)], send_email=data.get("send_welcome_email", True) is not False)
         ok = sum(1 for r in results if r["ok"])
         return 200, {"imported": ok, "failed": len(results) - ok, "results": results}
 
@@ -148,3 +192,32 @@ class ConfigView(V1View):
             "default_license_type": project.default_license_type, "usage_tracking": project.usage_tracking, "api_version": VERSION,
             "required_steps": list(project.REQUIRED_STEPS), "verified_steps": project.steps,
         }
+
+
+class CustomerSetupView(APIView):
+    """Public, token-authenticated: the customer sets their own password from the emailed one-time link. Nothing secret is returned."""
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        from . import universe
+        try:
+            c = universe.complete_setup(request.data.get("token"), request.data.get("password"))
+        except s.IntegrationError as exc:
+            return Response({"message": exc.message, "code": exc.code}, status=exc.status)
+        return Response({"ok": True, "user_id": c.user_id, "project": c.project.name})
+
+
+class DeveloperCredentialRedeemView(APIView):
+    """Public, single-use: the developer's one-time link + the out-of-band verification code -> a NEW API secret for the same Client ID (shown once)."""
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        try:
+            out = s.redeem_handoff(request.data.get("token"), ip=client_ip(request))
+        except IntegrationError as exc:
+            return Response({"ok": False, "error": {"code": exc.code, "message": exc.message}}, status=exc.status)
+        resp = Response({"ok": True, "data": out})
+        resp["Cache-Control"] = "no-store"  # the secret must not be cached anywhere
+        return resp

@@ -31,6 +31,23 @@ export const EyeOffIcon = (p) => (
     <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
   </Svg>
 );
+export const PencilIcon = (p) => (
+  <Svg {...p}>
+    <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+    <path d="m13.5 6.5 4 4" />
+  </Svg>
+);
+export const TrashIcon = (p) => (
+  <Svg {...p}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </Svg>
+);
+export const CopyIcon = (p) => (
+  <Svg {...p}>
+    <rect x="9" y="9" width="12" height="12" rx="2" />
+    <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+  </Svg>
+);
 export const DashboardIcon = (p) => (
   <Svg {...p}>
     <rect x="3" y="3" width="7.5" height="9" rx="2" />
@@ -154,5 +171,20 @@ export const ReportIcon = (p) => (
   <Svg {...p}>
     <path d="M4 20V4M4 20h16" />
     <path d="M8 16v-4M12 16V8M16 16v-6" />
+  </Svg>
+);
+
+export const UserPlusIcon = (p) => (
+  <Svg {...p}>
+    <circle cx="9" cy="8" r="4" />
+    <path d="M2 21a7 7 0 0 1 14 0" />
+    <path d="M19 8v6M16 11h6" />
+  </Svg>
+);
+export const RefreshIcon = (p) => (
+  <Svg {...p}>
+    <path d="M21 12a9 9 0 0 1-15.5 6.2L3 15.7" />
+    <path d="M3 12a9 9 0 0 1 15.5-6.2L21 8.3" />
+    <path d="M21 3v5.3h-5.3M3 21v-5.3h5.3" />
   </Svg>
 );

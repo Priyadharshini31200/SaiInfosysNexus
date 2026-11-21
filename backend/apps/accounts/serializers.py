@@ -48,6 +48,17 @@ class CurrentUserSerializer(serializers.Serializer):
     role_label = serializers.SerializerMethodField()
     permissions = serializers.SerializerMethodField()
     project_permissions = serializers.SerializerMethodField()
+    report_projects = serializers.SerializerMethodField()
+    visibility_projects = serializers.SerializerMethodField()
+
+    def get_visibility_projects(self, user):
+        """Projects whose Overall Dashboard card this account may manage (Admin grants only; Superadmin manages all)."""
+        from .models import DashboardVisibilityGrant
+        return list(DashboardVisibilityGrant.objects.filter(user=user).values_list("project_code", flat=True)) if user.profile.role == "ADMIN" else []
+
+    def get_report_projects(self, user):
+        from .models import StaffReportProject
+        return list(StaffReportProject.objects.filter(user=user).values_list("project_code", flat=True)) if user.profile.role == "USER" else []
 
     def get_project_permissions(self, user):
         return scoped_permission_map(user)

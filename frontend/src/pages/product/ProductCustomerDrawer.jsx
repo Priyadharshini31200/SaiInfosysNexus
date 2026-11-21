@@ -96,7 +96,7 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
     body = (
       <>
         <Group title="Customer Details" rows={[['Customer Name', c.name], ['Email', c.email], ['Contact Number', c.contact_number], ['External Customer ID', c.external_customer_id], ['Serial Number / User ID', c.serial_number], ['Registered On', DT(c.created_at)], ['Welcome Email', EMAIL[c.welcome_email_status] ?? c.welcome_email_status], ['Last Login', DT(c.last_login)]]} />
-        <Group title="License Details" rows={[['License Type', TYPE_LABEL[type]], ['License Status', STATUS_LABEL[c.status]], ['Activation Date', D(c.activated_at)], ['Expiry Date', type === 'LIFETIME' ? 'Never' : D(c.expires_at)], ['Active Devices', c.active_devices], ['Usage Category', c.usage_category || '—']]} />
+        <Group title="License Details" rows={[['License Type', TYPE_LABEL[type]], ['License Status', STATUS_LABEL[c.status]], ...(type === 'TRIAL' ? [['Trial Days', c.trial_days ?? '—']] : []), ['License Start Date', D(c.starts_at)], ['Activation Date', D(c.activated_at)], ['Expiry Date', type === 'LIFETIME' ? 'Never' : D(c.expires_at)], ['Active Device', c.active_device || '—'], ['Usage Category', c.usage_category || '—']]} />
         <History title="Device Activation History" columns={['Device', 'Activated', 'Status', 'Ended']} rows={activations.map((a) => [a.device_name, DT(a.activated_at), a.status === 'ACTIVE' ? 'Active' : 'Ended', a.ended_at ? `${DT(a.ended_at)} (${a.ended_reason.replace('_', ' ')})` : '—'])} empty="No device has been activated." />
         <History title="Device Transfer History" columns={['When', 'Previous device', 'New device']} rows={transfers.map((t) => [DT(t.at), t.from_device, t.to_device])} empty="No device transfers." />
         <History title="Usage History" columns={['When', 'Event', 'Device']} rows={usage.map((u) => [DT(u.at), u.event, u.device])} empty="No usage recorded yet." />
@@ -124,12 +124,12 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
         )}
         {dialog?.kind === 'renew' && (
           <Confirm title="Renew License" confirmLabel="Renew for one year" busy={busy === 'renew'} error={dlgError} onClose={close} onConfirm={() => run('renew', act('renew'), 'License renewed for one year.')}>
-            <p className={styles.message}>Renew {c.name}'s Annual license for one more year?</p>
+            <p className={styles.message}>Renew {c.name}'s 1 Year license for one more year?</p>
           </Confirm>
         )}
         {dialog?.kind === 'set' && (
           <Confirm title={c.status === 'pending' ? 'Approve / Set License' : 'Change License Type'} confirmLabel="Apply" busy={busy === 'set'} error={dlgError} onClose={close} onConfirm={() => run('set', act('set-license', { license_type: plan, trial_days: plan === 'TRIAL' ? Number(days) : undefined }), 'License updated.')}>
-            <label style={lbl}>License Type<select style={field} value={plan} onChange={(e) => setPlan(e.target.value)}><option value="TRIAL">Trial</option><option value="ONE_YEAR">Annual</option><option value="LIFETIME">Lifetime</option></select></label>
+            <label style={lbl}>License Type<select style={field} value={plan} onChange={(e) => setPlan(e.target.value)}><option value="TRIAL">Trial</option><option value="ONE_YEAR">1 Year</option><option value="LIFETIME">Lifetime</option></select></label>
             {plan === 'TRIAL' && <label style={lbl}>Trial Days<input type="number" min="1" max="365" style={field} value={days} onChange={(e) => setDays(e.target.value)} /></label>}
             <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>The licence becomes active immediately, starting now.</p>
           </Confirm>

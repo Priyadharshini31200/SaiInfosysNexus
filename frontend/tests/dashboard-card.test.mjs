@@ -8,7 +8,9 @@ import { transformWithOxc } from 'vite';
 const source = (await readFile(new URL('../src/components/ProjectUsageCard.jsx', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export const', 'const').replace('export default function', 'function');
 const { code } = await transformWithOxc(source, 'ProjectUsageCard.jsx', { jsx: { runtime: 'classic' } });
-const Card = new Function('React', 'styles', `${code}; return ProjectUsageCard;`)(React, {});
+const loadCard = new Function('React', 'styles', 'useState', 'useRef', `${code}; return ProjectUsageCard;`);
+const Card = loadCard(React, {}, React.useState, React.useRef);
+const renderCountTree = loadCard(React, {}, (initial) => [initial, () => {}], (current) => ({ current }));
 const project = { code: 'gstr2tally', label: 'GSTR2Tally', available: true, used: 1234, not_used: 5, expired: 6, expiring: 7 };
 
 test('each project renders exactly Used / Not Used / Expire from supplied counts', () => {
@@ -22,7 +24,7 @@ test('each project renders exactly Used / Not Used / Expire from supplied counts
 
 test('count clicks preserve project and exact report category; report grants disable links', () => {
   const calls = [];
-  const tree = Card({ project, onSelect: (...args) => calls.push(args), canOpen: (category) => category !== 'expired' });
+  const tree = renderCountTree({ project, onSelect: (...args) => calls.push(args), canOpen: (category) => category !== 'expired' });
   const buttons = tree.props.children[1].props.children;
   assert.deepEqual(buttons.map((button) => button.props.disabled), [false, false, true]);
   buttons.forEach((button) => button.props.onClick());

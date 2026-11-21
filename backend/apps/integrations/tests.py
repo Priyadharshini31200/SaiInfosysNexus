@@ -33,6 +33,9 @@ class Base(TestCase):
         r = self.staff.post(ADM + "projects/", {"code": "MOTHYS", "name": "Mothys Inventory Management", "frontend_url": "https://inventory.tallysolutionstamilnadu.com",
                                                  "backend_url": "https://inventory.tallysolutionstamilnadu.com/api", "framework": "FastAPI"}, format="json")
         assert r.status_code == 201, r.data
+        # The fixture stands in for the real, migration-seeded Mothys, which keeps the legacy 365-day rule (projects created through the
+        # API now default to calendar years, so the fixture is pinned to LEGACY explicitly).
+        IntegrationProject.objects.filter(code="MOTHYS").update(license_policy="LEGACY")
         self.project = IntegrationProject.objects.get(code="MOTHYS")
         self.cid, self.secret = r.data["credentials"]["client_id"], r.data["credentials"]["api_secret"]
         self.api = APIClient()
@@ -47,7 +50,7 @@ class Base(TestCase):
         return self.call("customers/register", {**REG, **over})
 
     def password(self):
-        return re.search(r"Temporary Password: (\S+)", next(m for m in mail.outbox if "Login Credentials" in m.subject).body).group(1)
+        return re.search(r"Temporary Password: (\S+)", next(m for m in mail.outbox if "Your Login Details" in m.subject).body).group(1)
 
     def make_active(self, **over):
         r = self.register(**over)
@@ -85,7 +88,7 @@ class ProjectTests(Base):
         self.assertEqual(c.get(ADM + "projects/").status_code, 403)
         self.assertEqual(APIClient().get(ADM + "projects/").status_code, 401)
         r = self.staff.post(ADM + "projects/", {"code": "X1", "name": "X", "frontend_url": "https://x.example", "backend_url": "https://x.example/api", "tally_serial_required": True}, format="json")
-        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.status_code, 201)  # Tally-integrated Universal projects are now configurable (Superadmin only, audited)
 
     def test_rotation_kills_old_secret_and_docs_match_routes(self):
         old = self.secret
@@ -130,9 +133,9 @@ class RegistrationTests(Base):
         self.assertEqual((d["license_type"], d["license_state"]), ("TRIAL", "ACTIVE"))
         self.assertEqual(len(mail.outbox), 1)
         m = mail.outbox[0]
-        self.assertEqual((m.subject, m.to), ("Mothys Inventory Management – Login Credentials", ["kumar@example.com"]))
-        for expect in ("Dear Kumar,", "Your Mothys Inventory Management account has been created successfully.", f"User ID: {d['user_id']}",
-                       f"Serial Number: {d['serial_number']}", "License Type: Trial", "Login URL:\nhttps://inventory.tallysolutionstamilnadu.com", "Connect. Simplify. Succeed."):
+        self.assertEqual((m.subject, m.to), ("Mothys Inventory – Your Login Details", ["kumar@example.com"]))
+        for expect in ("Dear Kumar,", "Your Mothys Inventory account has been created successfully.", f"User ID: {d['user_id']}",
+                       f"Serial Number: {d['serial_number']}", "License Type: Trial", "Trial Days / Expiry Date:", "Login:\nhttps://inventory.tallysolutionstamilnadu.com", "Regards,\nSai Infosys"):
             self.assertIn(expect, m.body)
         self.assertNotRegex(m.body, r"Activation Key: \d")  # no key at registration
         self.assertEqual(IntegrationActivationKey.objects.count(), 0)

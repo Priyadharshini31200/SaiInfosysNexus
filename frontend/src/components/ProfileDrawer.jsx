@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Drawer from './Drawer';
+import CompanyProfileSection from './CompanyProfileSection';
 import ResetPasswordForm from './ResetPasswordForm';
 import { ChevronDownIcon, KeyIcon } from './Icons';
 import styles from './ProfileDrawer.module.css';
+
+const ROLE_LABEL = { SUPERADMIN: 'Super Admin', ADMIN: 'Admin', USER: 'Report Viewer', DEVELOPER: 'Project Developer' };
 
 function ProfileContent() {
   const { user } = useAuth();
@@ -15,6 +18,10 @@ function ProfileContent() {
         <div className={styles.row}>
           <dt>Username</dt>
           <dd>{user.username}</dd>
+        </div>
+        <div className={styles.row}>
+          <dt>Role</dt>
+          <dd>{ROLE_LABEL[user.role] || user.role}</dd>
         </div>
       </dl>
 
@@ -32,6 +39,8 @@ function ProfileContent() {
         </button>
         {showReset && <ResetPasswordForm onCancel={() => setShowReset(false)} />}
       </section>
+
+      <CompanyProfileSection />
     </>
   );
 }

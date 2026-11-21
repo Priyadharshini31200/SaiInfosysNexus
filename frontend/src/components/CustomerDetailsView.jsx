@@ -59,7 +59,7 @@ export default function CustomerDetailsView({ project, customer: c, onEdit, onCh
         <div className={styles.drawerBody}>
           <div className={styles.drawerScroll}>
             <Group
-              title="Customer Details"
+              title=""
               rows={[
                 ['Name', c.name],
                 ['Company Name', c.company_name],

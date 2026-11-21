@@ -1,0 +1,2216 @@
+Creating test database for alias 'default'...
+Forbidden: /api/reports/consolidated/
+Forbidden: /api/reports/consolidated/
+Forbidden: /api/reports/consolidated/
+.Bad Request: /api/reports/consolidated/
+.Forbidden: /api/reports/consolidated/
+Forbidden: /api/reports/consolidated/
+Forbidden: /api/reports/consolidated/
+Forbidden: /api/reports/consolidated/
+Forbidden: /api/reports/consolidated/
+Forbidden: /api/staff/expiry-report/
+...Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+.Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+.....Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+Bad Request: /api/auth/login/
+Bad Request: /api/auth/login/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+.Forbidden: /api/projects/prn-auto-print/customers/2/
+.Unauthorized: /api/auth/me/
+.Forbidden: /api/projects/prn-auto-print/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+...Forbidden: /api/dashboard/project-usage/prn-auto-print/used/
+.Forbidden: /api/projects/prn-auto-print/customers/4/device/
+.....Forbidden: /api/config/project-permissions/
+Bad Request: /api/config/project-permissions/
+..Forbidden: /api/projects/prn-auto-print/customers/
+Forbidden: /api/projects/gstr2tally/customers/1/
+...Forbidden: /api/reports/usage/
+.Forbidden: /api/integrations/admin/projects/MOTHYS/reports/expiry/
+Forbidden: /api/integrations/admin/projects/MOTHYS/reports/expiry/
+Forbidden: /api/integrations/admin/projects/MOTHYS/product-customers/1/approve/
+Forbidden: /api/integrations/admin/projects/MOTHYS/product-customers/1/approve/
+Forbidden: /api/integrations/admin/projects/MOTHYS/product-customers/export/
+Forbidden: /api/integrations/admin/projects/MOTHYS/product-customers/export/
+Forbidden: /api/integrations/admin/projects/OTHERP/dashboard/
+Forbidden: /api/integrations/admin/projects/OTHERP/dashboard/
+Forbidden: /api/integrations/admin/projects/
+Forbidden: /api/integrations/admin/projects/
+..Forbidden: /api/integrations/admin/projects/MOTHYS/dashboard/
+Forbidden: /api/integrations/admin/projects/MOTHYS/dashboard/
+Forbidden: /api/integrations/admin/projects/MOTHYS/dashboard/
+Forbidden: /api/integrations/admin/projects/MOTHYS/dashboard/
+.Forbidden: /api/dashboard/card-visibility/prn-auto-print/
+Forbidden: /api/dashboard/card-visibility/prn-auto-print/
+Forbidden: /api/dashboard/project-usage/
+Forbidden: /api/dashboard/project-usage/
+Forbidden: /api/config/staff/
+Forbidden: /api/config/staff/
+..Forbidden: /api/config/staff/
+Forbidden: /api/config/staff/
+Forbidden: /api/config/staff/
+Forbidden: /api/config/staff/
+Unauthorized: /api/config/staff/
+Unauthorized: /api/config/staff/
+.Bad Request: /api/staff/expiry-report/
+Bad Request: /api/staff/expiry-report/
+Forbidden: /api/dashboard/project-usage/
+Forbidden: /api/dashboard/project-usage/
+Forbidden: /api/dashboard/sync/
+Forbidden: /api/dashboard/sync/
+Forbidden: /api/reports/license-expiry/
+Forbidden: /api/reports/license-expiry/
+Forbidden: /api/config/staff/
+Forbidden: /api/config/staff/
+Forbidden: /api/config/project-permissions/
+Forbidden: /api/config/project-permissions/
+Forbidden: /api/projects/prn-auto-print/customers/
+Forbidden: /api/projects/prn-auto-print/customers/
+Forbidden: /api/dashboard/card-visibility/gstr2tally/
+Forbidden: /api/dashboard/card-visibility/gstr2tally/
+.Bad Request: /api/auth/setup-password/
+Bad Request: /api/auth/setup-password/
+.Not Found: /api/config/staff/78/
+Not Found: /api/config/staff/78/
+.Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+..Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+Bad Request: /api/config/admin-permissions/
+.FF.FUnauthorized: /api/config/admin-permissions/
+Unauthorized: /api/config/admin-permissions/
+Forbidden: /api/config/admin-permissions/
+Forbidden: /api/config/admin-permissions/
+Forbidden: /api/config/admin-permissions/
+Forbidden: /api/config/admin-permissions/
+Forbidden: /api/config/admin-permissions/2/
+Forbidden: /api/config/admin-permissions/2/
+.FNot Found: /api/config/admin-permissions/99999/
+Not Found: /api/config/admin-permissions/99999/
+Bad Request: /api/config/admin-permissions/2/
+Bad Request: /api/config/admin-permissions/2/
+.FUnauthorized: /api/auth/me/
+Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/logout/
+Unauthorized: /api/auth/logout/
+Unauthorized: /api/auth/change-password/
+Unauthorized: /api/auth/change-password/
+.Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/me/
+..Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+.Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+Bad Request: /api/auth/change-password/
+.Forbidden: /api/auth/login/
+Forbidden: /api/auth/login/
+.Unauthorized: /api/auth/me/
+Unauthorized: /api/auth/me/
+.FUnauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+Too Many Requests: /api/auth/login/
+Too Many Requests: /api/auth/login/
+Too Many Requests: /api/auth/login/
+Too Many Requests: /api/auth/login/
+.Bad Request: /api/auth/login/
+Bad Request: /api/auth/login/
+...Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+..Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+.Development account Superadmin created (DEBUG is on).
+Development account Admin created (DEBUG is on).
+..Development account Superadmin not created: its initial password is not set in the environment.
+Development account Admin not created: its initial password is not set in the environment.
+.Forbidden: /api/dashboard/card-visibility/gstr2tally/
+Forbidden: /api/dashboard/card-visibility/gstr2tally/
+.Forbidden: /api/dashboard/card-visibility/gstr2tally/
+Forbidden: /api/dashboard/card-visibility/gstr2tally/
+Unauthorized: /api/dashboard/card-visibility/
+Unauthorized: /api/dashboard/card-visibility/
+....Bad Request: /api/dashboard/card-visibility/gstr2tally/
+Bad Request: /api/dashboard/card-visibility/gstr2tally/
+Bad Request: /api/dashboard/card-visibility/gstr2tally/
+Bad Request: /api/dashboard/card-visibility/gstr2tally/
+..Conflict: /api/dashboard/card-visibility/gstr2tally/
+Conflict: /api/dashboard/card-visibility/gstr2tally/
+.Not Found: /api/dashboard/card-visibility/nope/
+Not Found: /api/dashboard/card-visibility/nope/
+Bad Request: /api/dashboard/card-visibility/gstr2tally/
+Bad Request: /api/dashboard/card-visibility/gstr2tally/
+.Dashboard: legacy NoSuchLegacyDb database is not readable (('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchLegacyDb.dbo.Customers'. (208) (SQLExecDirectW)")); counting Nexus customers only
+.Dashboard: legacy NoSuchLegacyDb database is not readable (('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchLegacyDb.dbo.Customers'. (208) (SQLExecDirectW)")); counting Nexus customers only
+Dashboard: legacy NoSuchLegacyDb database is not readable (('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchLegacyDb.dbo.Customers'. (208) (SQLExecDirectW)")); counting Nexus customers only
+Dashboard: legacy NoSuchLegacyDb database is not readable (('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchLegacyDb.dbo.Customers'. (208) (SQLExecDirectW)")); counting Nexus customers only
+......FUnauthorized: /api/dashboard/project-usage/
+Unauthorized: /api/dashboard/project-usage/
+Unauthorized: /api/dashboard/project-usage/gstr2tally/used/
+Unauthorized: /api/dashboard/project-usage/gstr2tally/used/
+Forbidden: /api/dashboard/project-usage/
+Forbidden: /api/dashboard/project-usage/
+Forbidden: /api/dashboard/project-usage/gstr2tally/used/
+Forbidden: /api/dashboard/project-usage/gstr2tally/used/
+..Not Found: /api/dashboard/project-usage/nope/used/
+Not Found: /api/dashboard/project-usage/nope/used/
+Not Found: /api/dashboard/project-usage/gstr2tally/everything/
+Not Found: /api/dashboard/project-usage/gstr2tally/everything/
+Bad Request: /api/dashboard/project-usage/gstr2tally/used/
+Bad Request: /api/dashboard/project-usage/gstr2tally/used/
+Bad Request: /api/dashboard/project-usage/gstr2tally/used/
+Bad Request: /api/dashboard/project-usage/gstr2tally/used/
+...F.....Dashboard: gstr2tally usage data is unavailable
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 260, in _run
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\views.py", line 36, in get
+    entry.update(usage.summary(code))
+                 ~~~~~~~~~~~~~^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 71, in guarded
+    return function(*args, **kwargs)
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 281, in summary
+    total, used = _run(sql, [])[0]
+                  ~~~~^^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 263, in _run
+    raise ProjectUnavailable(str(exc)) from exc
+apps.dashboard.usage.ProjectUnavailable: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+Dashboard: gstr2tally usage list is unavailable
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 260, in _run
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\views.py", line 80, in get
+    data = usage.listing(project, category, search, page, page_size)
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 71, in guarded
+    return function(*args, **kwargs)
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 314, in listing
+    total = _run(base + f" SELECT COUNT(*) FROM base WHERE {where}", params)[0][0]
+            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 263, in _run
+    raise ProjectUnavailable(str(exc)) from exc
+apps.dashboard.usage.ProjectUnavailable: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+Service Unavailable: /api/dashboard/project-usage/gstr2tally/used/
+Service Unavailable: /api/dashboard/project-usage/gstr2tally/used/
+.Unauthorized: /api/reports/usage/
+Unauthorized: /api/reports/usage/
+Forbidden: /api/reports/usage/
+Forbidden: /api/reports/usage/
+F.Usage report: gstr2tally data is unavailable
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 260, in _run
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\report_views.py", line 150, in _usage_rows
+    rows += usage.report_rows(code, status, search)
+            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 71, in guarded
+    return function(*args, **kwargs)
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 348, in report_rows
+    rows = _run(
+        _base_sql(code)
+    ...<2 lines>...
+        params,
+    )
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 263, in _run
+    raise ProjectUnavailable(str(exc)) from exc
+apps.dashboard.usage.ProjectUnavailable: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+Usage report: gstr2tally data is unavailable
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+pyodbc.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 260, in _run
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\mssql\base.py", line 1009, in execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\report_views.py", line 150, in _usage_rows
+    rows += usage.report_rows(code, status, search)
+            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 71, in guarded
+    return function(*args, **kwargs)
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 348, in report_rows
+    rows = _run(
+        _base_sql(code)
+    ...<2 lines>...
+        params,
+    )
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\usage.py", line 263, in _run
+    raise ProjectUnavailable(str(exc)) from exc
+apps.dashboard.usage.ProjectUnavailable: ('42S02', "[42S02] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Invalid object name 'NoSuchDatabase.dbo.tally_import_job_tbl'. (208) (SQLExecDirectW)")
+Service Unavailable: /api/reports/usage/
+Service Unavailable: /api/reports/usage/
+..Conflict: /api/integrations/v1/customers/register
+Unprocessable Content: /api/integrations/v1/customers/register
+Not Found: /api/integrations/v1/customers/update
+Unauthorized: /api/integrations/v1/auth/verify
+Unauthorized: /api/integrations/v1/activation/request
+Bad Request: /api/integrations/v1/activation/verify
+Conflict: /api/integrations/v1/activation/verify
+Conflict: /api/integrations/v1/activation/verify
+.Forbidden: /api/integrations/admin/projects/MANUAL001/universe-customers/manual/
+..Bad Request: /api/integrations/admin/projects/MANUAL001/universe-customers/manual/
+..Unprocessable Content: /api/integrations/admin/projects/MANUAL001/universe-customers/manual/
+.Conflict: /api/integrations/admin/projects/MANUAL001/universe-customers/manual/
+.Bad Request: /api/integrations/admin/projects/TALLY001/universe-customers/manual/
+..Bad Request: /api/integrations/admin/projects/
+Bad Request: /api/integrations/admin/projects/
+..Bad Request: /api/integrations/admin/projects/
+...Forbidden: /api/integrations/admin/projects/QA002/api-config/
+Forbidden: /api/integrations/admin/projects/QA001/rotate-credentials/
+Forbidden: /api/integrations/admin/projects/QA001/
+Forbidden: /api/integrations/admin/projects/QA001/
+.Conflict: /api/integrations/admin/projects/QA001/activate/
+Method Not Allowed: /api/integrations/admin/projects/QA001/
+.Conflict: /api/integrations/admin/projects/QA001/
+.Bad Request: /api/integrations/admin/projects/QA001/
+.Bad Gateway: /api/integrations/admin/projects/MOTHYS/sync/
+..Bad Request: /api/integrations/admin/projects/MOTHYS/api-config/
+Bad Request: /api/integrations/admin/projects/MOTHYS/api-config/
+Bad Request: /api/integrations/admin/projects/MOTHYS/api-config/
+.Conflict: /api/integrations/admin/projects/MOTHYS/sync/
+Unauthorized: /api/integrations/admin/projects/MOTHYS/sync/
+.Bad Gateway: /api/integrations/admin/projects/MOTHYS/sync/
+.Bad Request: /api/integrations/admin/projects/MOTHYS/send-docs/
+.Bad Request: /api/integrations/admin/projects/MOTHYS/api-config/
+...Bad Request: /api/integrations/public/customer-setup/
+Bad Request: /api/integrations/public/customer-setup/
+Bad Request: /api/integrations/public/customer-setup/
+...Forbidden: /api/integrations/v1/auth/verify
+Forbidden: /api/integrations/v1/activation/request
+..Forbidden: /api/integrations/v1/activation/request
+..............Forbidden: /api/integrations/admin/projects/MOTHYS/
+.Conflict: /api/integrations/admin/projects/MOTHYS/tally-pending/4/retry/
+....Forbidden: /api/integrations/admin/projects/MOTHYS/usage-report/
+Forbidden: /api/integrations/admin/projects/MOTHYS/renewals/
+...Bad Request: /api/staff/expiry-report/
+.Bad Request: /api/staff/expiry-report/
+.Conflict: /api/integrations/admin/projects/PMP/universe-customers/customer/40/
+Conflict: /api/integrations/admin/projects/PMP/universe-customers/customer/40/renew/
+.Conflict: /api/integrations/admin/projects/PMP/universe-customers/registration/26/approve/
+Bad Request: /api/integrations/admin/projects/PMP/universe-customers/registration/26/extend-trial/
+.....Forbidden: /api/integrations/admin/projects/PMP/universe-customers/registration/35/approve/
+Forbidden: /api/integrations/admin/projects/PMP/universe-customers/registration/35/
+Forbidden: /api/integrations/admin/projects/OTHER2/universe-customers/
+Not Found: /api/integrations/admin/projects/PMP/universe-customers/registration/37/
+Not Found: /api/integrations/admin/projects/PMP/universe-customers/registration/37/
+.Forbidden: /api/integrations/admin/universe/projects/
+Forbidden: /api/integrations/admin/universe/cards/
+Forbidden: /api/integrations/admin/projects/PMP/universe-customers/
+Forbidden: /api/integrations/admin/projects/PMP/universe-dashboard/
+Forbidden: /api/integrations/admin/universe/projects/
+Forbidden: /api/integrations/admin/universe/cards/
+Forbidden: /api/integrations/admin/projects/PMP/universe-customers/
+Forbidden: /api/integrations/admin/projects/PMP/universe-dashboard/
+..FNot Found: /api/integrations/admin/projects/MOTHYS/universe-dashboard/
+....Not Found: /api/integrations/admin/universe/projects/NOSUCH/
+Not Found: /api/integrations/admin/universe/projects/MOTHYS/
+Forbidden: /api/integrations/admin/universe/projects/H001/
+.FForbidden: /api/integrations/admin/universe/hub/
+Forbidden: /api/integrations/admin/universe/projects/PMP/
+Forbidden: /api/integrations/admin/universe/hub/
+Forbidden: /api/integrations/admin/universe/projects/PMP/
+.Conflict: /api/integrations/admin/projects/PMPT/universe-customers/registration/60/approve/
+.Forbidden: /api/integrations/dev/projects/OTHERPRJ/
+Forbidden: /api/integrations/dev/projects/OTHERPRJ/api-config/
+Forbidden: /api/integrations/dev/projects/OTHERPRJ/docs/markdown/
+Forbidden: /api/integrations/dev/projects/OTHERPRJ/api-config/
+.Forbidden: /api/integrations/admin/registrations/
+Forbidden: /api/integrations/admin/registrations/62/approve/
+Forbidden: /api/integrations/admin/projects/
+Forbidden: /api/integrations/admin/projects/PMP/activate/
+Forbidden: /api/integrations/admin/projects/PMP/sync/
+Forbidden: /api/integrations/admin/projects/PMP/send-docs/
+Forbidden: /api/integrations/admin/projects/PMP/rotate-credentials/
+Forbidden: /api/integrations/admin/projects/PMP/customers/
+Forbidden: /api/config/staff/
+Forbidden: /api/dashboard/project-usage/
+Forbidden: /api/integrations/admin/notifications/
+.Bad Request: /api/config/staff/
+Bad Request: /api/config/staff/
+Forbidden: /api/config/staff/
+.Conflict: /api/integrations/v1/devices/authorize
+....Conflict: /api/integrations/admin/projects/PMP/activate/
+.Conflict: /api/integrations/admin/projects/PMP/activate/
+.Forbidden: /api/integrations/v1/auth/verify
+Forbidden: /api/integrations/v1/devices/authorize
+.Conflict: /api/integrations/admin/registrations/72/approve/
+Unauthorized: /api/integrations/v1/auth/verify
+.Unprocessable Content: /api/integrations/admin/registrations/73/approve/
+Unprocessable Content: /api/integrations/admin/registrations/73/approve/
+Unprocessable Content: /api/integrations/admin/registrations/73/approve/
+.Forbidden: /api/integrations/v1/devices/authorize
+Unauthorized: /api/integrations/v1/auth/verify
+Forbidden: /api/integrations/v1/activation/request
+...Forbidden: /api/integrations/admin/registrations/
+Forbidden: /api/integrations/admin/registrations/81/approve/
+...Conflict: /api/integrations/admin/registrations/85/retry-tally/
+.Conflict: /api/integrations/admin/projects/PMPT/activate/
+.Conflict: /api/integrations/admin/registrations/87/approve/
+.Unauthorized: /api/integrations/v1/activation/request
+Bad Request: /api/integrations/v1/activation/verify
+Bad Request: /api/integrations/v1/activation/verify
+.Conflict: /api/integrations/v1/activation/verify
+Conflict: /api/integrations/v1/activation/verify
+.Bad Request: /api/integrations/v1/activation/verify
+Too Many Requests: /api/integrations/v1/activation/request
+Bad Request: /api/integrations/v1/activation/verify
+..Forbidden: /api/integrations/v1/activation/verify
+.Not Found: /api/integrations/v1/customers/update
+Unprocessable Content: /api/integrations/v1/customers/update
+Not Found: /api/integrations/admin/failed-sync/12/retry/
+.Unauthorized: /api/integrations/v1/auth/verify
+Unauthorized: /api/integrations/v1/auth/verify
+Unauthorized: /api/integrations/v1/auth/verify
+Unauthorized: /api/integrations/v1/auth/verify
+Unauthorized: /api/integrations/v1/auth/verify
+Locked: /api/integrations/v1/auth/verify
+...Conflict: /api/integrations/v1/activation/verify
+Forbidden: /api/integrations/admin/projects/MOTHYS/product-customers/
+.Unprocessable Content: /api/integrations/admin/projects/MOTHYS/product-customers/70/extend-trial/
+Conflict: /api/integrations/admin/projects/MOTHYS/product-customers/70/renew/
+Conflict: /api/integrations/admin/projects/MOTHYS/product-customers/70/cancel-trial/
+.Not Found: /api/integrations/admin/projects/OTHER/product-customers/71/
+..Not Found: /api/integrations/admin/projects/MOTHYS/reports/nope/
+Forbidden: /api/integrations/admin/projects/MOTHYS/reports/expiry/
+...Unauthorized: /api/integrations/v1/customers/register
+.Forbidden: /api/integrations/admin/projects/
+Unauthorized: /api/integrations/admin/projects/
+.Unauthorized: /api/integrations/v1/auth/verify
+.Forbidden: /api/integrations/v1/activation/request
+...Unprocessable Content: /api/integrations/v1/customers/register
+Unprocessable Content: /api/integrations/v1/customers/register
+Conflict: /api/integrations/v1/customers/register
+Conflict: /api/integrations/v1/customers/register
+..Bad Request: /api/integrations/v1/customers/register
+.Unauthorized: /api/integrations/v1/customers/register
+Unauthorized: /api/integrations/v1/customers/register
+Forbidden: /api/integrations/v1/customers/register
+Forbidden: /api/integrations/v1/customers/register
+.Not Found: /api/integrations/v1/licenses/validate
+Not Found: /api/integrations/v1/licenses/validate
+Not Found: /api/integrations/v1/licenses/validate
+Too Many Requests: /api/integrations/v1/licenses/validate
+Too Many Requests: /api/integrations/v1/licenses/validate
+...Unprocessable Content: /api/integrations/v1/usage/events
+.Service Unavailable: /api/device/prn-auto-print/activate/
+.Forbidden: /api/device/prn-auto-print/activate/
+Forbidden: /api/device/prn-auto-print/activate/
+Forbidden: /api/device/prn-auto-print/activate/
+.Forbidden: /api/device/prn-auto-print/usage/
+Unauthorized: /api/device/prn-auto-print/login/
+.Not Found: /api/device/gstr2tally/activate/
+.Conflict: /api/device/prn-auto-print/activate/
+Unauthorized: /api/device/prn-auto-print/entitlement/
+...Bad Request: /api/device/prn-auto-print/usage/
+Bad Request: /api/device/prn-auto-print/usage/
+.Unauthorized: /api/device/prn-auto-print/usage/
+Unauthorized: /api/device/prn-auto-print/usage/
+Forbidden: /api/device/prn-auto-print/usage/
+.activation rejected project=prn-auto-print reason=key_mismatch serial=...678 key_chars=16
+Unauthorized: /api/device/prn-auto-print/activate/
+activation rejected project=prn-auto-print reason=unknown_serial serial=...999 key_chars=16
+Unauthorized: /api/device/prn-auto-print/activate/
+Bad Request: /api/device/prn-auto-print/activate/
+Bad Request: /api/device/prn-auto-print/activate/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/6/approve/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/6/approve/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/login/
+Unauthorized: /api/device/prn-auto-print/login/
+..Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/11/approve/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/11/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/11/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/11/approve/
+..Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+activation rejected project=prn-auto-print reason=key_mismatch serial=...678 key_chars=1
+Unauthorized: /api/device/prn-auto-print/activate/
+Unauthorized: /api/device/prn-auto-print/activate/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Bad Request: /api/projects/prn-auto-print/customers/73/device/revoke/
+Bad Request: /api/projects/prn-auto-print/customers/73/device/revoke/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/17/approve/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/17/approve/
+Forbidden: /api/projects/prn-auto-print/customers/73/device/revoke/
+Forbidden: /api/projects/prn-auto-print/customers/73/device/revoke/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+.Conflict: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/enroll/
+activation rejected project=prn-auto-print reason=key_mismatch serial=...003 key_chars=8
+Unauthorized: /api/device/prn-auto-print/activate/
+Unauthorized: /api/device/prn-auto-print/activate/
+.Conflict: /api/projects/prn-auto-print/customers/
+.Unhandled error in CustomerListView
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\rest_framework\views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "d:\SaiInfosysNexus\backend\apps\registrations\views.py", line 88, in post
+    customer, replaced = services.register_with_unique_serial(project, serializer.validated_data, request.user)
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\registrations\services.py", line 172, in register_with_unique_serial
+    return register(project, data, user), replaced
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\registrations\services.py", line 282, in register
+    audit.record(user, "REGISTERED", f"{customer.name} ({customer.company_name}): {detail}", project, customer)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1234, in _execute_mock_call
+    raise effect
+RuntimeError: boom
+Internal Server Error: /api/projects/prn-auto-print/customers/
+......Customer save refused by the database (missing_value)
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\services.py", line 172, in register_with_unique_serial
+    return register(project, data, user), replaced
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1234, in _execute_mock_call
+    raise effect
+django.db.utils.IntegrityError: Cannot insert the value NULL into column 'device_blocked', table 'x'; column does not allow nulls. INSERT fails.
+Conflict: /api/projects/prn-auto-print/customers/
+Customer save refused by the database (other)
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\services.py", line 172, in register_with_unique_serial
+    return register(project, data, user), replaced
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1234, in _execute_mock_call
+    raise effect
+django.db.utils.IntegrityError: some other constraint
+Conflict: /api/projects/prn-auto-print/customers/
+..Bad Request: /api/projects/prn-auto-print/customers/
+..Bad Request: /api/projects/prn-auto-print/customers/
+..Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-116-1795164020148); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: smtp down
+..Conflict: /api/projects/prn-auto-print/registration-requests/4/approve/
+.F.Not Found: /api/device/gstr2tally/activate/
+activation rejected project=prn-auto-print reason=unknown_serial serial=...742 key_chars=9
+Unauthorized: /api/device/prn-auto-print/activate/
+.Conflict: /api/device/prn-auto-print/activate/
+.Forbidden: /api/device/prn-auto-print/activate/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/activate/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/activate/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Forbidden: /api/device/prn-auto-print/usage/
+Unauthorized: /api/device/prn-auto-print/login/
+.activation rejected project=prn-auto-print reason=key_mismatch serial=...676 key_chars=16
+Unauthorized: /api/device/prn-auto-print/activate/
+activation rejected project=prn-auto-print reason=unknown_serial serial=...999 key_chars=9
+Unauthorized: /api/device/prn-auto-print/activate/
+Bad Request: /api/device/prn-auto-print/activate/
+.Forbidden: /api/projects/prn-auto-print/customers/138/reissue-activation-key/
+Conflict: /api/projects/prn-auto-print/customers/138/reissue-activation-key/
+Unauthorized: /api/projects/prn-auto-print/customers/138/reissue-activation-key/
+.activation rejected project=prn-auto-print reason=key_mismatch serial=...297 key_chars=9
+Unauthorized: /api/device/prn-auto-print/activate/
+...Bad Request: /api/projects/prn-auto-print/customers/
+......Bad Request: /api/projects/prn-auto-print/customers/
+...Bad Request: /api/projects/prn-auto-print/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+..Forbidden: /api/projects/prn-auto-print/customers/150/
+.Conflict: /api/projects/prn-auto-print/customers/152/
+.Not Found: /api/projects/prn-auto-print/customers/154/
+.Forbidden: /api/projects/prn-auto-print/customers/156/
+FNot Found: /api/projects/gstr2tally/customers/158/
+..Bad Request: /api/projects/prn-auto-print/customers/162/
+.Forbidden: /api/device/prn-auto-print/license/status/
+Forbidden: /api/device/prn-auto-print/account/
+..Not Found: /api/device/gstr2tally/enroll/
+.Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/login/
+.Unauthorized: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/enroll/
+Too Many Requests: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/enroll/
+Too Many Requests: /api/device/prn-auto-print/enroll/
+.Unauthorized: /api/device/prn-auto-print/enroll/
+Bad Request: /api/device/prn-auto-print/enroll/
+Bad Request: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.....Conflict: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/entitlement/
+.Unauthorized: /api/device/prn-auto-print/account/
+Unauthorized: /api/device/prn-auto-print/login/
+.Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/license/status/
+Unauthorized: /api/device/prn-auto-print/entitlement/
+Unauthorized: /api/device/prn-auto-print/license/status/
+.Service Unavailable: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/projects/prn-auto-print/customers/179/device/revoke/
+Forbidden: /api/projects/prn-auto-print/customers/179/device/revoke/
+Forbidden: /api/projects/prn-auto-print/customers/179/device/
+Forbidden: /api/projects/prn-auto-print/customers/179/device/
+Conflict: /api/projects/prn-auto-print/customers/179/device/revoke/
+Conflict: /api/projects/prn-auto-print/customers/179/device/revoke/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+....Conflict: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+.Conflict: /api/device/prn-auto-print/transfer-request/
+Conflict: /api/device/prn-auto-print/transfer-request/
+.Forbidden: /api/device/prn-auto-print/transfer-request/
+Forbidden: /api/device/prn-auto-print/transfer-request/
+..Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/33/approve/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/33/approve/
+.Unauthorized: /api/device/prn-auto-print/login/
+Unauthorized: /api/device/prn-auto-print/login/
+.Forbidden: /api/projects/prn-auto-print/device-transfer-requests/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/34/approve/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/34/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/34/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/34/approve/
+..Unauthorized: /api/device/prn-auto-print/transfer-request/
+Unauthorized: /api/device/prn-auto-print/transfer-request/
+.Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-203-1795164167223); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: down
+Conflict: /api/projects/prn-auto-print/customers/203/retry-credentials-email/
+.Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-205-1795164169490); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: down
+..Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-209-1795164174889); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: down
+Conflict: /api/projects/prn-auto-print/customers/209/retry-credentials-email/
+....Email 'Your Barcode AutoPrint account - SAI INFOSYS' to c1-25168@example.com failed while sending (event nexus-cred-215-1795164184844); not retried to avoid a duplicate: TimeoutError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to c1-25168@example.com FAILED after 1 attempt(s): TimeoutError: no reply after DATA
+.......Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-225-1795164200581); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: smtp down
+.F.Conflict: /api/projects/prn-auto-print/customers/231/resend-credentials/
+.Not Found: /api/projects/gstr2tally/customers/233/resend-credentials/
+Unauthorized: /api/projects/prn-auto-print/customers/233/resend-credentials/
+.Conflict: /api/projects/prn-auto-print/customers/235/retry-credentials-email/
+.Email 's' to x@example.com failed while sending (event -); not retried to avoid a duplicate: SMTPAuthenticationError
+Email 's' to x@example.com FAILED after 1 attempt(s): SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepted')
+.Email 's' to x@example.com: could not connect (attempt 1/3): OSError
+Email 's' to x@example.com: could not connect (attempt 2/3): OSError
+Email 's' to x@example.com: could not connect (attempt 3/3): OSError
+Email 's' to x@example.com FAILED after 3 attempt(s): OSError: connect timed out
+Email 's' to x@example.com failed while sending (event -); not retried to avoid a duplicate: OSError
+Email 's' to x@example.com FAILED after 1 attempt(s): OSError: timed out waiting for the reply
+..Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com: could not connect (attempt 1/3): OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com: could not connect (attempt 2/3): OSError
+.Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-242-1795164222538); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: smtp down
+......F.Forbidden: /api/portal/prn-auto-print/license/status/
+.Unhandled error in CustomerListView
+Traceback (most recent call last):
+  File "D:\SaiInfosysNexus\backend\.venv\Lib\site-packages\rest_framework\views.py", line 523, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "d:\SaiInfosysNexus\backend\apps\registrations\views.py", line 67, in get
+    return Response({"results": [customer_data(c) for c in ProjectCustomer.objects.filter(project=project).select_related("created_by", "updated_by")]})
+                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Intel\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py", line 1234, in _execute_mock_call
+    raise effect
+django.db.utils.OperationalError: login timeout expired
+Service Unavailable: /api/projects/prn-auto-print/customers/
+.Service Unavailable: /api/health/
+..Found 573 test(s).
+System check identified no issues (0 silenced).
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: already exists (unchanged)
+Admin: already exists (unchanged)
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+HANDOFF PASS POST customers/register [success] -> 201
+HANDOFF PASS POST customers/register [duplicate external id] -> 409
+HANDOFF PASS POST customers/register [validation error] -> 422
+HANDOFF PASS POST customers/update [success] -> 200
+HANDOFF PASS POST customers/update [unknown customer] -> 404
+HANDOFF PASS POST customers/import [success] -> 200
+HANDOFF PASS POST auth/verify [wrong password] -> 401
+HANDOFF PASS POST auth/verify [success] -> 200
+HANDOFF PASS POST auth/change-password [success] -> 200
+HANDOFF PASS POST licenses/validate [success] -> 200
+HANDOFF PASS POST activation/request [email not registered to this account] -> 401
+HANDOFF PASS POST activation/request [success] -> 200
+HANDOFF PASS POST activation/verify [wrong key] -> 400
+HANDOFF PASS POST activation/verify [success] -> 200
+HANDOFF PASS POST sessions/introspect [success] -> 200
+HANDOFF PASS POST auth/verify [login again on the authorised device] -> 200
+HANDOFF PASS POST activation/verify [second device: confirmation required] -> 409
+HANDOFF PASS POST devices/transfer/confirm [cancel] -> 200
+HANDOFF PASS POST devices/transfer/confirm [confirm] -> 200
+HANDOFF PASS POST sessions/introspect [old device after transfer] -> 200
+HANDOFF PASS POST usage/events [success] -> 200
+HANDOFF PASS POST usage/events [success] -> 200
+HANDOFF PASS POST sessions/logout [success] -> 200
+HANDOFF PASS GET projects/{code}/config [success] -> 200
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Not Found: /api/device/prn-auto-print/public/register-request/status/
+..Not Found: /api/portal/prn-auto-print/register-request/status/
+Not Found: /api/portal/prn-auto-print/register-request/status/
+.Forbidden: /api/portal/prn-auto-print/license/status/
+..Conflict: /api/projects/prn-auto-print/registration-requests/54/approve/
+Conflict: /api/projects/prn-auto-print/registration-requests/54/reject/
+.Unauthorized: /api/projects/prn-auto-print/registration-requests/55/reject/
+Unauthorized: /api/projects/prn-auto-print/registration-requests/55/approve/
+..Forbidden: /api/projects/prn-auto-print/registration-requests/57/reject/
+Not Found: /api/projects/gstr2tally/registration-requests/57/reject/
+..Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-270-1795164271027); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: smtp down
+Conflict: /api/projects/prn-auto-print/customers/270/retry-credentials-email/
+.Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-272-1795164274165); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: smtp down
+.Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-274-1795164277295); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: smtp down
+Conflict: /api/projects/prn-auto-print/customers/274/retry-credentials-email/
+.Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com failed while sending (event nexus-cred-276-1795164279536); not retried to avoid a duplicate: OSError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to new.customer@example.com FAILED after 1 attempt(s): OSError: smtp down
+Not Found: /api/projects/gstr2tally/customers/276/retry-credentials-email/
+Unauthorized: /api/projects/prn-auto-print/customers/276/retry-credentials-email/
+.Not Found: /api/device/prn-auto-print/../../../projects/prn-auto-print/device-transfer-requests/36/approve/
+Not Found: /api/device/prn-auto-print/../../../projects/prn-auto-print/device-transfer-requests/36/approve/
+.Conflict: /api/projects/prn-auto-print/device-transfer-requests/37/approve/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/37/approve/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/37/reject/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/37/reject/
+.Unauthorized: /api/device/prn-auto-print/transfer-request/
+Unauthorized: /api/device/prn-auto-print/transfer-request/
+.Conflict: /api/device/prn-auto-print/activate/
+Conflict: /api/device/prn-auto-print/activate/
+.Conflict: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Forbidden: /api/device/prn-auto-print/transfer-request/
+Forbidden: /api/device/prn-auto-print/transfer-request/
+..Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Forbidden: /api/device/prn-auto-print/transfer-request/
+Forbidden: /api/device/prn-auto-print/transfer-request/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Conflict: /api/device/prn-auto-print/transfer-request/
+Conflict: /api/device/prn-auto-print/transfer-request/
+..Bad Request: /api/device/prn-auto-print/transfer-request/
+Bad Request: /api/device/prn-auto-print/transfer-request/
+.Conflict: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+..Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/45/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/45/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/45/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/45/approve/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/
+Unauthorized: /api/projects/prn-auto-print/device-transfer-requests/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/45/approve/
+Forbidden: /api/projects/prn-auto-print/device-transfer-requests/45/approve/
+.Conflict: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+.Conflict: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/enroll/
+.Conflict: /api/device/prn-auto-print/transfer-request/
+Conflict: /api/device/prn-auto-print/transfer-request/
+..Unauthorized: /api/device/prn-auto-print/transfer-request/
+Unauthorized: /api/device/prn-auto-print/transfer-request/
+Unauthorized: /api/device/prn-auto-print/transfer-request/
+Unauthorized: /api/device/prn-auto-print/transfer-request/
+..Forbidden: /api/projects/prn-auto-print/customers/299/device/
+Forbidden: /api/projects/prn-auto-print/customers/299/device/revoke/
+Forbidden: /api/projects/prn-auto-print/customers/299/device/transfer/
+Unauthorized: /api/projects/prn-auto-print/customers/299/device/revoke/
+..Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/activate/
+Forbidden: /api/device/prn-auto-print/enroll/
+Conflict: /api/projects/prn-auto-print/customers/301/device/revoke/
+.Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Conflict: /api/projects/prn-auto-print/customers/303/device/transfer/
+...Forbidden: /api/device/prn-auto-print/entitlement/
+....Forbidden: /api/device/prn-auto-print/entitlement/
+.Unauthorized: /api/device/prn-auto-print/entitlement/
+.Forbidden: /api/device/prn-auto-print/entitlement/
+Forbidden: /api/device/prn-auto-print/entitlement/
+.Unauthorized: /api/projects/prn-auto-print/customers/317/extend-trial/
+Forbidden: /api/projects/prn-auto-print/customers/317/extend-trial/
+Forbidden: /api/projects/prn-auto-print/customers/317/extend-trial/
+F..Forbidden: /api/device/prn-auto-print/entitlement/
+.Conflict: /api/projects/prn-auto-print/customers/321/renew/
+Conflict: /api/projects/prn-auto-print/customers/321/renew/
+Conflict: /api/projects/prn-auto-print/customers/321/renew/
+Conflict: /api/projects/prn-auto-print/customers/321/renew/
+..Unauthorized: /api/projects/prn-auto-print/customers/323/renew/
+Forbidden: /api/projects/prn-auto-print/customers/323/renew/
+Forbidden: /api/projects/prn-auto-print/customers/323/renew/
+FUnauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Too Many Requests: /api/portal/prn-auto-print/login/
+Too Many Requests: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+.Bad Request: /api/portal/prn-auto-print/reset-password/
+Bad Request: /api/portal/prn-auto-print/reset-password/
+..Unauthorized: /api/projects/prn-auto-print/customers/327/reset-password/
+Unauthorized: /api/projects/prn-auto-print/customers/327/reset-password/
+Forbidden: /api/projects/prn-auto-print/customers/327/reset-password/
+Forbidden: /api/projects/prn-auto-print/customers/327/reset-password/
+Not Found: /api/projects/gstr2tally/customers/327/reset-password/
+Not Found: /api/projects/gstr2tally/customers/327/reset-password/
+.Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+..Email 'Your Barcode AutoPrint password was reset' to ravi@example.com: could not connect (attempt 1/1): AttributeError
+Email 'Your Barcode AutoPrint password was reset' to ravi@example.com FAILED after 1 attempt(s): AttributeError: 'BrokenBackend' object has no attribute 'open'
+.Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+.Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/auth/login/
+Unauthorized: /api/auth/login/
+.Unauthorized: /api/portal/prn-auto-print/account/
+Unauthorized: /api/portal/prn-auto-print/account/
+Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/login/
+.Bad Request: /api/portal/prn-auto-print/change-password/
+Bad Request: /api/portal/prn-auto-print/change-password/
+Bad Request: /api/portal/prn-auto-print/change-password/
+Bad Request: /api/portal/prn-auto-print/change-password/
+.Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/portal/prn-auto-print/account/
+.Email 'Your GSTR2Tally account - SAI INFOSYS' to a@example.com: could not connect (attempt 1/3): AttributeError
+Email 'Your GSTR2Tally account - SAI INFOSYS' to a@example.com: could not connect (attempt 2/3): AttributeError
+Email 'Your GSTR2Tally account - SAI INFOSYS' to a@example.com: could not connect (attempt 3/3): AttributeError
+Email 'Your GSTR2Tally account - SAI INFOSYS' to a@example.com FAILED after 3 attempt(s): AttributeError: 'BrokenBackend' object has no attribute 'open'
+..Unauthorized: /api/portal/gstr2tally/login/
+Forbidden: /api/portal/gstr2tally/license/status/
+Bad Request: /api/portal/gstr2tally/change-password/
+Unauthorized: /api/portal/gstr2tally/license/status/
+..Unauthorized: /api/portal/gstr2tally/login/
+Unauthorized: /api/portal/gstr2tally/login/
+Forbidden: /api/portal/gstr2tally/login/
+Unauthorized: /api/portal/gstr2tally/login/
+.Conflict: /api/portal/gstr2tally/register-request/
+Bad Request: /api/portal/gstr2tally/register-request/
+Conflict: /api/portal/gstr2tally/register-request/
+.Unauthorized: /api/portal/prn-auto-print/reset-password/
+Unauthorized: /api/portal/gstr2tally/reset-password/
+Unauthorized: /api/portal/gstr2tally/reset-password/
+.Email 'Your Barcode AutoPrint account - SAI INFOSYS' to ravi@example.com: could not connect (attempt 1/3): AttributeError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to ravi@example.com: could not connect (attempt 2/3): AttributeError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to ravi@example.com: could not connect (attempt 3/3): AttributeError
+Email 'Your Barcode AutoPrint account - SAI INFOSYS' to ravi@example.com FAILED after 3 attempt(s): AttributeError: 'BrokenBackend' object has no attribute 'open'
+..Conflict: /api/projects/prn-auto-print/registration-requests/71/approve/
+Conflict: /api/projects/prn-auto-print/registration-requests/71/approve/
+.Email 'New Barcode AutoPrint sign-up request' to boss@nexus.test: could not connect (attempt 1/1): AttributeError
+Email 'New Barcode AutoPrint sign-up request' to boss@nexus.test FAILED after 1 attempt(s): AttributeError: 'BrokenBackend' object has no attribute 'open'
+.Unauthorized: /api/projects/prn-auto-print/registration-requests/73/approve/
+Unauthorized: /api/projects/prn-auto-print/registration-requests/73/approve/
+Forbidden: /api/projects/prn-auto-print/registration-requests/73/approve/
+Forbidden: /api/projects/prn-auto-print/registration-requests/73/approve/
+Forbidden: /api/projects/prn-auto-print/registration-requests/73/
+Forbidden: /api/projects/prn-auto-print/registration-requests/73/
+Forbidden: /api/projects/gstr2tally/registration-requests/73/
+Forbidden: /api/projects/gstr2tally/registration-requests/73/
+FBad Request: /api/projects/prn-auto-print/registration-requests/74/approve/
+Bad Request: /api/projects/prn-auto-print/registration-requests/74/approve/
+Bad Request: /api/projects/prn-auto-print/registration-requests/74/approve/
+Bad Request: /api/projects/prn-auto-print/registration-requests/74/approve/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Conflict: /api/device/prn-auto-print/transfer-request/
+Conflict: /api/device/prn-auto-print/transfer-request/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/56/approve/
+Conflict: /api/projects/prn-auto-print/device-transfer-requests/56/approve/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+.Forbidden: /api/device/prn-auto-print/enroll/
+Forbidden: /api/device/prn-auto-print/enroll/
+Unauthorized: /api/device/prn-auto-print/login/
+Unauthorized: /api/device/prn-auto-print/login/
+.Forbidden: /api/projects/gstr2tally/customers/export/
+Forbidden: /api/projects/gstr2tally/customers/export/
+Forbidden: /api/projects/gstr2tally/customers/export/
+Forbidden: /api/projects/gstr2tally/customers/export/
+Forbidden: /api/projects/gstr2tally/customers/export/
+Forbidden: /api/projects/gstr2tally/customers/export/
+F.Forbidden: /api/reports/license-expiry/export/
+Forbidden: /api/reports/license-expiry/export/
+Forbidden: /api/reports/license-expiry/export/
+Forbidden: /api/reports/license-expiry/export/
+F.FUnauthorized: /api/reports/license-expiry/
+Unauthorized: /api/reports/license-expiry/
+Forbidden: /api/reports/license-expiry/
+Forbidden: /api/reports/license-expiry/
+Forbidden: /api/reports/license-expiry/
+Forbidden: /api/reports/license-expiry/
+FForbidden: /api/projects/gstr2tally/activation-key/
+Forbidden: /api/projects/gstr2tally/activation-key/
+EForbidden: /api/projects/gstr2tally/customers/
+Forbidden: /api/projects/gstr2tally/customers/
+Forbidden: /api/projects/gstr2tally/activation-key/
+Forbidden: /api/projects/gstr2tally/activation-key/
+FUnauthorized: /api/projects/gstr2tally/customers/
+Unauthorized: /api/projects/gstr2tally/customers/
+..Not Found: /api/projects/prn-auto-print/customers/398/
+Not Found: /api/projects/prn-auto-print/customers/398/
+Not Found: /api/projects/nope/customers/
+Not Found: /api/projects/nope/customers/
+..Forbidden: /api/projects/gstr2tally/customers/
+Forbidden: /api/projects/gstr2tally/customers/
+Forbidden: /api/projects/gstr2tally/customers/400/
+Forbidden: /api/projects/gstr2tally/customers/400/
+FConflict: /api/projects/gstr2tally/customers/401/cancel-trial/
+Conflict: /api/projects/gstr2tally/customers/401/cancel-trial/
+.Bad Request: /api/projects/gstr2tally/customers/402/extend-trial/
+Bad Request: /api/projects/gstr2tally/customers/402/extend-trial/
+Conflict: /api/projects/gstr2tally/customers/402/cancel-trial/
+Conflict: /api/projects/gstr2tally/customers/402/cancel-trial/
+Conflict: /api/projects/gstr2tally/customers/402/extend-trial/
+Conflict: /api/projects/gstr2tally/customers/402/extend-trial/
+Conflict: /api/projects/gstr2tally/customers/402/inactivate/
+Conflict: /api/projects/gstr2tally/customers/402/inactivate/
+..Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+Bad Request: /api/projects/prn-auto-print/customers/
+.Conflict: /api/projects/gstr2tally/customers/405/extend-trial/
+Conflict: /api/projects/gstr2tally/customers/405/extend-trial/
+Conflict: /api/projects/gstr2tally/customers/405/cancel-trial/
+Conflict: /api/projects/gstr2tally/customers/405/cancel-trial/
+....Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+..Forbidden: /api/projects/gstr2tally/registration-requests/
+Forbidden: /api/projects/gstr2tally/registration-requests/
+FEmail 'Your GSTR2Tally account - SAI INFOSYS' to ravi20@example.com: could not connect (attempt 1/3): AttributeError
+Email 'Your GSTR2Tally account - SAI INFOSYS' to ravi20@example.com: could not connect (attempt 2/3): AttributeError
+Email 'Your GSTR2Tally account - SAI INFOSYS' to ravi20@example.com: could not connect (attempt 3/3): AttributeError
+Email 'Your GSTR2Tally account - SAI INFOSYS' to ravi20@example.com FAILED after 3 attempt(s): AttributeError: 'BrokenBackend' object has no attribute 'open'
+.Forbidden: /api/dashboard/sync/
+Forbidden: /api/dashboard/sync/
+Unauthorized: /api/projects/gstr2tally/sync/
+Unauthorized: /api/projects/gstr2tally/sync/
+..Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+Bad Request: /api/projects/gstr2tally/customers/
+.Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/export/
+...Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/10/credentials/resend/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/10/credentials/reset-password/
+Not Found: /api/v1/tally-sl-admin/products/gstr2tally/customers/10/credentials/bogus/
+.Conflict: /api/v1/tally-sl-admin/products/gstr2tally/customers/11/credentials/resend/
+.Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+Conflict: /api/v1/tally-sl/gstr2tally/register/
+Bad Request: /api/v1/tally-sl/gstr2tally/register/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+Conflict: /api/v1/tally-sl/gstr2tally/activate/confirm/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/confirm/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+Forbidden: /api/v1/tally-sl/otherapp/auth/login/
+.Unauthorized: /api/portal/prn-auto-print/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+..Conflict: /api/v1/tally-sl/gstr2tally/register/
+.Bad Request: /api/v1/tally-sl/gstr2tally/auth/login/
+.Bad Request: /api/v1/tally-sl/gstr2tally/register/
+Bad Request: /api/v1/tally-sl/gstr2tally/register/
+...Conflict: /api/v1/tally-sl/gstr2tally/register/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/verify-otp/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+.Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+..Conflict: /api/v1/tally-sl/gstr2tally/register/
+..Not Found: /api/v1/tally-sl-admin/notifications/2/read/
+..Method Not Allowed: /api/v1/tally-sl-admin/notifications/5/read/
+Method Not Allowed: /api/v1/tally-sl-admin/notifications/5/read/
+Method Not Allowed: /api/v1/tally-sl-admin/notifications/5/read/
+.Forbidden: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+.Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Unauthorized: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Forbidden: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Bad Request: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Bad Request: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Bad Request: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+Not Found: /api/v1/tally-sl/gstr2tally/events/device-transfer/
+..Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+..Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.Conflict: /api/v1/tally-sl/gstr2tally/activate/confirm/
+Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+..Bad Request: /api/v1/tally-sl/gstr2tally/activate/confirm/
+.Bad Request: /api/v1/tally-sl/otherapp/activate/confirm/
+.Bad Request: /api/v1/tally-sl/gstr2tally/activate/confirm/
+..Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+.Bad Request: /api/v1/tally-sl-admin/products/gstr2tally/customers/46/license/activate/
+...Conflict: /api/v1/tally-sl-admin/products/gstr2tally/customers/49/license/extend-trial/
+.....Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+Bad Request: /api/v1/tally-sl/gstr2tally/activate/verify/
+.......Too Many Requests: /api/v1/tally-sl/gstr2tally/identify/
+.Conflict: /api/v1/tally-sl/gstr2tally/register/
+.Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+.Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+Bad Request: /api/v1/tally-sl/gstr2tally/auth/reset-password/
+..Unauthorized: /api/v1/tally-sl/gstr2tally/identify/
+Forbidden: /api/v1/tally-sl/gstr2tally/identify/
+..Unauthorized: /api/v1/tally-sl/gstr2tally/session/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+.Bad Request: /api/v1/tally-sl/gstr2tally/register/
+.Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Unauthorized: /api/v1/tally-sl/gstr2tally/auth/login/
+Too Many Requests: /api/v1/tally-sl/gstr2tally/auth/login/
+.Forbidden: /api/v1/tally-sl-admin/permissions/
+Forbidden: /api/v1/tally-sl-admin/permissions/
+.Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/74/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/74/license/activate/
+.Unauthorized: /api/v1/tally-sl-admin/dashboard/
+.Not Found: /api/v1/tally-sl-admin/products/gstr2tally/customers/79/
+.Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/80/license/activate/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/80/device/revoke/
+Conflict: /api/v1/tally-sl-admin/products/gstr2tally/customers/80/device/revoke/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/80/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/80/
+.Bad Request: /api/v1/tally-sl-admin/reports/license-expiry/export/
+..Bad Request: /api/v1/tally-sl-admin/reports/user-performance/
+.Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/
+Forbidden: /api/v1/tally-sl-admin/products/gstr2tally/customers/89/license/renew/
+Forbidden: /api/v1/tally-sl-admin/products/otherapp/customers/
+.Bad Request: /api/v1/tally-sl-admin/permissions/
+Method Not Allowed: /api/v1/tally-sl-admin/products/
+Not Found: /api/v1/tally-sl-admin/products/gstr2tally/api-key/
+Not Found: /api/v1/tally-sl-admin/usage-rules/
+...Not Found: /api/v1/tally-sl-admin/usage/bogus/
+.....Forbidden: /api/v1/tally-sl/gstr2tally/usage/open/
+...............
+======================================================================
+ERROR: test_admin_changes_are_seen_by_superadmin_with_who_and_when (apps.registrations.tests.RegistrationTests.test_admin_changes_are_seen_by_superadmin_with_who_and_when)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\tests.py", line 159, in test_admin_changes_are_seen_by_superadmin_with_who_and_when
+    cid = self.register(email="by.admin@example.com").json()["id"]
+          ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\registrations\tests.py", line 50, in register
+    return self.post(P + "customers/", self.form(**over))
+                                       ~~~~~~~~~^^^^^^^^
+  File "d:\SaiInfosysNexus\backend\apps\registrations\tests.py", line 40, in form
+    key = self.post(P + "activation-key/").json()["activation_key"]
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'activation_key'
+
+======================================================================
+FAIL: test_endpoint_guard_returns_403_when_switch_is_off (apps.accounts.tests.AdminPermissionTests.test_endpoint_guard_returns_403_when_switch_is_off)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\accounts\tests.py", line 285, in test_endpoint_guard_returns_403_when_switch_is_off
+    self.assertEqual(call(), 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_heading_matching_an_action_is_mapped_and_enforced (apps.accounts.tests.AdminPermissionTests.test_heading_matching_an_action_is_mapped_and_enforced)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\accounts\tests.py", line 230, in test_heading_matching_an_action_is_mapped_and_enforced
+    self.assertTrue(user_can(admin, "gstr2tally", Action.VIEW))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_me_exposes_effective_permissions (apps.accounts.tests.AdminPermissionTests.test_me_exposes_effective_permissions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\accounts\tests.py", line 295, in test_me_exposes_effective_permissions
+    self.assertTrue(perms["entry"])
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_toggles_are_enforced_for_admin_in_every_project (apps.accounts.tests.AdminPermissionTests.test_toggles_are_enforced_for_admin_in_every_project)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\accounts\tests.py", line 254, in test_toggles_are_enforced_for_admin_in_every_project
+    self.assertTrue(user_can(admin, "gstr2tally", Action.ENTRY))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unmapped_heading_grants_nothing (apps.accounts.tests.AdminPermissionTests.test_unmapped_heading_grants_nothing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\accounts\tests.py", line 243, in test_unmapped_heading_grants_nothing
+    self.assertEqual(user_can(admin, "gstr2tally", action), expected, action)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False != True : entry
+
+======================================================================
+FAIL: test_module_permission_defaults_and_grants (apps.accounts.tests.AuthTests.test_module_permission_defaults_and_grants)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\accounts\tests.py", line 149, in test_module_permission_defaults_and_grants
+    self.assertTrue(user_can(admin, "projects", Action.ENTRY))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_used_and_not_used_come_from_nexus_device_usage (apps.dashboard.tests.NexusRecordedUsageTests.test_used_and_not_used_come_from_nexus_device_usage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\tests.py", line 315, in test_used_and_not_used_come_from_nexus_device_usage
+    self.assertEqual((counts["used"], counts["not_used"]), (1, 2))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (2, 1) != (1, 2)
+
+First differing element 0:
+2
+1
+
+- (2, 1)
++ (1, 2)
+
+======================================================================
+FAIL: test_gstr_counts (apps.dashboard.tests.ProjectUsageTests.test_gstr_counts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\tests.py", line 104, in test_gstr_counts
+    self.assertEqual(usage.summary("gstr2tally", NOW), {"total": 4, "used": 2, "not_used": 2, "expiring": 0})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'total': 4, 'used': 2, 'not_used': 2, 'expiring': 0, 'expired': 0} != {'total': 4, 'used': 2, 'not_used': 2, 'expiring': 0}
+- {'expired': 0, 'expiring': 0, 'not_used': 2, 'total': 4, 'used': 2}
+?  --------------
+
++ {'expiring': 0, 'not_used': 2, 'total': 4, 'used': 2}
+
+======================================================================
+FAIL: test_usage_report_api_filters_and_permissions (apps.dashboard.tests.ProjectUsageTests.test_usage_report_api_filters_and_permissions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\dashboard\tests.py", line 260, in test_usage_report_api_filters_and_permissions
+    self.assertEqual({(r["product"], r["status"]) for r in prn_unused}, {("Barcode Auto Print", "Not Used")})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the first set but not the second:
+('Barcode AutoPrint', 'Not Used')
+Items in the second set but not the first:
+('Barcode Auto Print', 'Not Used')
+
+======================================================================
+FAIL: test_classification_is_unavailable_without_telemetry_and_real_with_it (apps.integrations.test_universe_customers.ProjectDashboard.test_classification_is_unavailable_without_telemetry_and_real_with_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\integrations\test_universe_customers.py", line 198, in test_classification_is_unavailable_without_telemetry_and_real_with_it
+    self.assertEqual(d["stats"], {"total_customers": 2, "last_7_days": 2, "pending_activation": 1, "recent_device_transfers": 0})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'tot[84 chars]s': 0, 'used': None, 'not_used': None, 'expire[20 chars]None} != {'tot[84 chars]s': 0}
+- {'expired': 0,
+-  'last_7_days': 2,
+? ^
+
++ {'last_7_days': 2,
+? ^
+
+-  'last_used': None,
+-  'not_used': None,
+   'pending_activation': 1,
+   'recent_device_transfers': 0,
+-  'total_customers': 2,
+?                      ^
+
++  'total_customers': 2}
+?                      ^
+
+-  'used': None}
+
+======================================================================
+FAIL: test_row_shape_customer_count_and_last_sync (apps.integrations.test_universe_customers.ProjectHub.test_row_shape_customer_count_and_last_sync)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\integrations\test_universe_customers.py", line 359, in test_row_shape_customer_count_and_last_sync
+    self.assertEqual((row["customer_count"], row["api_status"]["sync"], row["can"]), (2, "OK", {"open": True, "configure": True}))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (2, 'OK', {'dashboard': True, 'customers': True, 'edi[41 chars]rue}) != (2, 'OK', {'open': True, 'configure': True})
+
+First differing element 2:
+{'dashboard': True, 'customers': True, 'edi[40 chars]True}
+{'open': True, 'configure': True}
+
++ (2, 'OK', {'configure': True, 'open': True})
+- (2,
+-  'OK',
+-  {'archive': True,
+-   'configure': True,
+-   'customers': True,
+-   'dashboard': True,
+-   'edit': True})
+
+======================================================================
+FAIL: test_approval_email_carries_everything_the_customer_needs_and_nothing_secret (apps.registrations.test_credentials.CredentialsEmailTests.test_approval_email_carries_everything_the_customer_needs_and_nothing_secret)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_credentials.py", line 60, in test_approval_email_carries_everything_the_customer_needs_and_nothing_secret
+    self.assertIn(needle, msg.body)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: 'Barcode Auto Print' not found in 'Hello Meena,\n\nYour Barcode AutoPrint account has been created.\n\nCustomer Name: Meena\nProduct Name: Barcode AutoPrint\nUser ID: 729393278\nTemporary Password: p6Yf5CtTRx\nSerial Number: 729393278\nActivation Key: QCX7FAPVM\nLicense Plan: 1 Year\nActivation Date: 20/11/2026\nExpiry Date: One year from the day you first activate on your computer\n\nTo get started:\n  1. Install and open Barcode AutoPrint.\n  2. Sign in with your User ID and the temporary password above (this computer is registered automatically).\n  3. You can go straight to the dashboard. To choose a password of your own, open My Profile at any time.\n\nKeep the Activation Key for your records and for support. Do not share the Activation Key or the temporary password.\n\nSAI INFOSYS\nSai Infosys Nexus'
+
+======================================================================
+FAIL: test_inactive_customer_is_blocked_for_a_regular_admin (apps.registrations.test_delete_customer.DeleteCustomerTests.test_inactive_customer_is_blocked_for_a_regular_admin)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_delete_customer.py", line 51, in test_inactive_customer_is_blocked_for_a_regular_admin
+    self.assertEqual(self.s.delete(self.url, {"confirm_serial": self.serial()}, format="json").status_code, 409)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 409
+
+======================================================================
+FAIL: test_email_names_customer_and_product_and_user_id_is_the_serial (apps.registrations.test_email_delivery.ResendCredentialsTests.test_email_names_customer_and_product_and_user_id_is_the_serial)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_email_delivery.py", line 35, in test_email_names_customer_and_product_and_user_id_is_the_serial
+    self.assertIn(needle, body)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 'Product Name: Barcode Auto Print' not found in 'Hello Meena,\n\nYour Barcode AutoPrint account has been created.\n\nCustomer Name: Meena\nProduct Name: Barcode AutoPrint\nUser ID: 765206902\nTemporary Password: Dy4dP9X2Cb\nSerial Number: 765206902\nActivation Key: UDNVYZF2H\nLicense Plan: 1 Year\nActivation Date: 20/11/2026\nExpiry Date: One year from the day you first activate on your computer\n\nTo get started:\n  1. Install and open Barcode AutoPrint.\n  2. Sign in with your User ID and the temporary password above (this computer is registered automatically).\n  3. You can go straight to the dashboard. To choose a password of your own, open My Profile at any time.\n\nKeep the Activation Key for your records and for support. Do not share the Activation Key or the temporary password.\n\nSAI INFOSYS\nSai Infosys Nexus'
+
+======================================================================
+FAIL: test_trial_email_lists_every_field_but_never_the_trial_length (apps.registrations.test_mail_reject_health.CredentialEmailContentTests.test_trial_email_lists_every_field_but_never_the_trial_length)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_mail_reject_health.py", line 45, in test_trial_email_lists_every_field_but_never_the_trial_length
+    self.assertIn(label, msg.body)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+AssertionError: 'Product Name: Barcode Auto Print' not found in 'Hello Meena,\n\nYour Barcode AutoPrint account has been created.\n\nCustomer Name: Meena\nProduct Name: Barcode AutoPrint\nUser ID: 768498790\nTemporary Password: usMvEBev6P\nSerial Number: 768498790\nActivation Key: DY8YQ6775\nLicense Plan: Trial\nActivation Date: 20/11/2026\n\nTo get started:\n  1. Install and open Barcode AutoPrint.\n  2. Sign in with your User ID and the temporary password above (this computer is registered automatically).\n  3. You can go straight to the dashboard. To choose a password of your own, open My Profile at any time.\n\nKeep the Activation Key for your records and for support. Do not share the Activation Key or the temporary password.\n\nSAI INFOSYS\nSai Infosys Nexus'
+
+======================================================================
+FAIL: test_trial_extension_needs_an_authorised_user_and_really_extends_the_device_licence (apps.registrations.test_packages.PackageTests.test_trial_extension_needs_an_authorised_user_and_really_extends_the_device_licence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_packages.py", line 121, in test_trial_extension_needs_an_authorised_user_and_really_extends_the_device_licence
+    self.assertEqual(self.s.post(url, {"days": 5}, format="json").status_code, 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_renewal_follows_the_edit_permission (apps.registrations.test_packages.RenewalTests.test_renewal_follows_the_edit_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_packages.py", line 231, in test_renewal_follows_the_edit_permission
+    self.assertEqual(self.s.post(self.url, {}, format="json").status_code, 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_permissions_and_project_isolation (apps.registrations.test_prn_flow.PrnFlowTests.test_permissions_and_project_isolation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_prn_flow.py", line 129, in test_permissions_and_project_isolation
+    self.assertEqual(self.staff.get(other).status_code, 404)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 404
+
+======================================================================
+FAIL: test_customer_export_is_per_project_and_permission_checked (apps.registrations.test_reports.ReportTests.test_customer_export_is_per_project_and_permission_checked)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_reports.py", line 103, in test_customer_export_is_per_project_and_permission_checked
+    self.assertEqual(r.status_code, 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_report_export_needs_reports_and_export_permissions (apps.registrations.test_reports.ReportTests.test_report_export_needs_reports_and_export_permissions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_reports.py", line 92, in test_report_export_needs_reports_and_export_permissions
+    self.assertEqual(self.export(REPORT + "export/", "pdf", [self.expired.id]).status_code, 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_report_lists_active_licenses_with_an_expiry_across_projects (apps.registrations.test_reports.ReportTests.test_report_lists_active_licenses_with_an_expiry_across_projects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_reports.py", line 55, in test_report_lists_active_licenses_with_an_expiry_across_projects
+    self.assertEqual({r["product"] for r in rows}, {"GSTR2Tally", "Barcode Auto Print"})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the first set but not the second:
+'Barcode AutoPrint'
+Items in the second set but not the first:
+'Barcode Auto Print'
+
+======================================================================
+FAIL: test_report_needs_the_reports_permission (apps.registrations.test_reports.ReportTests.test_report_needs_the_reports_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\test_reports.py", line 62, in test_report_needs_the_reports_permission
+    self.assertEqual(self.client.get(REPORT).status_code, 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_admin_only_gets_enabled_actions (apps.registrations.tests.RegistrationTests.test_admin_only_gets_enabled_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\tests.py", line 294, in test_admin_only_gets_enabled_actions
+    self.assertEqual(self.post(P + "activation-key/").status_code, 201)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 201
+
+======================================================================
+FAIL: test_edit_only_admin_can_load_the_record (apps.registrations.tests.RegistrationTests.test_edit_only_admin_can_load_the_record)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\tests.py", line 352, in test_edit_only_admin_can_load_the_record
+    self.assertEqual(self.client.get(f"{P}customers/{cid}/").status_code, 200)  # Edit may load it
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+======================================================================
+FAIL: test_registration_requests_need_entry_permission (apps.registrations.tests.RegistrationTests.test_registration_requests_need_entry_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "d:\SaiInfosysNexus\backend\apps\registrations\tests.py", line 136, in test_registration_requests_need_entry_permission
+    self.assertEqual(self.client.get(P + "registration-requests/").status_code, 200)  # Entry is on by default
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 200
+
+----------------------------------------------------------------------
+Ran 573 tests in 3529.193s
+
+FAILED (failures=25, errors=1)
+Destroying test database for alias 'default'...
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created
+Superadmin: created
+Admin: created

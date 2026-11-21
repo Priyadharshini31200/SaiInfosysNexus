@@ -100,3 +100,5 @@
     transition: none;
   }
 }
+
+.wide { width: min(920px, 100vw); }

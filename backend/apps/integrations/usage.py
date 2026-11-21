@@ -18,7 +18,7 @@ from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 from .models import IntegrationCustomer, IntegrationLicense, IntegrationProject, IntegrationSession, IntegrationUsageEvent
-from .services import ACTIVITY_EVENTS, license_state
+from .services import ACTIVITY_EVENTS, license_state, trial_days
 
 STATUS_OF = {"PENDING_APPROVAL": "pending", "INACTIVE": "inactive", "CANCELLED": "cancelled", "EXPIRED": "expired", "SUSPENDED": "inactive"}
 CATEGORY_FILTERS = ("used", "not_used", "expired", "expiring", "trial", "annual", "lifetime", "active_devices", "speed", "normal", "new", "one_time", "pending")
@@ -64,7 +64,7 @@ def customer_rows(project, now=None):
         rows.append({
             "id": c.pk, "license_id": lic.pk, "external_customer_id": c.external_customer_id, "name": c.name, "email": c.email,
             "contact_number": c.contact_number, "serial_number": c.serial_number, "user_id": c.user_id, "license_type": lic.license_type,
-            "status": status, "state": state, "activated_at": first_active.get(lic.pk), "expires_at": lic.expires_at,
+            "status": status, "state": state, "activated_at": first_active.get(lic.pk), "expires_at": lic.expires_at, "starts_at": lic.starts_at, "trial_days": trial_days(lic),
             "last_login": last_login.get(lic.pk), "used": used, "opens": opens.get(lic.pk, 0), "login_count": logins.get(lic.pk, 0), "active_device": active_device.get(lic.pk, ""), "last_opened": last_used.get(lic.pk), "active_days": days_all.get(lic.pk, 0), "active_devices": devices.get(lic.pk, 0),
             "usage_category": classify((now - lic.created_at).days, days_all.get(lic.pk, 0), days_30.get(lic.pk, 0), rules),
             "expiring_this_month": state == "ACTIVE" and bool(lic.expires_at) and lic.expires_at < month_end,

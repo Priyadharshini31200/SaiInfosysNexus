@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+import CardVisibilityPanel from './CardVisibilityPanel';
 import styles from './ProjectUsageCard.module.css';
 
 export const COUNTS = [
@@ -8,13 +10,20 @@ export const COUNTS = [
 
 /** Compact project panel with Used / Not Used / Expire drilldowns. Always three cards; when the project's data cannot be read they are
  *  muted, non-clickable placeholders (0) flagged with a warning icon, never presented as real counts. */
-export default function ProjectUsageCard({ project, selected, onSelect, canOpen = () => true }) {
+export default function ProjectUsageCard({ project, selected, onSelect, canOpen = () => true, visibility = null, onVisibilitySaved = () => {} }) {
+  const [flipped, setFlipped] = useState(false);
+  const cardRef = useRef(null);
+  const canHover = () => typeof window !== 'undefined' && window.matchMedia?.('(hover: hover)').matches;
+  // Hover opens the settings face on desktop; leaving closes it unless the user is working inside it (focus) - never saves anything.
+  const leave = () => { if (flipped && canHover() && !cardRef.current?.contains(document.activeElement)) setFlipped(false); };
   const unavailable = !project.available;
   const partial = !unavailable && project.complete === false && project.note;
   return (
-    <section className={styles.card} aria-labelledby={`usage-${project.code}`}>
+    <section ref={cardRef} className={styles.card} aria-labelledby={`usage-${project.code}`} onMouseLeave={leave}>
       <h2 id={`usage-${project.code}`} className={styles.name}>
-        {project.label}
+        {visibility?.can_edit ? (
+          <button type="button" className={styles.nameBtn} aria-expanded={flipped} title="Card visibility settings" onMouseEnter={() => canHover() && setFlipped(true)} onClick={() => setFlipped((f) => (canHover() ? true : !f))}>{project.label}</button>
+        ) : project.label}
         {unavailable && (
           <span className={`${styles.flag} ${styles.warn}`} role="img" title={project.message || 'Data is currently unavailable.'} aria-label={project.message || 'Data is currently unavailable.'}>
             {'⚠'}
@@ -27,6 +36,9 @@ export default function ProjectUsageCard({ project, selected, onSelect, canOpen 
         )}
       </h2>
 
+      {flipped ? (
+        <CardVisibilityPanel code={project.code} setting={visibility} onCancel={() => setFlipped(false)} onSaved={(saved) => { setFlipped(false); onVisibilitySaved(saved); }} />
+      ) : (
       <div className={`${styles.counts} ${unavailable ? styles.placeholders : ''}`}>
         {COUNTS.map(({ category, field, label, fullLabel, tone }) =>
           unavailable ? (
@@ -50,6 +62,7 @@ export default function ProjectUsageCard({ project, selected, onSelect, canOpen 
           ),
         )}
       </div>
+      )}
     </section>
   );
 }

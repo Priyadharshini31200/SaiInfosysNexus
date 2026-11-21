@@ -34,6 +34,8 @@ class IntegrationProject(models.Model):
     # explicit, ordered, non-overlapping usage classes (see usage.classify)
     usage_rules = models.TextField(default=json.dumps(DEFAULT_RULES))
     status = models.CharField(max_length=15, default=SETUP_PENDING)
+    license_policy = models.CharField(max_length=10, default="LEGACY")  # LEGACY = existing 365-day rule (Mothys); CALENDAR = exact calendar years
+    validity_years = models.PositiveSmallIntegerField(default=1)
     enabled = models.BooleanField(default=True)
     verified_steps = models.TextField(default="[]")
     last_sync_status = models.CharField(max_length=20, blank=True, default="")
@@ -77,6 +79,9 @@ class IntegrationCustomer(models.Model):
     name = models.CharField(max_length=150)
     email = models.EmailField()
     contact_number = models.CharField(max_length=20)
+    company_name = models.CharField(max_length=150, blank=True, default="")
+    address = models.CharField(max_length=300, blank=True, default="")
+    gstin = models.CharField(max_length=15, blank=True, default="")
     serial_number = models.CharField(max_length=20, unique=True)
     user_id = models.CharField(max_length=20, unique=True)
     password_hash = models.CharField(max_length=256)
@@ -115,6 +120,7 @@ class IntegrationActivationKey(models.Model):
     used_at = models.DateTimeField(null=True, blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     # set when verification succeeded but another device holds the licence: awaiting the customer's confirmation
+    internal = models.BooleanField(default=False)  # UNIVERSE: provisioned by Nexus, stored only as a hash, never sent or shown
     transfer_hash = models.CharField(max_length=64, blank=True, default="")
     pending_device_id = models.CharField(max_length=120, blank=True, default="")
     pending_device_name = models.CharField(max_length=150, blank=True, default="")
@@ -183,3 +189,145 @@ class IntegrationSyncLog(models.Model):
     payload = models.TextField(blank=True, default="")  # sync fields only; never a credential
     retries = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class IntegrationApiConfig(models.Model):
+    """Configurable customer-registration (PULL) API of a project. The credential is only a REFERENCE (an environment-variable name)."""
+
+    project = models.OneToOneField(IntegrationProject, on_delete=models.CASCADE, related_name="api_config")
+    customer_method = models.CharField(max_length=6, default="GET")
+    customer_path = models.CharField(max_length=200)
+    auth_type = models.CharField(max_length=20, default="NONE")  # NONE | BEARER | API_KEY_HEADER | CUSTOM
+    auth_header = models.CharField(max_length=60, blank=True, default="")
+    credential_ref = models.CharField(max_length=80, blank=True, default="")
+    request_headers = models.TextField(default="{}")  # non-secret headers only
+    auth_config = models.TextField(default="{}")  # CUSTOM auth settings; secrets only as env-variable REFERENCES, never values
+    api_protocol = models.TextField(default='{"type": "REST"}')  # REST (the only implemented adapter) | GRAPHQL | SOAP | OTHER - saved as a draft, never activated
+    field_mapping = models.TextField(default="{}")  # nexus field -> dotted path in the project's record
+    pagination = models.TextField(default="{}")
+    sync_mode = models.CharField(max_length=10, default="POLL")
+    sync_interval_minutes = models.PositiveSmallIntegerField(default=60)
+    send_welcome_email = models.BooleanField(default=True)
+    tally_path = models.CharField(max_length=200, blank=True, default="")  # Tally License Details API (per customer)
+    tally_id_param = models.CharField(max_length=40, default="customer_id")
+    product_path = models.CharField(max_length=200, blank=True, default="")
+    identity_path = models.CharField(max_length=200, blank=True, default="")
+    usage_path = models.CharField(max_length=200, blank=True, default="")
+    validation = models.TextField(default="{}")  # {check: {ok, at}} - integration may be activated only after the mandatory checks passed
+    developer_name = models.CharField(max_length=100, blank=True, default="")
+    developer_email = models.CharField(max_length=150, blank=True, default="")
+
+
+class IntegrationSyncCheckpoint(models.Model):
+    project = models.OneToOneField(IntegrationProject, on_delete=models.CASCADE, related_name="sync_checkpoint")
+    status = models.CharField(max_length=10, default="IDLE")  # IDLE | RUNNING | OK | FAILED
+    next_page = models.PositiveIntegerField(default=1)
+    fetched_total = models.PositiveIntegerField(default=0)
+    last_started_at = models.DateTimeField(null=True, blank=True)
+    last_finished_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.CharField(max_length=300, blank=True, default="")
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    consecutive_failures = models.PositiveSmallIntegerField(default=0)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+
+
+class IntegrationDocEmail(models.Model):
+    """Delivery history of the API documentation sent to a project's developer (never contains a secret)."""
+
+    project = models.ForeignKey(IntegrationProject, on_delete=models.CASCADE, related_name="doc_emails")
+    to_email = models.CharField(max_length=150)
+    status = models.CharField(max_length=40)
+    sent_by = models.CharField(max_length=80, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class IntegrationTallyInfo(models.Model):
+    """Verified Tally licence details of a customer of a Tally-integrated Universal project (Tally Serial Number = Nexus User ID)."""
+
+    customer = models.OneToOneField(IntegrationCustomer, on_delete=models.CASCADE, related_name="tally_info")
+    tally_serial = models.CharField(max_length=20)
+    edition = models.CharField(max_length=40)
+    tss_active = models.BooleanField(default=True)
+    tss_expiry = models.DateField(null=True, blank=True)
+    license_admin = models.CharField(max_length=120)
+    virtual_user_limit = models.PositiveIntegerField(null=True, blank=True)
+    gateway_server = models.CharField(max_length=150, blank=True, default="")
+    verified_at = models.DateTimeField(auto_now_add=True)
+
+
+class IntegrationTallyPending(models.Model):
+    """A registration whose mandatory Tally details could not be fetched / validated. No customer, serial, credentials or licence exist yet."""
+
+    project = models.ForeignKey(IntegrationProject, on_delete=models.CASCADE, related_name="tally_pending")
+    external_customer_id = models.CharField(max_length=100)
+    name = models.CharField(max_length=150)
+    email = models.CharField(max_length=150)
+    contact_number = models.CharField(max_length=20)
+    tally_payload = models.TextField(default="{}")
+    status = models.CharField(max_length=30, default="PENDING_TALLY_VERIFICATION")
+    error = models.CharField(max_length=300, blank=True, default="")
+    attempts = models.PositiveSmallIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["project", "external_customer_id"], name="uniq_int_tally_pending")]
+
+
+class IntegrationRenewal(models.Model):
+    """History of every licence term change (grant, renewal) of a Universal project licence."""
+
+    license = models.ForeignKey(IntegrationLicense, on_delete=models.CASCADE, related_name="renewals")
+    action = models.CharField(max_length=20)  # GRANTED | RENEWED
+    license_type = models.CharField(max_length=10)
+    years = models.PositiveSmallIntegerField(null=True, blank=True)
+    previous_expires_at = models.DateTimeField(null=True, blank=True)
+    new_expires_at = models.DateTimeField(null=True, blank=True)
+    actor = models.CharField(max_length=80, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class IntegrationRegistration(models.Model):
+    """UNIVERSE incoming registration queue. A synchronised customer is stored here and gets NO credentials, serial or licence until a
+    Superadmin runs Save & Allow. Tally-required projects stay PENDING_TALLY until the four mandatory Tally values are verified."""
+
+    PENDING_REVIEW, PENDING_TALLY, HELD, REJECTED, APPROVED = "PENDING_REVIEW", "PENDING_TALLY_VERIFICATION", "HELD", "REJECTED", "APPROVED"
+    project = models.ForeignKey(IntegrationProject, on_delete=models.CASCADE, related_name="registrations")
+    external_customer_id = models.CharField(max_length=100)
+    name = models.CharField(max_length=150)
+    email = models.CharField(max_length=150)
+    contact_number = models.CharField(max_length=20)
+    company_name = models.CharField(max_length=150, blank=True, default="")
+    address = models.CharField(max_length=300, blank=True, default="")
+    gstin = models.CharField(max_length=15, blank=True, default="")
+    source = models.CharField(max_length=20, default="API SYNC")  # API SYNC | WEBHOOK | PUSH
+    tally_payload = models.TextField(default="{}")
+    status = models.CharField(max_length=30, default=PENDING_REVIEW)
+    tally_error = models.CharField(max_length=300, blank=True, default="")
+    tally_attempts = models.PositiveSmallIntegerField(default=0)
+    customer = models.OneToOneField(IntegrationCustomer, null=True, blank=True, on_delete=models.SET_NULL, related_name="registration")
+    decided_by = models.CharField(max_length=80, blank=True, default="")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    note = models.CharField(max_length=300, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["project", "external_customer_id"], name="uniq_int_registration")]
+        ordering = ["-id"]
+
+
+class IntegrationNotification(models.Model):
+    """In-app notification for Nexus staff (e.g. New Customer Registration - <Project>). Opens the exact registration."""
+
+    project = models.ForeignKey(IntegrationProject, on_delete=models.CASCADE, related_name="notifications")
+    registration = models.ForeignKey(IntegrationRegistration, null=True, blank=True, on_delete=models.CASCADE, related_name="notifications")
+    kind = models.CharField(max_length=20, default="REGISTRATION")  # REGISTRATION | SYNC_FAILURE | EXPIRY
+    customer = models.ForeignKey(IntegrationCustomer, null=True, blank=True, on_delete=models.CASCADE, related_name="notifications")
+    dedupe_key = models.CharField(max_length=120, null=True, blank=True, unique=True)  # e.g. expiry:<licence>:<date> - a scheduled job never repeats a notification
+    title = models.CharField(max_length=200)
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-id"]

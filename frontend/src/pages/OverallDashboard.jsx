@@ -71,6 +71,15 @@ export default function OverallDashboard() {
   const { loaded, can: canTally } = useTallyAccess();
   const [state, setState] = useState({ loading: true, error: '', overall: null, cards: [] });
   const [retry, setRetry] = useState(0);
+  // Card visibility: server-computed effective flags, refreshed every 30 s so a scheduled card appears by itself. Absent = visible.
+  const [vis, setVis] = useState({});
+  useEffect(() => {
+    let current = true;
+    const load = () => dashboardApi.cardVisibility().then((d) => current && setVis(d.settings), () => {});
+    load();
+    const timer = setInterval(load, 30000);
+    return () => { current = false; clearInterval(timer); };
+  }, []);
   // Mothys Inventory (API-connected, TALLY SL PRODUCTS group): its own Used / Not Used / Expire from the project-scoped API.
   // Super Admin only. While loading nothing is shown; on failure the card shows "unavailable", never a false zero.
   const { user } = useAuth();
@@ -140,21 +149,36 @@ export default function OverallDashboard() {
           errors.push(`Barcode AutoPrint: ${err.message}`);
         }
       }
+      // UNIVERSE projects (approved + enabled): extra project cards and licence rows for the same six tiles. Legacy products are not touched.
+      let uniCards = [];
+      if (user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') {
+        try {
+          const u = await integrationsApi.universeCards();
+          uniCards = u.cards;
+          if (u.rows.length) add(accumulate(u.rows, (r) => ({ state: r.state, trial: r.trial, expiry: r.expiry, email: r.email }), 'universe', identities, null), u.rows.length);
+        } catch {
+          /* UNIVERSE data is optional: the legacy dashboard never depends on it */
+        }
+      }
       if (current) {
         setState({
           loading: false,
           error: errors.join(' · '),
           overall: { ...sum, total: identities.size, pending: pendingKnown ? sum.pending : null },
-          cards: [...tallyCards, ...(prnCard ? [prnCard] : [])], // Mothys is merged at render time (below)
+          cards: [...tallyCards, ...(prnCard ? [prnCard] : []), ...uniCards], // Mothys is merged at render time (below)
         });
       }
     })();
     return () => {
       current = false;
     };
-  }, [loaded, canPrn, canPrnCard, retry]);
+  }, [loaded, canPrn, canPrnCard, retry, user?.role]);
 
   const open = useCallback((code, category) => {
+    if (state.cards.some((c) => c.code === code && c.kind === 'universe')) {
+      navigate(`/universe/projects/${code}/customers?${category === 'expired' ? 'status=Expired' : `usage=${category === 'used' ? 'used' : 'not_used'}`}`);
+      return;
+    }
     if (code === MOTHYS) {
       navigate(`/product/${MOTHYS}/customers?${new URLSearchParams({ filter: category.replace('-', '_') })}`); // used | not_used | expired
       return;
@@ -168,13 +192,14 @@ export default function OverallDashboard() {
     // Tally SL: Used / Not Used -> User Performance report filtered by usage; Expire -> License Expiry report filtered to expired
     if (category === 'expired') navigate(`/tally/reports/license-expiry?${new URLSearchParams({ product: code, status: 'expired' })}`);
     else navigate(`/tally/reports/user-performance?${new URLSearchParams({ product: code, usage: category === 'used' ? 'used' : 'not_used' })}`);
-  }, [navigate]);
-  const canOpen = useCallback((code, category) => (code === MOTHYS ? true : code === PRN ? can('reports', `${PRN}:${category === 'expired' ? 'expiry' : 'usage'}`) : canTally('reports', code)), [can, canTally]);
+  }, [navigate, state.cards]);
+  const canOpen = useCallback((code, category) => (code === MOTHYS || state.cards.some((c) => c.code === code && c.kind === 'universe') ? true : code === PRN ? can('reports', `${PRN}:${category === 'expired' ? 'expiry' : 'usage'}`) : canTally('reports', code)), [can, canTally, state.cards]);
 
   if (loaded && !canPrn && state.cards.length === 0 && !state.loading) {
     return <section className={styles.page} aria-label="Dashboard"><p className={styles.note}>No Dashboard access is assigned. Choose an authorized menu or contact your Superadmin.</p></section>;
   }
   const cards = mothys ? [...state.cards.filter((c) => c.kind === 'tally'), mothys, ...state.cards.filter((c) => c.kind !== 'tally')] : state.cards;
+  const visibleCards = cards.filter((c) => vis[c.code]?.effective !== false);
   const { overall } = state;
 
   return (
@@ -186,7 +211,7 @@ export default function OverallDashboard() {
         <>
           <div className={styles.tiles} role="list" aria-label="Overall Nexus statistics">
             {TILES.map((t) => (
-              <div key={t.key} role="listitem" className={styles.tile}>
+              <div key={t.key} role="listitem" className={styles.tile} {...(t.key === 'month' ? { onClick: () => navigate('/reports/consolidated-expiry'), style: { cursor: 'pointer' }, title: 'Open the Consolidated This Month Expiry report' } : {})}>
                 <span className={styles.tileLabel}>{t.label}</span>
                 <span className={styles.tileValue}>{overall[t.key] === null ? '—' : overall[t.key].toLocaleString('en-IN')}</span>
               </div>
@@ -194,10 +219,12 @@ export default function OverallDashboard() {
           </div>
 
           <div className={styles.projects} aria-label="Projects">
-            {cards.map((project) => (
-              <ProjectUsageCard key={project.code} project={project} selected={null} onSelect={open} canOpen={(category) => canOpen(project.code, category)} />
+            {visibleCards.map((project) => (
+              <ProjectUsageCard key={project.code} project={project} selected={null} onSelect={open} canOpen={(category) => canOpen(project.code, category)}
+                visibility={vis[project.code] ?? (user?.role === 'SUPERADMIN' ? { code: project.code, mode: 'show', effective: true, version: 0, can_edit: true } : null)}
+                onVisibilitySaved={(saved) => setVis((v) => ({ ...v, [saved.code]: saved }))} />
             ))}
-            {cards.length === 0 && !state.error && <p className={styles.note}>No products to show.</p>}
+            {visibleCards.length === 0 && !state.error && <p className={styles.note}>No products to show.</p>}
           </div>
         </>
       )}
