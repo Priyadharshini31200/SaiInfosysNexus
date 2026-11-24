@@ -1,0 +1,21 @@
+/* Icon buttons of the Activate Customer License popup: dark navy, white icon. */
+.iconBtn {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: #0b2a5b;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.iconBtn:hover:not(:disabled) { background: #12397a; }
+.iconBtn:active:not(:disabled) { background: #081f45; }
+.iconBtn:focus-visible { outline: 2px solid #fff; outline-offset: -4px; box-shadow: 0 0 0 3px #3b82f6; }
+.iconBtn:disabled { background: #0b2a5b; opacity: 0.45; cursor: not-allowed; }
+.iconBtn svg { display: block; pointer-events: none; }
