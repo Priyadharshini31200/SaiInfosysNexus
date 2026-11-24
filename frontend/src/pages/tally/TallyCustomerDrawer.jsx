@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTallyAccess } from '../../context/TallyAccessContext';
 import { formatDate, formatDateTime } from '../../utils/date';
 import { PLAN_LABELS, STATE_LABELS } from './TallyShared';
+import activate from './ActivateDialog.module.css';
 import styles from '../../components/CustomerList.module.css'; // the PRN Customer Details drawer styling, reused unchanged
 
 const NA = 'Not Available';
@@ -80,6 +81,67 @@ function expiryPreview(plan, days, years, customDays) {
 
 const small = { margin: '4px 0 0', fontSize: 12.5, color: 'var(--muted)' };
 
+const EyeIcon = ({ off }) => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" />{off && <path d="M3 3l18 18" />}
+  </svg>
+);
+const RefreshIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 3v6h-6" />
+  </svg>
+);
+
+/** Activate Customer License popup. A top-level component with its own state, so typing in the password field never
+ *  remounts it or resets the cursor (the parent re-rendering no longer touches the inputs). */
+function ActivateLicenseDialog({ c, busy, dlgError, setDlgError, onClose, onSave }) {
+  const [plan, setPlan] = useState('TRIAL');
+  const [num, setNum] = useState({ TRIAL: '3', YEARS: '1', CUSTOM: '30' });
+  const [pwd, setPwd] = useState(() => genPwd());
+  const serial = c.tally_serial;
+  const n = num[plan];
+  const exp = expiryPreview(plan, n, n, n);
+  const valid = Boolean(serial) && exp !== undefined && pwd.trim().length > 0;
+  const input = { display: 'block', width: '100%', height: 34, marginTop: 3, boxSizing: 'border-box' };
+  const lab = { display: 'block', fontSize: 12.5, fontWeight: 600 };
+  const save = () => {
+    if (!valid) { setDlgError(serial ? 'Enter a valid positive whole number and a password.' : 'A verified Tally Serial Number is required.'); return; }
+    onSave({ license_plan: plan, password: pwd, trial_days: plan === 'TRIAL' ? Number(n) : undefined, years: plan === 'YEARS' ? Number(n) : undefined, custom_days: plan === 'CUSTOM' ? Number(n) : undefined });
+  };
+  return (
+    <Confirm title="Activate Customer License" confirmLabel="Save & Activate" busy={busy} onClose={onClose} onConfirm={save}
+      error={dlgError || (serial ? '' : 'No verified Tally Serial Number is available for this customer. The serial must come from the Tally Connector; it cannot be generated.')}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
+        <label style={lab}>Customer Name<input style={input} value={c.name} readOnly /></label>
+        <label style={lab}>Email<input style={input} value={c.email} readOnly /></label>
+        <label style={lab}>Serial Number / User ID<input style={input} value={serial || 'Unavailable'} readOnly /></label>
+        <label style={lab}>Activation Key<input style={input} value="Existing key kept; generated internally" readOnly /></label>
+        <label style={lab}>License Type
+          <select style={input} value={plan} onChange={(e) => setPlan(e.target.value)}>
+            <option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="YEARS">Years</option><option value="CUSTOM">Custom</option>
+          </select>
+        </label>
+        {plan === 'LIFETIME'
+          ? <label style={lab}>Validity<input style={input} value="No expiry" readOnly disabled /></label>
+          : <label style={lab}>{plan === 'YEARS' ? 'Years' : 'Validity (days)'}
+            <input type="number" min="1" step="1" style={input} value={n} onChange={(e) => setNum((m) => ({ ...m, [plan]: e.target.value }))} />
+          </label>}
+        <label style={lab}>License Start Date<input style={input} value={formatDate(new Date().toISOString())} readOnly /></label>
+        <label style={lab}>Expiry Date<input style={input} value={exp === null ? 'No expiry' : exp === undefined ? 'Enter a valid number' : formatDate(exp.toISOString())} readOnly disabled={exp === null} /></label>
+      </div>
+      <div style={{ ...lab, marginTop: 8 }}>
+        <label htmlFor="gstr-act-pwd">Auto-Generated Password (editable)</label>
+        <div style={{ display: 'flex', gap: 6, marginTop: 3 }}>
+          <input id="gstr-act-pwd" style={{ ...input, marginTop: 0 }} type={showPwd ? 'text' : 'password'} value={pwd} onChange={(e) => setPwd(e.target.value)} autoComplete="new-password" spellCheck={false} />
+          <button type="button" className={activate.iconBtn} disabled={busy} onClick={() => setShowPwd((v) => !v)} title={showPwd ? 'Hide password' : 'Show password'} aria-label={showPwd ? 'Hide password' : 'Show password'} aria-pressed={showPwd}><EyeIcon off={showPwd} /></button>
+          <button type="button" className={activate.iconBtn} disabled={busy} onClick={() => { setPwd(genPwd()); setShowPwd(true); }} title="Regenerate password" aria-label="Regenerate password"><RefreshIcon /></button>
+        </div>
+      </div>
+      <p style={small}>The temporary password is emailed once after saving. Existing activation keys are never regenerated; the customer is not asked for the key at login.</p>
+    </Confirm>
+  );
+}
+
 /**
  * Right-side Customer Details drawer for one GSTR2Tally (Tally SL) customer - same layout as the Barcode AutoPrint drawer:
  * scrolling grouped details above a fixed footer holding Edit, Delete and the three-dot menu. Device Transfer History and
@@ -96,9 +158,6 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
   const [form, setForm] = useState({});
   const [days, setDays] = useState(3);
   const [plan, setPlan] = useState('TRIAL');
-  const [years, setYears] = useState(1);
-  const [customDays, setCustomDays] = useState(30);
-  const [pwd, setPwd] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [issued, setIssued] = useState({ key: '', password: '' });
   const [openHist, setOpenHist] = useState({ transfers: Boolean(highlight), audit: false });
@@ -161,7 +220,6 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
       setMenuOpen(false); setDlgError('');
       if (kind === 'edit') setForm({ name: c.name, email: c.email, contact_number: c.contact_number, company_name: c.company_name || '', gstin: c.gstin || '' });
       if (kind === 'extend' || kind === 'activate') { setDays(3); setPlan('TRIAL'); }
-      if (kind === 'activate') { setYears(1); setCustomDays(30); setPwd(genPwd()); setShowPwd(false); }
       setDialog({ kind });
     };
     const credMsg = (r) => (r.credentials_email === 'submitted' ? `New credentials were emailed to ${r.email_sent_to}.` : 'The email could not be sent. The temporary password is shown in the drawer once.');
@@ -257,46 +315,10 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
             <p className={styles.message}>Permanently delete {c.name} ({c.tally_serial})? The license and device records are removed with the customer; the audit history is kept. This cannot be undone.</p>
           </Confirm>
         )}
-        {dialog?.kind === 'activate' && (() => {
-          const exp = expiryPreview(plan, days, years, customDays);
-          const serial = c.tally_serial;
-          const input = { display: 'block', width: '100%', height: 32, marginTop: 2 };
-          const lab = { display: 'block', fontSize: 12.5, fontWeight: 600 };
-          const valid = Boolean(serial) && exp !== undefined && pwd.trim().length > 0;
-          const body = { license_plan: plan, password: pwd, trial_days: plan === 'TRIAL' ? Number(days) : undefined, years: plan === 'YEARS' ? Number(years) : undefined, custom_days: plan === 'CUSTOM' ? Number(customDays) : undefined };
-          return (
-            <Confirm title="Activate Customer License" confirmLabel="Save & Activate" busy={busy === 'activate'} error={dlgError || (valid ? '' : (!serial ? 'No verified Tally Serial Number is available for this customer. The serial must come from the Tally Connector; it cannot be generated.' : ''))} onClose={closeDialog}
-              onConfirm={() => (valid ? run('activate', act('activate', body), (r) => `License activated.${r.credentials_email ? (r.credentials_email === 'submitted' ? ` Credentials emailed to ${r.email_sent_to}.` : ' The email could not be sent; the license is active.') : ''}`) : setDlgError(serial ? 'Enter a valid positive whole number.' : 'A verified Tally Serial Number is required.'))}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px' }}>
-                <label style={lab}>Customer Name<input style={input} value={c.name} readOnly /></label>
-                <label style={lab}>Email<input style={input} value={c.email} readOnly /></label>
-                <label style={lab}>Serial Number / User ID (verified Tally serial)<input style={input} value={serial || 'Unavailable'} readOnly /></label>
-                <label style={lab}>Activation Key<input style={input} value="Generated automatically on save" readOnly /></label>
-                <label style={lab}>License Type
-                  <select style={input} value={plan} onChange={(e) => setPlan(e.target.value)}>
-                    <option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="YEARS">Years</option><option value="CUSTOM">Custom</option>
-                  </select>
-                </label>
-                {plan !== 'LIFETIME' ? (
-                  <label style={lab}>{plan === 'YEARS' ? 'Validity (years)' : 'Validity (days)'}
-                    <input type="number" min="1" step="1" style={input} value={plan === 'TRIAL' ? days : plan === 'YEARS' ? years : customDays}
-                      onChange={(e) => (plan === 'TRIAL' ? setDays(e.target.value) : plan === 'YEARS' ? setYears(e.target.value) : setCustomDays(e.target.value))} />
-                  </label>
-                ) : <label style={lab}>Validity<input style={input} value="No expiry" readOnly /></label>}
-                <label style={lab}>License Start Date<input style={input} value={formatDate(new Date().toISOString())} readOnly /></label>
-                <label style={lab}>Expiry Date<input style={input} value={exp === null ? 'No expiry' : exp === undefined ? 'Enter a valid number' : formatDate(exp.toISOString())} readOnly /></label>
-              </div>
-              <label style={{ ...lab, marginTop: 6 }}>Auto-Generated Password (editable)
-                <span style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-                  <input style={{ ...input, marginTop: 0 }} type={showPwd ? 'text' : 'password'} value={pwd} onChange={(e) => setPwd(e.target.value)} autoComplete="new-password" />
-                  <button type="button" onClick={() => setShowPwd((v) => !v)}>{showPwd ? 'Hide' : 'Show'}</button>
-                  <button type="button" onClick={() => { setPwd(genPwd()); setShowPwd(true); }}>Regenerate</button>
-                </span>
-              </label>
-              <p style={small}>The temporary password is emailed once after saving. Existing activation keys are never regenerated; the customer is not asked for the key at login.</p>
-            </Confirm>
-          );
-        })()}
+        {dialog?.kind === 'activate' && (
+          <ActivateLicenseDialog c={c} busy={busy === 'activate'} dlgError={dlgError} setDlgError={setDlgError} onClose={closeDialog}
+            onSave={(body) => run('activate', act('activate', body), (r) => `License activated.${r.credentials_email ? (r.credentials_email === 'submitted' ? ` Credentials emailed to ${r.email_sent_to}.` : ' The email could not be sent; the license is active.') : ''}`)} />
+        )}
         {dialog?.kind === 'extend' && (
           <Confirm title="Extend Trial" confirmLabel="Extend Trial" busy={busy === 'extend'} error={dlgError} onClose={closeDialog}
             onConfirm={() => run('extend', act('extend-trial', { days: Number(days) }), `Trial extended by ${days} day(s).`)}>
@@ -344,6 +366,7 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
     );
     footer = (
       <div className={styles.licenseBar}>
+        {items.some((i) => i.key === 'activate') && <button type="button" className={styles.primary} onClick={() => open('activate')}>Activate License</button>}
         {can('edit', product) && <button type="button" onClick={() => open('edit')}>Edit</button>}
         {can('delete', product) && <button type="button" className={styles.danger} onClick={() => open('delete')}>Delete</button>}
         {items.length > 0 && (
