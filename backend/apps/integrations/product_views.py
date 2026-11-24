@@ -185,7 +185,19 @@ class ProductCustomerActionView(ProductView):
         elif action == "renew":
             s.renew_license(lic, who)
         elif action == "set-license":
-            s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"))
+            form = body.get("activation_form") is True  # Activate Customer License popup: Custom days allowed, optional temporary password
+            s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"),
+                               custom_days=body.get("custom_days"), allow_custom=form)
+            if form and body.get("password"):
+                from . import universe
+                if not c.must_change_password:
+                    raise s.IntegrationError("INVALID_STATE", "This customer already chose their own password; it cannot be replaced here.", 409)
+                pw = universe.check_password(body["password"])
+                c.password_hash = s.make_password(pw)
+                c.failed_logins, c.locked_until = 0, None
+                c.save(update_fields=["password_hash", "failed_logins", "locked_until", "updated_at"])
+                welcome = s.send_welcome(c, pw)  # AFTER the licence change is committed; a mail failure never undoes it
+                s.audit(c.project, "customer.welcome_sent", c.user_id, ok=welcome != "failed", actor=who, detail=welcome)
         elif action == "approve":
             s.approve_license(lic, body.get("license_type"), who)
         elif action == "inactivate":
@@ -199,7 +211,10 @@ class ProductCustomerActionView(ProductView):
         else:
             raise NotFound("Unknown action.")
         c = IntegrationCustomer.objects.select_related("license", "project").get(pk=c.pk)
-        return Response({"customer": _row_out(next(r for r in usage.customer_rows(c.project) if r["id"] == c.pk))})
+        out = {"customer": _row_out(next(r for r in usage.customer_rows(c.project) if r["id"] == c.pk))}
+        if action == "set-license" and locals().get("welcome"):
+            out["welcome_email"] = welcome
+        return Response(out)
 
 
 # ---------------------------------------------------------------- Reports (mirror of the GSTR report patterns, Mothys data only)

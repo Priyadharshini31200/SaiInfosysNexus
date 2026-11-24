@@ -54,6 +54,9 @@ function Confirm({ title, children, confirmLabel, danger, busy, error, onConfirm
   );
 }
 
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+const genPwd = () => Array.from(crypto.getRandomValues(new Uint32Array(10)), (n) => ALPHABET[n % ALPHABET.length]).join('');
+const whole = (v) => /^[1-9]\d*$/.test(String(v));
 const field = { display: 'block', width: '100%', height: 34, marginTop: 3 };
 const lbl = { display: 'block', fontSize: 12.5, fontWeight: 600, marginTop: 8 };
 
@@ -67,6 +70,10 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
   const [form, setForm] = useState({});
   const [days, setDays] = useState(3);
   const [plan, setPlan] = useState('TRIAL');
+  const [years, setYears] = useState(1);
+  const [customDays, setCustomDays] = useState(30);
+  const [pwd, setPwd] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
   const menuRef = useRef(null);
 
   const load = useCallback(() => integrationsApi.productCustomer(code, id).then((data) => setState({ loading: false, error: '', data }), (e) => setState({ loading: false, error: e.message, data: null })), [code, id]);
@@ -78,7 +85,7 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
     return () => document.removeEventListener('mousedown', outside);
   }, [menuOpen]);
 
-  const open = (kind) => { setMenuOpen(false); setDlgError(''); setDialog({ kind }); if (kind === 'edit' && state.data) { const c = state.data.customer; setForm({ customer_name: c.name, email: c.email, contact_number: c.contact_number }); } if (kind === 'extend') setDays(3); if (kind === 'set') setPlan('TRIAL'); };
+  const open = (kind) => { setMenuOpen(false); setDlgError(''); setDialog({ kind }); if (kind === 'edit' && state.data) { const c = state.data.customer; setForm({ customer_name: c.name, email: c.email, contact_number: c.contact_number }); } if (kind === 'extend') setDays(3); if (kind === 'set') setPlan('TRIAL'); if (kind === 'activate') { setPlan('TRIAL'); setDays(3); setYears(1); setCustomDays(30); setPwd(genPwd()); setShowPwd(false); } };
   const close = () => { if (!busy) setDialog(null); };
   async function run(name, fn, ok) {
     setBusy(name); setDlgError('');
@@ -134,6 +141,36 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
             <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>The licence becomes active immediately, starting now.</p>
           </Confirm>
         )}
+        {dialog?.kind === 'activate' && (() => {
+          const n = plan === 'TRIAL' ? days : plan === 'ONE_YEAR' ? years : customDays;
+          const exp = plan === 'LIFETIME' ? null : whole(n) ? new Date(Date.now() + Number(n) * (plan === 'ONE_YEAR' ? 365 : 1) * 86400000) : undefined;
+          const valid = exp !== undefined && pwd.length >= 3 && Boolean(c.serial_number);
+          const set = (v) => (plan === 'TRIAL' ? setDays(v) : plan === 'ONE_YEAR' ? setYears(v) : setCustomDays(v));
+          const g = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 10px' };
+          return (
+            <Confirm title="Activate Customer License" confirmLabel="Save & Activate" busy={busy === 'activate'} error={dlgError} onClose={close}
+              onConfirm={() => (valid ? run('activate', act('set-license', { activation_form: true, license_type: plan, trial_days: plan === 'TRIAL' ? Number(days) : undefined, years: plan === 'ONE_YEAR' ? Number(years) : undefined, custom_days: plan === 'CUSTOM' ? Number(customDays) : undefined, password: c.must_change_password === false ? undefined : pwd }), 'License activated. User ID and temporary password were emailed to the customer.') : setDlgError('Enter a valid positive whole number and a password of at least 3 characters.'))}>
+              <div style={g}>
+                <label style={lbl}>Customer Name<input style={field} value={c.name} readOnly /></label>
+                <label style={lbl}>Email<input style={field} value={c.email} readOnly /></label>
+                <label style={lbl}>Serial Number / User ID<input style={field} value={c.serial_number || 'Unavailable'} readOnly /></label>
+                <label style={lbl}>Activation Key<input style={field} value="Existing key kept; generated internally" readOnly /></label>
+                <label style={lbl}>License Type<select style={field} value={plan} onChange={(e) => setPlan(e.target.value)}><option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="ONE_YEAR">Years</option><option value="CUSTOM">Custom</option></select></label>
+                {plan === 'LIFETIME' ? <label style={lbl}>Validity<input style={field} value="No expiry" readOnly /></label>
+                  : <label style={lbl}>{plan === 'ONE_YEAR' ? 'Validity (years)' : 'Validity (days)'}<input type="number" min="1" step="1" style={field} value={n} onChange={(e) => set(e.target.value)} /></label>}
+                <label style={lbl}>License Start Date<input style={field} value={formatDate(new Date().toISOString())} readOnly /></label>
+                <label style={lbl}>Expiry Date<input style={field} value={exp === null ? 'No expiry' : exp === undefined ? 'Enter a valid number' : formatDate(exp.toISOString())} readOnly /></label>
+              </div>
+              <label style={lbl}>Auto-Generated Password (editable)
+                <span style={{ display: 'flex', gap: 6 }}>
+                  <input style={{ ...field, marginTop: 3 }} type={showPwd ? 'text' : 'password'} value={pwd} onChange={(e) => setPwd(e.target.value)} autoComplete="new-password" />
+                  <button type="button" onClick={() => setShowPwd((v) => !v)}>{showPwd ? 'Hide' : 'Show'}</button>
+                  <button type="button" onClick={() => { setPwd(genPwd()); setShowPwd(true); }}>Regenerate</button>
+                </span>
+              </label>
+            </Confirm>
+          );
+        })()}
         {dialog?.kind === 'inactivate' && (
           <Confirm title="Inactivate" danger confirmLabel="Yes, inactivate" busy={busy === 'inactivate'} error={dlgError} onClose={close} onConfirm={() => run('inactivate', act('inactivate'), 'Customer inactivated.')}>
             <p className={styles.message}>Inactivate {c.name}? Access stops immediately and the device session is revoked.</p>
@@ -161,6 +198,7 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
     ].filter(Boolean);
     footer = (
       <div className={styles.licenseBar}>
+        {c.status === 'not_activated' && <button type="button" className={styles.primary} onClick={() => open('activate')}>Activate License</button>}
         <button type="button" onClick={() => open('edit')}>Edit Customer</button>
         <div className={styles.menuWrap} ref={menuRef}>
           <button type="button" className={styles.menuButton} aria-haspopup="menu" aria-expanded={menuOpen} aria-label="More actions" onClick={() => setMenuOpen((o) => !o)}>⋮</button>
