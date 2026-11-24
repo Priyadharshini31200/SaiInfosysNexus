@@ -178,7 +178,14 @@ class LoginView(ClientView):
         s = LoginSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         d = s.validated_data
-        return Response(services.login(self.product, d["user_id"], d["password"], d.get("device"), self.ip()))
+        result = services.login(self.product, d["user_id"], d["password"], d.get("device"), self.ip(), bool(request.data.get("confirm_transfer")), bool(request.data.get("enroll_device")))
+        replaced_customer = result.pop("_replaced_customer", None)
+        if replaced_customer is not None:
+            try:
+                emails.send_device_replaced(replaced_customer, (d.get("device") or {}).get("device_name", ""))
+            except Exception:  # a mail outage never undoes the transfer
+                pass
+        return Response(result)
 
 
 class LogoutView(ClientView):

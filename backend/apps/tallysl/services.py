@@ -380,10 +380,22 @@ def refresh_session(session):
     return issue_session(session.customer, session.client_device_id, session.device)
 
 
-def login(product, user_id, password, device_info, ip=""):
+def login(product, user_id, password, device_info, ip="", confirm_transfer=False, enroll_device=False):
     customer = authenticate(product, user_id, password)
     info = device_info or {}
     current = active_device(customer)
+    if (current is None and enroll_device and info.get("client_device_id") and info.get("fingerprint")
+            and not customer.devices.exists()):
+        # First-time enrollment WITHOUT a manual activation key: the account password proves the customer, the product key proves the
+        # call comes from the GSTR backend (which read the serial from the Connector), and only an ACTIVE licence with no device ever
+        # bound qualifies. Opt-in (enroll_device=true), so existing clients are unaffected.
+        return _login_transfer(customer, None, info, ip)
+    if current is not None and info.get("client_device_id") and info.get("fingerprint") and not _matches(current, info.get("client_device_id"), info.get("fingerprint")):
+        # Another device holds this licence: GSTR2Tally asks OK / Cancel and calls again with confirm_transfer=true. No key, OTP or approval.
+        if not confirm_transfer:
+            raise TallyError(TRANSFER_WARNING, 409, "device_conflict",
+                             {"current_device": {"name": current.device_name, "enrolled_at": str(current.enrolled_at)}})
+        return _login_transfer(customer, current, info, ip)
     device = current if _matches(current, info.get("client_device_id"), info.get("fingerprint")) else None
     token = issue_session(customer, info.get("client_device_id", ""), device)
     audit("LOGIN", "device matched" if device else "no enrolled device match", customer=customer, actor="customer", ip=ip)
@@ -394,6 +406,39 @@ def login(product, user_id, password, device_info, ip=""):
         "token": token, "must_change_password": False,
         "account": account_data(customer), "license": payload,
     }
+
+
+def _login_transfer(customer, current, info, ip):
+    """OK pressed: atomically revoke the previous device and its sessions, authorise this one, audit it."""
+    now = timezone.now()
+    with transaction.atomic():
+        customer = TallyCustomer.objects.select_for_update().select_related("product", "license").get(pk=customer.pk)
+        if license_state(customer.license, now) != "active":
+            raise TallyError("This license is not active. Contact Sai Infosys.", 403, "license_not_active")
+        current = active_device(customer)
+        if current is None and customer.devices.exists():
+            raise TallyError("This licence's device was revoked. Contact Sai Infosys.", 403, "device_not_enrolled")
+        if current is None or not _matches(current, info["client_device_id"], info["fingerprint"]):
+            if current is not None:
+                current.revoked_at, current.revoked_reason = now, "Replaced by a new device"
+                current.save(update_fields=["revoked_at", "revoked_reason"])
+                customer.sessions.filter(revoked_at__isnull=True).update(revoked_at=now, revoked_reason="device_replaced")
+            device = TallyDevice.objects.create(
+                customer=customer, client_device_id=info["client_device_id"][:64], fingerprint_hash=_keyed("fp", info["fingerprint"]),
+                device_name=(info.get("device_name") or "")[:100], app_version=(info.get("app_version") or "")[:30],
+                generation=(customer.devices.aggregate(m=Max("generation"))["m"] or 0) + 1, last_seen_at=now)
+            TallyDeviceTransfer.objects.create(customer=customer, kind=TallyDeviceTransfer.REPLACED if current is not None else TallyDeviceTransfer.ENROLLED,
+                                               from_device=current, to_device=device, performed_by="customer", ip_address=ip)
+            audit("DEVICE_REPLACED" if current is not None else "DEVICE_ENROLLED", f"{device.device_name or device.client_device_id}", customer=customer, actor="customer", ip=ip)
+            replaced = current is not None
+        else:
+            device, replaced = current, False
+        token = issue_session(customer, info["client_device_id"], device)
+        payload = license_payload(customer, device, now)
+    if payload["authorized"]:
+        record_open(customer, device, "login", info.get("app_version", ""))
+    return {"token": token, "must_change_password": False, "account": account_data(customer), "license": payload,
+            "device_replaced": replaced, "_replaced_customer": customer if replaced else None}
 
 
 def account_data(customer):
