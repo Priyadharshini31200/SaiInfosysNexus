@@ -52,6 +52,18 @@ def send_welcome(customer, raw_password):
     return status
 
 
+def send_license_activated(customer, raw_password):
+    """Administrator activated the licence with a temporary password. The Activation Key is NOT included (it goes only to the
+    customer on request); the existing password / hash is never sent."""
+    name = customer.product.name
+    rows = [("Customer Name", customer.name), ("Product", name), ("User ID (Tally Serial Number)", customer.tally_serial),
+            ("Temporary Password", raw_password)] + license_rows(customer.license)
+    steps = [f"Open {name} and sign in with the User ID and temporary password above.",
+             "Change the password any time from Profile > Change Password."]
+    return _send(customer, f"Your {name} license is active - SAI INFOSYS", rows, f"Your {name} license has been activated.",
+                 "tally_license_activated", steps, ["Do not share this password."])
+
+
 def send_activation_key(customer, raw_key):
     """Sent ONLY when the customer asks to activate a computer (Activate User). Never at registration, login or staff actions."""
     name = customer.product.name
