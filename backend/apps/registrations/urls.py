@@ -65,5 +65,7 @@ urlpatterns = [
     path("device/<str:project>/public/forgot-password/", dv.PublicForgotPasswordView.as_view()),
     path("device/<str:project>/public/recover-username/", dv.PublicRecoverUsernameView.as_view()),
     path("device/<str:project>/public/reset-password/", dv.PublicResetPasswordView.as_view()),
+    path("device/<str:project>/public/forgot-password-otp/", dv.PublicForgotPasswordOtpView.as_view()),
+    path("device/<str:project>/public/reset-password-otp/", dv.PublicResetPasswordOtpView.as_view()),
     path("device/<str:project>/public/keys/", dv.PublicKeysView.as_view()),
 ]

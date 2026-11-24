@@ -453,3 +453,22 @@ class TransferDeviceView(_StaffDeviceView):
             return _rule_error(exc)
         customer.refresh_from_db()
         return Response({**customer_data(customer), **device.device_panel(customer)})
+
+
+# ---------------------------------------------------------------- OTP password reset (additive; link flow above unchanged)
+class PublicForgotPasswordOtpView(_Open):
+    throttle_scope = "device_public"
+
+    def post(self, request, project):
+        portal.request_password_otp(project, request.data.get("identifier"))
+        return Response({"message": "If the account exists, a 6-digit OTP has been emailed to the registered email."})
+
+
+class PublicResetPasswordOtpView(_Open):
+    throttle_scope = "device_public"
+
+    def post(self, request, project):
+        serializer = pv.NewPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        portal.reset_password_with_otp(project, request.data.get("identifier"), request.data.get("otp"), serializer.validated_data["new_password"])
+        return Response({"message": "Password updated. You can sign in now."})

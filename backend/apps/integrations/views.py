@@ -91,6 +91,17 @@ class RegisterView(V1View):
         return s.register_customer(project, data, idem_key=key)
 
 
+class WebhookTestView(V1View):
+    """Safe connection test for an authenticated-webhook project: proves routing, credentials and project_code only.
+    Creates NO customer or registration, never counts as a live registration (audit action 'webhook.test')."""
+    step = None
+
+    def process(self, project, data, request):
+        s.audit(project, "webhook.test", "connection test", ok=True, ip=client_ip(request), detail="routing and authentication verified; no customer created")
+        return {"routing": "ok", "authentication": "ok", "project_code": project.code, "customer_created": False,
+                "live_registration_recorded": False}
+
+
 class DeviceAuthorizeView(V1View):
     """UNIVERSE: Nexus authorises (or refuses) a device for a customer; the project backend enforces the answer."""
     step = "activation_verify"

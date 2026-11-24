@@ -419,3 +419,57 @@ def send_password_changed(customer):
         "If you did not make this change, use Forgot Password in your application and contact support.\n\nSai Infosys Nexus",
         customer.email, kind="password_changed", customer=customer, attempts=1,
     ) == "accepted"
+
+
+# ---------------------------------------------------------------- 6-digit OTP password reset (additive)
+OTP_WINDOW = 600  # seconds; an OTP is valid for 10 minutes and dies as soon as the password changes
+
+
+def _otp_for(customer, window):
+    import hmac
+    msg = f"{customer.pk}|{customer.project}|{_fingerprint(customer)}|{window}".encode()
+    digest = hmac.new(settings.SECRET_KEY.encode(), msg, hashlib.sha256).digest()
+    return f"{int.from_bytes(digest[:4], 'big') % 1000000:06d}"
+
+
+def _find_for_reset(project, identifier):
+    identifier = (identifier or "").strip()
+    if not identifier:
+        return None
+    return (
+        ProjectCustomer.objects.filter(project=project, email__iexact=identifier).first()
+        or ProjectCustomer.objects.filter(project=project, user_id__iexact=identifier).first()
+    )
+
+
+def request_password_otp(project, identifier):
+    """Emails a 6-digit OTP to the registered email. Same answer whether or not the account exists."""
+    customer = _find_for_reset(project, identifier)
+    if not customer or not customer.email:
+        return
+    otp = _otp_for(customer, int(timezone.now().timestamp()) // OTP_WINDOW)
+    _send(
+        f"{PROJECTS[project]} password reset OTP",
+        f"Hello {customer.name},\n\nYour one-time password reset code is: {otp}\n\n"
+        f"It is valid for about {OTP_WINDOW // 60}-{OTP_WINDOW // 30} minutes. If you did not ask for this, ignore this email.\n\nSai Infosys Nexus",
+        customer.email, kind="password_otp", customer=customer,
+    )
+
+
+def reset_password_with_otp(project, identifier, otp, new):
+    import hmac
+    customer = _find_for_reset(project, identifier)
+    otp = str(otp or "").strip()
+    from django.core.cache import cache
+    tries_key = f"otp-tries:{project}:{customer.pk}" if customer else None
+    if customer and cache.get(tries_key, 0) >= 5:
+        raise PortalError("Too many attempts. Request a new OTP later.", 429, "otp_locked")
+    if not customer or len(otp) != 6:
+        raise PortalError("Invalid or expired OTP.", 400, "invalid_otp")
+    now = int(timezone.now().timestamp()) // OTP_WINDOW
+    if not any(hmac.compare_digest(otp, _otp_for(customer, w)) for w in (now, now - 1)):
+        cache.set(tries_key, cache.get(tries_key, 0) + 1, OTP_WINDOW)
+        raise PortalError("Invalid or expired OTP.", 400, "invalid_otp")
+    _set_password(customer, new)  # changes the fingerprint: the OTP cannot be reused
+    audit.record(None, "CUSTOMER_PASSWORD_RESET_OTP", customer.user_id, project, customer)
+    send_password_changed(customer)

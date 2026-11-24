@@ -478,8 +478,7 @@ class ActivationAndTransferTests(Base):
         pw = "Own#Pass1"
         TallyCustomer.objects.filter(pk=self.c.pk).update(password_hash=__import__("django.contrib.auth.hashers", fromlist=["x"]).make_password(pw), must_change_password=False)
         old = self.call("auth/login/", {"user_id": self.c.tally_serial, "password": pw, "device": DEV_A})
-        self.assertFalse(old.data["license"]["authorized"])
-        self.assertEqual(old.data["license"]["state"], "device_not_authorized")
+        self.assertEqual((old.status_code, old.data["code"]), (409, "device_conflict"))  # the old laptop is asked OK / Cancel; nothing changes
         new = self.call("auth/login/", {"user_id": self.c.tally_serial, "password": pw, "device": DEV_B})
         self.assertTrue(new.data["license"]["authorized"])
         # history + exactly one active device
@@ -562,7 +561,7 @@ class TallyInfoAndUsageTests(Base):
     def test_unauthorized_device_open_not_counted(self):
         TallyUsageEvent.objects.all().delete()
         TallyCustomer.objects.filter(pk=self.c.pk).update(password_hash=__import__("django.contrib.auth.hashers", fromlist=["x"]).make_password("pw1"))
-        other = self.call("auth/login/", {"user_id": self.c.tally_serial, "password": "pw1", "device": DEV_B}).data["token"]
+        other = self.call("auth/login/", {"user_id": self.c.tally_serial, "password": "pw1"}).data["token"]  # no device identity -> unauthorized session (a different device now gets the transfer prompt)
         r = self.call("usage/open/", token=other)
         self.assertEqual(r.status_code, 403)
         self.assertEqual(TallyUsageEvent.objects.count(), 0)
@@ -770,3 +769,39 @@ class ReportAndPermissionTests(Base):
         self.assertTrue(any(h["action"] == "DEVICE_ENROLLED" for h in d["activation_history"]))
         # a customer of another product is not reachable through this product's URL
         self.assertEqual(self.staff(self.super).get(f"{ADM}/products/gstr2tally/customers/{self.o.pk}/").status_code, 404)
+
+
+class LoginDeviceTransferTests(Base):
+    def test_login_conflict_cancel_and_confirm(self):
+        c = self.registered()
+        key = self.activate(c)
+        self.enroll(c, key, DEV_A)
+        pw = "Own#Pass1"
+        TallyCustomer.objects.filter(pk=c.pk).update(password_hash=__import__("django.contrib.auth.hashers", fromlist=["x"]).make_password(pw), must_change_password=False)
+        a = self.call("auth/login/", {"user_id": c.tally_serial, "password": pw, "device": DEV_A})
+        self.assertTrue(a.data["license"]["authorized"])  # same device: no prompt
+        b = self.call("auth/login/", {"user_id": c.tally_serial, "password": pw, "device": DEV_B})
+        self.assertEqual((b.status_code, b.data["code"]), (409, "device_conflict"))
+        self.assertEqual(self.call("session/", token=a.data["token"], method="get").status_code, 200)  # Cancel = nothing changed
+        ok = self.call("auth/login/", {"user_id": c.tally_serial, "password": pw, "device": DEV_B, "confirm_transfer": True})
+        self.assertEqual(ok.status_code, 200, ok.data)
+        self.assertTrue(ok.data["license"]["authorized"] and ok.data["device_replaced"])
+        self.assertNotIn("_replaced_customer", ok.data)
+        self.assertEqual(self.call("session/", token=a.data["token"], method="get").status_code, 401)  # old session revoked
+
+
+class KeyFreeEnrollmentTests(Base):
+    def test_first_enroll_opt_in_only_for_active_license_without_prior_device(self):
+        c = self.registered()
+        self.activate(c)  # licence active, never bound to a device
+        pw = "Own#Pass1"
+        TallyCustomer.objects.filter(pk=c.pk).update(password_hash=__import__("django.contrib.auth.hashers", fromlist=["x"]).make_password(pw), must_change_password=False)
+        plain = self.call("auth/login/", {"user_id": c.tally_serial, "password": pw, "device": DEV_A})
+        self.assertFalse(plain.data["license"]["authorized"])  # default behaviour unchanged
+        r = self.call("auth/login/", {"user_id": c.tally_serial, "password": pw, "device": DEV_A, "enroll_device": True})
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertTrue(r.data["license"]["authorized"])
+        wrong = self.call("auth/login/", {"user_id": c.tally_serial, "password": "bad", "device": DEV_B, "enroll_device": True})
+        self.assertEqual(wrong.status_code, 401)  # password still required
+        b = self.call("auth/login/", {"user_id": c.tally_serial, "password": pw, "device": DEV_B, "enroll_device": True})
+        self.assertEqual((b.status_code, b.data["code"]), (409, "device_conflict"))  # a bound licence is never taken without OK

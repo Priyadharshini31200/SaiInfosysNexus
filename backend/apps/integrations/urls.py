@@ -12,6 +12,7 @@ ADMIN = "integrations/admin"
 urlpatterns = [
     # ---- project backends (X-Client-Id / X-Client-Secret)
     path(f"{V1}/customers/register", v.RegisterView.as_view()),
+    path(f"{V1}/webhook/test", v.WebhookTestView.as_view()),
     path(f"{V1}/customers/update", v.UpdateView.as_view()),
     path(f"{V1}/customers/import", v.ImportView.as_view()),
     path("integrations/public/customer-setup/", v.CustomerSetupView.as_view()),
