@@ -356,7 +356,8 @@ class LicenseActionView(StaffView):
         ip, user, body = self.ip(), request.user, request.data
         key = None
         if action == "activate":
-            c, key = services.activate_license(c, body.get("license_plan") or body.get("license_type"), body.get("trial_days"), user, ip)
+            c, key = services.activate_license(c, body.get("license_plan") or body.get("license_type"), body.get("trial_days"), user, ip,
+                                               years=body.get("years"), custom_days=body.get("custom_days"), password=body.get("password") or None)
         elif action == "extend-trial":
             c = services.extend_trial(c, body.get("days"), user, ip)
         elif action == "cancel-trial":
@@ -374,6 +375,12 @@ class LicenseActionView(StaffView):
         out = {"customer": customer_row(c)}
         if key:
             out.update(activation_key=key, activation_key_email="on_request")
+        if action == "activate" and body.get("password"):
+            # AFTER the commit: a mail failure is reported separately and never undoes or repeats the activation.
+            from . import emails
+            status = emails.send_license_activated(c, body["password"])
+            out["credentials_email"] = "submitted" if status == "accepted" else status
+            out["email_sent_to"] = emails.mask_email(c.email)
         return Response(out)
 
 

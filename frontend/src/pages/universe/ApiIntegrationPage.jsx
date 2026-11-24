@@ -238,11 +238,17 @@ function LogsTab({ code, allowSync, apiBase, onBack }) {
   const cp = cfg?.checkpoint;
   const push = cfg?.config?.sync_mode === 'PUSH';
   const regs = audit.filter((a) => /^(registration\.received|registration\.rejected|customer\.registered)$/.test(a.action || '')); // inbound events only, not staff approvals
-  const lastReg = regs.find((a) => a.ok);
-  const status = project?.status === 'ACTIVE' ? 'Integration Active' : push ? (lastReg ? 'Live webhook received - ready to activate' : 'Awaiting Live Webhook') : STATUS[project?.status] || '—';
+  const lastReg = regs.find((a) => a.ok && a.action === 'registration.received') || regs.find((a) => a.ok);
+  const lastEvent = audit.find((a) => /^(registration\.received|registration\.rejected|api\.unauthenticated|api\.project_mismatch)$/.test(a.action || '')); // newest real inbound attempt
+  const lastTest = audit.find((a) => a.action === 'webhook.test' && a.ok); // connection test only: never a live registration
+  const failed = lastEvent && !lastEvent.ok ? lastEvent : null;
+  const WHY = { 'api.unauthenticated': 'Authentication failed: wrong or missing X-Client-Id / X-Client-Secret', 'api.project_mismatch': 'project_code does not match these credentials' };
+  const failReason = failed ? (WHY[failed.action] || friendly(failed.detail) || 'Registration rejected') : '';
+  const pushStatus = failed ? 'Failed' : lastReg ? 'Success' : lastTest ? 'Configured / Ready' : 'Awaiting First Event';
+  const status = project?.status === 'ACTIVE' ? 'Integration Active' : push ? pushStatus : STATUS[project?.status] || '—';
   const tiles = push
-    ? [['Mode', 'Authenticated Webhook'], ['Status', status], ['Last Received Event', lastReg ? formatDateTime(lastReg.at) : 'None yet'], ['Successful Registrations', regs.filter((a) => a.ok).length],
-      ['Rejected Events', regs.filter((a) => !a.ok).length], ['Authentication Failures', audit.filter((a) => a.action === 'api.unauthenticated').length]]
+    ? [['Mode', 'Authenticated Webhook'], ['Status', status], ['Last Received Time', lastReg ? formatDateTime(lastReg.at) : 'None yet'], ['Last Sync Result', failed ? `Failed - ${failReason}` : lastReg ? 'Success' : 'No live event yet'],
+      ['Successful Registrations', regs.filter((a) => a.ok).length], ['Rejected Events', regs.filter((a) => !a.ok).length], ['Authentication Failures', audit.filter((a) => a.action === 'api.unauthenticated').length]]
     : [['Mode', 'Scheduled Polling'], ['Status', status], ['Last Successful Sync', cp?.last_success_at ? formatDateTime(cp.last_success_at) : 'Never'], ['Customers Fetched', cp?.fetched_total ?? 0], ['Failed Attempts', cp?.consecutive_failures ?? 0], ['Next Sync', cp?.next_run_at ? formatDateTime(cp.next_run_at) : '—']];
   const endpoint = `${apiBase || ''}customers/register`;
   return (
@@ -273,7 +279,7 @@ function Stepper({ tab, isSuper, project, steps, onGo }) {
     config: !steps ? 'Loading' : steps.cfg ? 'Saved' : 'Not Started',
     mapping: !steps?.cfg ? 'Not Started' : v.customer?.ok && v.mapping?.ok ? 'Completed' : failed ? 'Needs Attention' : 'Pending Validation',
     docs: steps?.docs?.length ? 'Completed' : 'Not Started',
-    logs: project?.status === 'ACTIVE' ? 'Completed' : push && v.mapping?.ok ? 'Awaiting Live Webhook' : 'Not Started',
+    logs: project?.status === 'ACTIVE' ? 'Completed' : push && v.mapping?.ok ? 'Awaiting First Event' : 'Not Started',
   };
   const list = STEP_LABELS.filter(([k]) => isSuper || k !== 'docs');
   return (
