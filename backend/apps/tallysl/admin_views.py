@@ -330,6 +330,7 @@ class CustomerDetailView(StaffView):
             contact_number = serializers.CharField(max_length=20, required=False)
             company_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
             gstin = serializers.RegexField(r"^$|^[0-9]{2}[A-Za-z0-9]{13}$", required=False, allow_blank=True)
+            password = serializers.CharField(max_length=128, required=False, allow_blank=True, trim_whitespace=False)
 
         s = S(data=request.data)
         s.is_valid(raise_exception=True)
@@ -347,7 +348,7 @@ class LicenseActionView(StaffView):
     """POST .../customers/<id>/license/<action>/ - activate | extend-trial | cancel-trial | renew | inactivate | reissue-key."""
 
     ACTIONS = {"activate": "license_activation", "extend-trial": "license_management", "cancel-trial": "license_management",
-               "renew": "license_management", "inactivate": "license_management", "reissue-key": "license_management"}
+               "renew": "license_management", "change": "license_management", "inactivate": "license_management", "reissue-key": "license_management"}
 
     def post(self, request, product, pk, action):
         if action not in self.ACTIONS:
@@ -359,7 +360,10 @@ class LicenseActionView(StaffView):
             c, key = services.activate_license(c, body.get("license_plan") or body.get("license_type"), body.get("trial_days"), user, ip,
                                                years=body.get("years"), custom_days=body.get("custom_days"), password=body.get("password") or None)
         elif action == "extend-trial":
-            c = services.extend_trial(c, body.get("days"), user, ip)
+            c = services.extend_trial(c, body.get("days"), user, ip, body.get("reason") or "")
+        elif action == "change":
+            c = services.change_license(c, body.get("license_plan"), user, ip, trial_days=body.get("trial_days"), years=body.get("years"),
+                                        custom_days=body.get("custom_days"), confirm=bool(body.get("confirm")))
         elif action == "cancel-trial":
             c = services.cancel_trial(c, user, ip)
         elif action == "renew":

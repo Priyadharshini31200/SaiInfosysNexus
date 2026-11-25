@@ -913,7 +913,7 @@ def _lic_locked(lic):
     return IntegrationLicense.objects.select_for_update().select_related("customer__project").get(pk=lic.pk)
 
 
-def extend_trial(lic, days, actor=""):
+def extend_trial(lic, days, actor="", reason=""):
     try:
         days = int(days)
         if not 1 <= days <= 365:
@@ -925,9 +925,12 @@ def extend_trial(lic, days, actor=""):
         if lic.license_type != IntegrationLicense.TRIAL or lic.status not in (IntegrationLicense.ACTIVE,):
             raise IntegrationError("INVALID_STATE", "Only an active (or expired) Trial can be extended.", 409)
         now = timezone.now()
-        lic.expires_at = max(lic.expires_at or now, now) + timedelta(days=days)
+        old = lic.expires_at
+        lic.expires_at = max(old or now, now) + timedelta(days=days)
         lic.save(update_fields=["expires_at"])
-    audit(lic.customer.project, "license.trial_extended", lic.customer.user_id, actor=actor, detail=f"+{days}d")
+    fmt = lambda d: d.strftime("%d/%m/%Y") if d else "none"  # noqa: E731
+    audit(lic.customer.project, "license.trial_extended", lic.customer.user_id, actor=actor,
+          detail=f"+{days}d, old expiry {fmt(old)} -> new expiry {fmt(lic.expires_at)}" + (f", reason: {str(reason).strip()[:80]}" if reason else ""))
     return lic
 
 

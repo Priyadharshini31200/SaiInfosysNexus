@@ -98,6 +98,7 @@ function ActivateLicenseDialog({ c, busy, dlgError, setDlgError, onClose, onSave
   const [plan, setPlan] = useState('TRIAL');
   const [num, setNum] = useState({ TRIAL: '3', YEARS: '1', CUSTOM: '30' });
   const [pwd, setPwd] = useState(() => genPwd());
+  const [showPwd, setShowPwd] = useState(false);
   const serial = c.tally_serial;
   const n = num[plan];
   const exp = expiryPreview(plan, n, n, n);
@@ -142,6 +143,105 @@ function ActivateLicenseDialog({ c, busy, dlgError, setDlgError, onClose, onSave
   );
 }
 
+
+const fieldInput = { display: 'block', width: '100%', height: 34, marginTop: 3, boxSizing: 'border-box' };
+const fieldLabel = { display: 'block', fontSize: 12.5, fontWeight: 600 };
+const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '8px 12px' };
+
+/** Edit GSTR2Tally Customer: customer fields, optional new password and license management. Own state, so typing never remounts it. */
+function EditCustomerDialog({ c, license, canLicense, busy, dlgError, setDlgError, onClose, onSave }) {
+  const [f, setF] = useState({ name: c.name || '', company_name: c.company_name || '', email: c.email || '', contact_number: c.contact_number || '', gstin: c.gstin || '' });
+  const [pwd, setPwd] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const canChange = canLicense && license.state !== 'pending' && license.state !== 'inactive';
+  const orig = license.plan === 'ANNUAL' ? 'YEARS' : license.plan;
+  const [plan, setPlan] = useState(orig);
+  const [num, setNum] = useState({ TRIAL: String(license.trial_days || 3), YEARS: '1', CUSTOM: '30' });
+  const [confirm, setConfirm] = useState(false);
+  const licChanged = canChange && plan !== orig;
+  const n = num[plan];
+  const exp = expiryPreview(plan, n, n, n);
+  const restricts = licChanged && license.plan === 'LIFETIME' && license.state === 'active' && plan !== 'LIFETIME';
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const save = () => {
+    if (!f.name.trim() || !f.email.trim() || !f.contact_number.trim()) { setDlgError('Customer name, email and contact number are required.'); return; }
+    if (licChanged && exp === undefined) { setDlgError('Enter a valid positive whole number for the license validity.'); return; }
+    if (restricts && !confirm) { setDlgError('Tick the confirmation: this change limits access of an active Lifetime license.'); return; }
+    onSave({
+      customer: f, password: pwd || undefined,
+      license: licChanged ? { license_plan: plan, trial_days: plan === 'TRIAL' ? Number(n) : undefined, years: plan === 'YEARS' ? Number(n) : undefined, custom_days: plan === 'CUSTOM' ? Number(n) : undefined, confirm } : null,
+    });
+  };
+  const expiryText = licChanged
+    ? (exp === null ? 'Never (Lifetime)' : exp === undefined ? 'Enter a valid number' : `${formatDate(exp.toISOString())} (confirmed on save)`)
+    : (license.plan === 'LIFETIME' ? 'Never (Lifetime)' : license.expires_at ? formatDate(license.expires_at) : 'Not Available');
+  return (
+    <Confirm title="Edit GSTR2Tally Customer" confirmLabel="Save Changes" busy={busy} onClose={onClose} onConfirm={save} error={dlgError}>
+      <div style={grid2}>
+        <label style={fieldLabel}>Customer Name<input style={fieldInput} value={f.name} onChange={set('name')} autoFocus /></label>
+        <label style={fieldLabel}>Company Name (optional)<input style={fieldInput} value={f.company_name} onChange={set('company_name')} /></label>
+        <label style={fieldLabel}>Email<input style={fieldInput} type="email" value={f.email} onChange={set('email')} /></label>
+        <label style={fieldLabel}>Contact Number<input style={fieldInput} value={f.contact_number} onChange={set('contact_number')} /></label>
+        <label style={fieldLabel}>GSTIN<input style={fieldInput} value={f.gstin} onChange={set('gstin')} /></label>
+        <label style={fieldLabel}>Serial Number / User ID<input style={fieldInput} value={c.user_id || c.tally_serial || ''} readOnly /></label>
+        <label style={fieldLabel}>Activation Key<input style={fieldInput} value={license.activation_key_suffix ? `••••${license.activation_key_suffix}` : 'Not issued'} readOnly /></label>
+        <div style={fieldLabel}>
+          <label htmlFor="gstr-edit-pwd">Set New Password (Optional)</label>
+          <div style={{ display: 'flex', gap: 6, marginTop: 3 }}>
+            <input id="gstr-edit-pwd" style={{ ...fieldInput, marginTop: 0 }} type={showPwd ? 'text' : 'password'} value={pwd} placeholder="Leave blank to keep current" onChange={(e) => setPwd(e.target.value)} autoComplete="new-password" spellCheck={false} />
+            <button type="button" className={activate.iconBtn} disabled={busy} onClick={() => setShowPwd((v) => !v)} title={showPwd ? 'Hide password' : 'Show password'} aria-label={showPwd ? 'Hide password' : 'Show password'} aria-pressed={showPwd}><EyeIcon off={showPwd} /></button>
+            <button type="button" className={activate.iconBtn} disabled={busy} onClick={() => { setPwd(genPwd()); setShowPwd(true); }} title="Generate new temporary password" aria-label="Generate new temporary password"><RefreshIcon /></button>
+          </div>
+        </div>
+      </div>
+      <h4 style={{ margin: '12px 0 4px', fontSize: 13 }}>License</h4>
+      <div style={grid2}>
+        <label style={fieldLabel}>License Type
+          <select style={fieldInput} value={plan} disabled={!canChange} onChange={(e) => { setPlan(e.target.value); setConfirm(false); }}>
+            <option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="YEARS">Years</option><option value="CUSTOM">Custom</option>
+          </select>
+        </label>
+        <label style={fieldLabel}>License Status<input style={fieldInput} value={STATE_LABELS[license.state] || license.state} readOnly /></label>
+        <label style={fieldLabel}>License Start Date<input style={fieldInput} value={license.activated_at ? formatDate(license.activated_at) : 'Not Available'} readOnly /></label>
+        {licChanged && plan !== 'LIFETIME' && (
+          <label style={fieldLabel}>{plan === 'YEARS' ? 'Years' : 'Validity (Days)'}
+            <input type="number" min="1" step="1" style={fieldInput} value={n} onChange={(e) => setNum((m) => ({ ...m, [plan]: e.target.value }))} />
+          </label>
+        )}
+        <label style={fieldLabel}>Expiry Date<input style={fieldInput} readOnly value={expiryText} /></label>
+      </div>
+      {restricts && (
+        <label style={{ display: 'flex', gap: 6, marginTop: 8, fontSize: 12.5 }}>
+          <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} /> I confirm this changes an active Lifetime license to a time-limited one.
+        </label>
+      )}
+      <p style={small}>The Serial Number / User ID and Activation Key are never changed here. The existing password is kept unless you enter a new one.</p>
+    </Confirm>
+  );
+}
+
+/** Extend Customer Trial popup with a live expiry preview (the server recomputes the real date). */
+function ExtendTrialDialog({ c, license, busy, dlgError, onClose, onSave }) {
+  const [days, setDays] = useState('3');
+  const [reason, setReason] = useState('');
+  const ok = whole(days) && Number(days) <= 365;
+  const base = license.expires_at && new Date(license.expires_at) > new Date() ? new Date(license.expires_at) : new Date();
+  const next = ok ? new Date(base.getTime() + Number(days) * 86400000) : null;
+  return (
+    <Confirm title="Extend Customer Trial" confirmLabel="Extend Trial" busy={busy} error={dlgError} onClose={onClose} onConfirm={() => ok && onSave({ days: Number(days), reason })}>
+      <div style={grid2}>
+        <label style={fieldLabel}>Customer Name<input style={fieldInput} value={c.name} readOnly /></label>
+        <label style={fieldLabel}>Serial Number / User ID<input style={fieldInput} value={c.user_id || c.tally_serial || ''} readOnly /></label>
+        <label style={fieldLabel}>Current License Type<input style={fieldInput} value="Trial" readOnly /></label>
+        <label style={fieldLabel}>Current Expiry Date<input style={fieldInput} value={license.expires_at ? formatDate(license.expires_at) : 'Not Available'} readOnly /></label>
+        <label style={fieldLabel}>Extend By (Days)<input type="number" min="1" max="365" step="1" style={fieldInput} value={days} onChange={(e) => setDays(e.target.value)} autoFocus /></label>
+        <label style={fieldLabel}>New Expiry Date<input style={fieldInput} value={next ? formatDate(next.toISOString()) : 'Enter 1 to 365 days'} readOnly /></label>
+      </div>
+      <label style={{ ...fieldLabel, marginTop: 8 }}>Reason for Extension (optional)<input style={fieldInput} value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} /></label>
+    </Confirm>
+  );
+}
+
 /**
  * Right-side Customer Details drawer for one GSTR2Tally (Tally SL) customer - same layout as the Barcode AutoPrint drawer:
  * scrolling grouped details above a fixed footer holding Edit, Delete and the three-dot menu. Device Transfer History and
@@ -155,10 +255,6 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
   const [dialog, setDialog] = useState(null);
   const [busy, setBusy] = useState('');
   const [dlgError, setDlgError] = useState('');
-  const [form, setForm] = useState({});
-  const [days, setDays] = useState(3);
-  const [plan, setPlan] = useState('TRIAL');
-  const [showPwd, setShowPwd] = useState(false);
   const [issued, setIssued] = useState({ key: '', password: '' });
   const [openHist, setOpenHist] = useState({ transfers: Boolean(highlight), audit: false });
   const menuRef = useRef(null);
@@ -218,8 +314,6 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
     ].filter(Boolean);
     const open = (kind) => {
       setMenuOpen(false); setDlgError('');
-      if (kind === 'edit') setForm({ name: c.name, email: c.email, contact_number: c.contact_number, company_name: c.company_name || '', gstin: c.gstin || '' });
-      if (kind === 'extend' || kind === 'activate') { setDays(3); setPlan('TRIAL'); }
       setDialog({ kind });
     };
     const credMsg = (r) => (r.credentials_email === 'submitted' ? `New credentials were emailed to ${r.email_sent_to}.` : 'The email could not be sent. The temporary password is shown in the drawer once.');
@@ -293,21 +387,12 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
         </Collapse>
 
         {dialog?.kind === 'edit' && (
-          <Modal title="Edit Customer" onClose={closeDialog}>
-            <form onSubmit={(e) => { e.preventDefault(); run('edit', () => tallyApi.editCustomer(product, id, form), 'Customer updated.'); }} noValidate>
-              {[['name', 'Customer Name'], ['company_name', 'Company Name'], ['contact_number', 'Contact Number'], ['email', 'Email'], ['gstin', 'GSTIN']].map(([k, label]) => (
-                <label key={k} style={{ display: 'block', marginBottom: 8, fontSize: 12.5, fontWeight: 600 }}>{label}
-                  <input style={{ width: '100%', height: 34, padding: '0 8px', marginTop: 3 }} value={form[k] ?? ''} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} />
-                </label>
-              ))}
-              <p style={small}>The Tally Serial Number / User ID cannot be changed.</p>
-              {dlgError && <Alert type="error">{dlgError}</Alert>}
-              <div className={styles.dialogActions}>
-                <button type="submit" className={styles.primary} disabled={busy === 'edit'}>{busy === 'edit' ? 'Saving…' : 'Save'}</button>
-                <button type="button" onClick={closeDialog} disabled={busy === 'edit'}>Cancel</button>
-              </div>
-            </form>
-          </Modal>
+          <EditCustomerDialog c={c} license={license} canLicense={mgmt} busy={busy === 'edit'} dlgError={dlgError} setDlgError={setDlgError} onClose={closeDialog}
+            onSave={({ customer, password, license: lic }) => run('edit', async () => {
+              const out = await tallyApi.editCustomer(product, id, { ...customer, ...(password ? { password } : {}) });
+              if (lic) await tallyApi.licenseAction(product, id, 'change', lic);
+              return out;
+            }, 'Customer updated.')} />
         )}
         {dialog?.kind === 'delete' && (
           <Confirm title="Delete Customer" danger confirmLabel="Yes, delete customer" busy={busy === 'delete'} error={dlgError} onClose={closeDialog}
@@ -320,12 +405,8 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
             onSave={(body) => run('activate', act('activate', body), (r) => `License activated.${r.credentials_email ? (r.credentials_email === 'submitted' ? ` Credentials emailed to ${r.email_sent_to}.` : ' The email could not be sent; the license is active.') : ''}`)} />
         )}
         {dialog?.kind === 'extend' && (
-          <Confirm title="Extend Trial" confirmLabel="Extend Trial" busy={busy === 'extend'} error={dlgError} onClose={closeDialog}
-            onConfirm={() => run('extend', act('extend-trial', { days: Number(days) }), `Trial extended by ${days} day(s).`)}>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600 }}>Days to add
-              <input type="number" min="1" max="365" autoFocus style={{ display: 'block', width: '100%', height: 34, marginTop: 3 }} value={days} onChange={(e) => setDays(e.target.value)} />
-            </label>
-          </Confirm>
+          <ExtendTrialDialog c={c} license={license} busy={busy === 'extend'} dlgError={dlgError} onClose={closeDialog}
+            onSave={(b) => run('extend', act('extend-trial', b), `Trial extended by ${b.days} day(s).`)} />
         )}
         {dialog?.kind === 'cancel' && (
           <Confirm title="Cancel Trial" danger confirmLabel="Yes, cancel trial" busy={busy === 'cancel'} error={dlgError} onClose={closeDialog} onConfirm={() => run('cancel', act('cancel-trial'), 'Trial cancelled.')}>
@@ -368,6 +449,7 @@ export default function TallyCustomerDrawer({ product, id, highlight = 0, onClos
       <div className={styles.licenseBar}>
         {items.some((i) => i.key === 'activate') && <button type="button" className={styles.primary} onClick={() => open('activate')}>Activate License</button>}
         {can('edit', product) && <button type="button" onClick={() => open('edit')}>Edit</button>}
+        {items.some((i) => i.key === 'extend') && <button type="button" onClick={() => open('extend')}>Extend Trial</button>}
         {can('delete', product) && <button type="button" className={styles.danger} onClick={() => open('delete')}>Delete</button>}
         {items.length > 0 && (
           <div className={styles.menuWrap} ref={menuRef}>

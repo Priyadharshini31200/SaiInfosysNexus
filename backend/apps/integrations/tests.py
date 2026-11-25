@@ -410,6 +410,25 @@ class MothysProductTests(Base):
         c.force_authenticate(admin)
         self.assertEqual(c.get(ADM + "projects/MOTHYS/product-customers/").status_code, 403)
 
+    def test_activate_license_popup_action_custom_days_password_and_email(self):
+        from django.core import mail
+        from .models import IntegrationCustomer
+        self.register(external_customer_id="M9", email="rethanya@example.com", customer_name="Rethanya")
+        row = self.pc().data["results"][0]
+        self.assertEqual(row["status"], "not_activated")
+        mail.outbox.clear()
+        r = self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 45, "password": "Temp#Pass9"})
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data["customer"]["license_type"], "CUSTOM")
+        self.assertIn(r.data["welcome_email"], ("accepted", "not_delivered", "failed"))
+        self.assertTrue(any("Temp#Pass9" in m.body and row["serial_number"] in m.body for m in mail.outbox))
+        cust = IntegrationCustomer.objects.get(pk=row["id"])
+        self.assertNotEqual(cust.password_hash, "Temp#Pass9")
+        bad = self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 0})
+        self.assertEqual(bad.status_code, 422)
+        legacy = self.pc(f"{row['id']}/set-license/", "post", {"license_type": "LIFETIME"})  # legacy call unchanged
+        self.assertEqual(legacy.status_code, 200)
+
     def test_paid_registration_pending_then_approved_and_scoped_to_project(self):
         self.staff.patch(ADM + "projects/MOTHYS/", {"default_license_type": "ONE_YEAR"}, format="json")
         d = self.make_active()[2]

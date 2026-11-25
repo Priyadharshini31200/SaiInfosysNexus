@@ -805,3 +805,34 @@ class KeyFreeEnrollmentTests(Base):
         self.assertEqual(wrong.status_code, 401)  # password still required
         b = self.call("auth/login/", {"user_id": c.tally_serial, "password": pw, "device": DEV_B, "enroll_device": True})
         self.assertEqual((b.status_code, b.data["code"]), (409, "device_conflict"))  # a bound licence is never taken without OK
+
+
+class ActivationFormTests(Base):
+    def act(self, c, **body):
+        return self.staff(self.super).post(f"{ADM}/products/gstr2tally/customers/{c.pk}/license/activate/", body, format="json")
+
+    def test_years_custom_lifetime_password_email_and_key_kept(self):
+        c = self.registered()
+        mail.outbox.clear()
+        r = self.act(c, license_plan="YEARS", years=2, password="Temp#Set1")
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data["credentials_email"], "submitted")
+        body = mail.outbox[-1].body
+        self.assertIn("Temp#Set1", body)
+        self.assertIn(c.tally_serial, body)
+        self.assertNotIn("Activation Key", body)
+        lic = TallyCustomer.objects.get(pk=c.pk).license
+        self.assertEqual((lic.expires_at - lic.activated_at).days, 730)
+        h = lic.activation_key_hash
+        self.assertTrue(h)
+        r2 = self.act(c, license_plan="CUSTOM", custom_days=45)  # form path: existing key is not regenerated
+        lic.refresh_from_db()
+        self.assertEqual(lic.activation_key_hash, h)
+        self.assertEqual((lic.expires_at - lic.activated_at).days, 45)
+        self.assertEqual(self.act(c, license_plan="LIFETIME", password="x").status_code, 200)
+        lic.refresh_from_db()
+        self.assertIsNone(lic.expires_at)
+        self.assertEqual(self.act(c, license_plan="CUSTOM", custom_days="0").status_code, 400)
+        self.assertEqual(self.act(c, license_plan="YEARS", years=1.5).status_code, 400)
+        self.assertEqual(self.act(c, license_plan="TRIAL", trial_days=3).status_code, 200)  # legacy call still works (issues a key)
+        self.assertTrue(TallyCustomer.objects.get(pk=c.pk).password_hash != "Temp#Set1")
