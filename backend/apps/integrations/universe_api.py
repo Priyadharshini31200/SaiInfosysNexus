@@ -17,7 +17,7 @@ from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from apps.accounts.constants import Role
@@ -422,6 +422,10 @@ class UniverseCustomerView(ProductView):
             return Response({"record": registration_detail(p, reg, request.user)})
         if "email" in body and Reg.objects.filter(project=p, email=str(body["email"]).strip().lower()).exclude(customer=c).exists():
             raise IntegrationError("DUPLICATE_EMAIL", "Another customer of this project already uses this email address.", 409)
+        if body.get("password"):
+            if not (get_role(request.user) == Role.SUPERADMIN or user_can(request.user, code, "edit")):
+                raise PermissionDenied("Not allowed to set passwords.")
+            universe.admin_set_password(c, body["password"], who)
         s.edit_customer(c, body, actor=who)
         for f, n in (("company_name", 150), ("address", 300), ("gstin", 15)):
             if f in body:
@@ -484,10 +488,12 @@ class UniverseCustomerActionView(UniverseCustomerView):
             return Response({"record": registration_detail(p, reg, request.user)})
         lic, result = c.license, None
         if action == "extend-trial":
-            s.extend_trial(lic, body.get("days"), who)
+            s.extend_trial(lic, body.get("days"), who, body.get("reason") or "")
         elif action == "renew":
             s.renew_license(lic, who)
         elif action == "set-license":
+            if lic.license_type == "LIFETIME" and s.license_state(lic) == "ACTIVE" and body.get("license_type") != "LIFETIME" and not body.get("confirm"):
+                raise IntegrationError("CONFIRMATION_REQUIRED", "Changing an active Lifetime license to a time-limited one restricts access. Confirm to continue.", 409)
             s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"), custom_days=body.get("custom_days"), allow_custom=True)
         elif action == "inactivate":
             s.set_customer_active(c, False, who)

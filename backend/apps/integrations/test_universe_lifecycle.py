@@ -381,3 +381,19 @@ class DeveloperWorkspace(Lifecycle):
         none = self.staff.post("/api/config/staff/", {"full_name": "X", "username": "devnone", "email": "x@example.com", "role": "DEVELOPER"}, format="json")
         self.assertEqual(none.status_code, 400)
         self.assertEqual(self.dev.post("/api/config/staff/", {}, format="json").status_code, 403)
+
+
+class WebhookConnectionTest(Lifecycle):
+    def test_connection_test_creates_nothing_and_is_not_a_live_registration(self):
+        from .models import IntegrationAudit
+        before = IntegrationRegistration.objects.count()
+        r = self.v1("webhook/test")
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data["data"]["customer_created"], False)
+        self.assertEqual(IntegrationRegistration.objects.count(), before)
+        self.assertTrue(IntegrationAudit.objects.filter(project=self.project, action="webhook.test").exists())
+        self.assertFalse(IntegrationAudit.objects.filter(project=self.project, action="registration.received").exists())
+        bad = self.api.post(V1 + "webhook/test", {"project_code": self.code}, format="json", HTTP_X_CLIENT_ID=self.cred["client_id"], HTTP_X_CLIENT_SECRET="wrong")
+        self.assertEqual(bad.status_code, 401)  # authentication is not bypassed
+        wrong_project = self.api.post(V1 + "webhook/test", {"project_code": "OTHER"}, format="json", HTTP_X_CLIENT_ID=self.cred["client_id"], HTTP_X_CLIENT_SECRET=self.cred["api_secret"])
+        self.assertEqual(wrong_project.status_code, 403)

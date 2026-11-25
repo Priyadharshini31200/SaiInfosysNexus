@@ -725,18 +725,70 @@ def activate_license(customer, license_type, trial_days, user, ip="", *, years=N
 
 
 @transaction.atomic
-def extend_trial(customer, days, user, ip=""):
+def extend_trial(customer, days, user, ip="", reason=""):
+    """Extends the EXISTING trial (active, or expired but still a trial). Active: adds to the current expiry. Expired: adds to now.
+    Key, serial, password and devices are untouched."""
     customer = _lock(customer)
     lic = customer.license
     if lic.license_type != TallyLicense.TRIAL or lic.status != TallyLicense.ACTIVE:
-        raise TallyError("Only an active trial can be extended.", 409, "not_a_trial")
-    days = int(days or 0)
-    if not 1 <= days <= 365:
-        raise TallyError("Extension must be between 1 and 365 days.", 400, "invalid_trial_days")
-    lic.expires_at = max(lic.expires_at or timezone.now(), timezone.now()) + timedelta(days=days)
-    lic.trial_days = (lic.trial_days or 0) + days
+        raise TallyError("Only a trial license can be extended.", 409, "not_a_trial")
+    try:
+        n = int(str(days).strip())
+    except (TypeError, ValueError):
+        n = 0
+    if str(days).strip() != str(n) or not 1 <= n <= 365:
+        raise TallyError("Extension must be a whole number between 1 and 365 days.", 400, "invalid_trial_days", {"days": ["Enter a whole number from 1 to 365."]})
+    now = timezone.now()
+    old = lic.expires_at
+    lic.expires_at = max(old or now, now) + timedelta(days=n)
+    lic.trial_days = (lic.trial_days or 0) + n
     lic.save()
-    audit("TRIAL_EXTENDED", f"+{days} days, now ends {lic.expires_at:%d/%m/%Y}", customer=customer, actor=actor_name(user), ip=ip)
+    audit("TRIAL_EXTENDED", f"+{n} days, old expiry {old:%d/%m/%Y} -> new expiry {lic.expires_at:%d/%m/%Y}" if old else f"+{n} days, new expiry {lic.expires_at:%d/%m/%Y}"
+          + (f", reason: {str(reason).strip()[:100]}" if reason else ""), customer=customer, actor=actor_name(user), ip=ip)
+    return customer
+
+
+@transaction.atomic
+def change_license(customer, plan, user, ip="", *, trial_days=None, years=None, custom_days=None, confirm=False):
+    """Change the type/validity of an EXISTING non-pending license (same row; key, serial, devices and activation date kept)."""
+    stored = STORED_OF.get("ANNUAL" if plan in ("YEARS", "CUSTOM") else plan)
+    if stored is None:
+        raise TallyError("License Type must be Trial, Years, Lifetime or Custom.", 400, "invalid_license_plan")
+    customer = _lock(customer)
+    lic = customer.license
+    if lic.status == TallyLicense.PENDING:
+        raise TallyError("Activate this license first.", 409, "license_pending")
+
+    def whole(value, field, high):
+        try:
+            n = int(str(value))
+        except (TypeError, ValueError):
+            n = 0
+        if not 1 <= n <= high or str(value).strip() != str(n):
+            raise TallyError(f"{field} must be a positive whole number (1 to {high}).", 400, "invalid_validity", {field.lower().split()[0]: [f"Enter a whole number from 1 to {high}."]})
+        return n
+
+    now = timezone.now()
+    was = lic.get_license_type_display()
+    was_open = lic.license_type == TallyLicense.LIFETIME and license_state(lic, now) == "active"
+    if plan == "TRIAL":
+        n = whole(trial_days, "Trial days", 365)
+        exp, tdays, detail = now + timedelta(days=n), n, f"{n} days"
+    elif plan == "CUSTOM":
+        n = whole(custom_days, "Custom days", 3650)
+        exp, tdays, detail = now + timedelta(days=n), None, f"custom {n} days"
+    elif plan == "YEARS":
+        n = whole(years, "Years", 50)
+        exp, tdays, detail = now + timedelta(days=365 * n), None, f"{n} year(s)"
+    else:
+        exp, tdays, detail = None, None, "no expiry"
+    if was_open and exp is not None and not confirm:
+        raise TallyError("Changing an active Lifetime license to a time-limited one restricts access. Confirm to continue.", 409, "confirmation_required")
+    old = lic.expires_at
+    lic.license_type, lic.expires_at, lic.trial_days = stored, exp, tdays
+    lic.save()
+    before = f"; old expiry {old:%d/%m/%Y}" if old else ""
+    audit("LICENSE_CHANGED", f"{was} -> {lic.get_license_type_display()} ({detail}){before}", customer=customer, actor=actor_name(user), ip=ip)
     return customer
 
 
@@ -813,6 +865,15 @@ def revoke_device(customer, user, reason="Revoked by an administrator", ip=""):
 def update_customer(customer, data, user, ip=""):
     customer = _lock(customer)
     changed = []
+    password = data.get("password")
+    if password:  # explicit administrator-set replacement; stored hashed, all sessions signed out
+        check_password_rule(password)
+        customer.password_hash = make_password(password)
+        customer.password_changed_at = None
+        customer.failed_logins, customer.locked_until = 0, None
+        customer.save(update_fields=["password_hash", "password_changed_at", "failed_logins", "locked_until", "updated_at"])
+        customer.sessions.filter(revoked_at__isnull=True).update(revoked_at=timezone.now(), revoked_reason="password_changed")
+        audit("PASSWORD_SET_BY_ADMIN", customer=customer, actor=actor_name(user), ip=ip)
     for field in ("name", "email", "contact_number", "company_name", "gstin"):
         if field in data and data[field] != getattr(customer, field):
             setattr(customer, field, data[field].strip().lower() if field == "email" else data[field].strip().upper() if field == "gstin" else data[field].strip())

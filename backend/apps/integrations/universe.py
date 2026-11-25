@@ -362,6 +362,18 @@ def reset_password(customer, actor=""):
     return {"temporary_password": pw, "password_notice": "Shown once. It is stored only as a hash and is never emailed; the customer must change it at first login."}
 
 
+def admin_set_password(customer, password, actor=""):
+    """Authorised administrator-chosen password: hashed, customer must change it at next login, every session revoked."""
+    if not 3 <= len(str(password or "")) <= 128:
+        raise IntegrationError("WEAK_PASSWORD", "Password must be 3-128 characters.", 400)
+    with transaction.atomic():
+        customer.password_hash, customer.must_change_password = make_password(str(password)), True
+        customer.failed_logins, customer.locked_until = 0, None
+        customer.save(update_fields=["password_hash", "must_change_password", "failed_logins", "locked_until", "updated_at"])
+        s._revoke_all(customer.license, "password_reset")
+        s.audit(customer.project, "customer.password_set_by_admin", customer.user_id, actor=actor)
+
+
 def ensure_expiry_notifications(now=None, days=7):
     """Idempotent: one notification per (licence, expiry date) for UNIVERSE licences expiring within `days`. Safe to call from any request or scheduled job."""
     now = now or timezone.now()

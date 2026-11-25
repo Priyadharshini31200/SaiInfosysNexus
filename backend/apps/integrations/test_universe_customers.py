@@ -103,6 +103,24 @@ class CustomersListAndPopup(CustomerCentric):
         self.assertTrue(any(h["action"] == "registration.save_and_allow" for h in d["history"]["audit"]))
         self.assertTrue(d["history"]["terms"])
 
+    def test_admin_password_lifetime_confirm_and_extend_audit(self):
+        from django.contrib.auth.hashers import check_password
+        from .models import IntegrationAudit
+        out = self.approve(self.reg().pk, trial_days=3).data
+        cust = IntegrationCustomer.objects.get(user_id=out["result"]["user_id"])
+        url = f"{self.base}customer/{cust.pk}/"
+        before = cust.password_hash
+        self.assertEqual(self.staff.patch(url, {"customer_name": "Only Name"}, format="json").status_code, 200)
+        self.assertEqual(IntegrationCustomer.objects.get(pk=cust.pk).password_hash, before)
+        self.assertEqual(self.staff.patch(url, {"password": "Newpass-9"}, format="json").status_code, 200)
+        self.assertTrue(check_password("Newpass-9", IntegrationCustomer.objects.get(pk=cust.pk).password_hash))
+        self.assertEqual(self.staff.post(url + "extend-trial/", {"days": 0}, format="json").status_code, 422)
+        self.assertEqual(self.staff.post(url + "extend-trial/", {"days": 3, "reason": "demo"}, format="json").status_code, 200)
+        self.assertIn("new expiry", IntegrationAudit.objects.filter(action="license.trial_extended").first().detail)
+        self.assertEqual(self.staff.post(url + "set-license/", {"license_type": "LIFETIME"}, format="json").status_code, 200)
+        self.assertEqual(self.staff.post(url + "set-license/", {"license_type": "TRIAL", "trial_days": 5}, format="json").status_code, 409)
+        self.assertEqual(self.staff.post(url + "set-license/", {"license_type": "TRIAL", "trial_days": 5, "confirm": True}, format="json").status_code, 200)
+
     def test_edit_extend_renew_change_type_suspend_and_reset_password(self):
         out = self.approve(self.reg().pk, trial_days=3).data
         cust = IntegrationCustomer.objects.get(user_id=out["result"]["user_id"])

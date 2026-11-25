@@ -81,7 +81,7 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
   const status = isReg ? r?.registration.approval_status : r?.license.status;
 
   const saveEdit = run('save', async () => {
-    const res = await integrationsApi.patchUniverseCustomer(code, curKind, curId, { customer_name: edit.name, company_name: edit.company_name, email: edit.email, contact_number: edit.contact_number, address: edit.address, gstin: edit.gstin });
+    const res = await integrationsApi.patchUniverseCustomer(code, curKind, curId, { customer_name: edit.name, company_name: edit.company_name, email: edit.email, contact_number: edit.contact_number, address: edit.address, gstin: edit.gstin, ...(!isReg && edit.newPassword ? { password: edit.newPassword } : {}) });
     setRec(res.record); setEdit(null); setErrors({});
   }, 'Changes saved successfully.');
 
@@ -126,6 +126,18 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
                       <label key={k} className={styles.field}>{l}<input value={edit[k] || ''} onChange={(e) => setEdit({ ...edit, [k]: e.target.value })} />{errors[k === 'name' ? 'customer_name' : k] && <span className={styles.err}>{[].concat(errors[k === 'name' ? 'customer_name' : k]).join(' ')}</span>}</label>
                     ))}
                     <KV k="External Customer ID" mono>{r.registration.external_customer_id}</KV>
+                    {!isReg && <>
+                      <KV k="User ID / Serial Number" mono>{r.account.user_id}</KV>
+                      <KV k="Activation Key">{r.account.activation_key_status}</KV>
+                      {can.reset_password && <label className={styles.field}>Set New Password (Optional)
+                        <span className={styles.inline}>
+                          <input type={edit.showPw ? 'text' : 'password'} value={edit.newPassword || ''} maxLength={128} autoComplete="new-password" placeholder="Leave blank to keep current" onChange={(e) => setEdit({ ...edit, newPassword: e.target.value })} />
+                          <button type="button" className={styles.regenBtn} title={edit.showPw ? 'Hide Password' : 'Show Password'} aria-label={edit.showPw ? 'Hide Password' : 'Show Password'} aria-pressed={!!edit.showPw} onClick={() => setEdit({ ...edit, showPw: !edit.showPw })}>{edit.showPw ? <EyeOffIcon size={18} aria-hidden="true" /> : <EyeIcon size={18} aria-hidden="true" />}</button>
+                          <button type="button" className={styles.regenBtn} title="Generate New Password" aria-label="Generate New Password" onClick={() => setEdit({ ...edit, newPassword: genPassword(), showPw: true })}><RefreshIcon size={18} aria-hidden="true" /></button>
+                        </span>
+                        {edit.newPassword && !validPassword(edit.newPassword) && <span className={styles.err}>At least 3 characters.</span>}
+                      </label>}
+                    </>}
                   </div>
                 ) : (
                   isReg ? (
@@ -242,7 +254,7 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
                         {lic.license_type === 'ONE_YEAR' && <label className={`${styles.field} ${styles.fDur}`} title="Duration in years">Years<input type="number" min="1" max="10" value={lic.years} onChange={(e) => setLic({ ...lic, years: e.target.value })} /></label>}
                         {lic.license_type === 'CUSTOM' && <label className={`${styles.field} ${styles.fDur}`} title="Custom duration in days">Days<input type="number" min="1" max="3650" value={lic.custom_days} onChange={(e) => setLic({ ...lic, custom_days: e.target.value.replace(/\D/g, '') })} /></label>}
                         <button type="button" title="Apply License Change" aria-label="Apply License Change" className={styles.regenBtn} disabled={!!busy || (lic.license_type !== 'LIFETIME' && !/^[1-9]\d*$/.test(String(lic.license_type === 'ONE_YEAR' ? lic.years : lic.license_type === 'CUSTOM' ? lic.custom_days : lic.trial_days)))}
-                          onClick={() => window.confirm('Apply this licence change now?') && run('type', async () => { const res = await act('set-license', { license_type: lic.license_type, trial_days: lic.trial_days, years: lic.years, custom_days: lic.custom_days }); setRec(res.record); }, 'License updated.')()}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
+                          onClick={() => window.confirm('Apply this licence change now?') && run('type', async () => { const res = await act('set-license', { license_type: lic.license_type, trial_days: lic.trial_days, years: lic.years, custom_days: lic.custom_days, confirm: true }); setRec(res.record); }, 'License updated.')()}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
                       </>}
                     </div>
                   </div>
