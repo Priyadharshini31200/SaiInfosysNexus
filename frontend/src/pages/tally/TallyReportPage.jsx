@@ -37,7 +37,9 @@ const ReportRow = memo(function ReportRow({ kind, r, n }) {
   }
   return (
     <tr>
-      <td>{n}</td><td>{serialLink(r)}</td><td>{r.tally_email || NA}</td><td>{r.tally_expiry_date ? formatDate(r.tally_expiry_date) : NA}</td>
+      <td>{n}</td><td>{serialLink(r)}</td><td>{r.tally_email || NA}</td><td>{r.edition || NA}</td><td>{r.license_administrator || NA}</td>
+      <td>{r.virtual_user_limit ?? NA}</td><td>{r.tally_expiry_date ? formatDate(r.tally_expiry_date) : NA}</td>
+      <td>{r.tss_remaining_days == null ? NA : r.tss_remaining_days < 0 ? 'Expired' : r.tss_remaining_days}</td>
     </tr>
   );
 });
@@ -71,7 +73,7 @@ export default function TallyReportPage({ kind }) {
     ? ['S.No', 'Customer Name', 'Tally Serial No.', 'User Category', 'Total Opens', 'Last Opened', 'Active Days']
     : isExpiry
       ? ['S.No', 'Customer Name', 'Product', 'Tally Serial No.', 'License Plan', 'Nexus Activation Date', 'Nexus Expiry Date', 'Status']
-      : ['S.No', 'Tally Serial No.', 'Tally Email ID', 'Tally Expiry Date'];
+      : ['S.No', 'Tally Serial No.', 'Tally Email ID', 'Edition', 'License Administrator', 'Virtual Users', 'Tally Expiry Date', 'Days Left'];
 
   const note = truncated || (loading && rows.length > 0)
     ? (loading

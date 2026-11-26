@@ -30,7 +30,7 @@ class ResendCredentialsTests(CredentialsBase):
     def test_email_names_customer_and_product_and_user_id_is_the_serial(self):
         r = self.approve("ONE_YEAR").json()
         body = mail.outbox[-1].body
-        for needle in ("Customer Name: Meena", "Product Name: Barcode Auto Print", f"User ID: {r['serial_number']}",
+        for needle in ("Customer Name: Meena", "Product Name: Barcode AutoPrint", f"User ID: {r['serial_number']}",
                        f"Serial Number: {r['serial_number']}", "Temporary Password:", "Activation Key:", "License Plan: 1 Year"):
             self.assertIn(needle, body)
         self.assertEqual(r["credentials_email_status_label"], "Submitted")

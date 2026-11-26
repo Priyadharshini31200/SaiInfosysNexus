@@ -55,7 +55,7 @@ class CredentialsEmailTests(CredentialsBase):
         r = self.approve("ONE_YEAR")
         body_json, msg = r.json(), mail.outbox[-1]
         self.assertEqual(msg.to, ["new.customer@example.com"])
-        for needle in ("Meena", "Barcode Auto Print", "1 Year", f"User ID: {body_json['user_id']}", f"Serial Number: {body_json['serial_number']}",
+        for needle in ("Meena", "Barcode AutoPrint", "1 Year", f"User ID: {body_json['user_id']}", f"Serial Number: {body_json['serial_number']}",
                        "Password:", "Activation Key:", "Sign in with your User ID", "My Profile"):
             self.assertIn(needle, msg.body)
         self.assertEqual(body_json["user_id"], body_json["serial_number"])
