@@ -417,7 +417,7 @@ class MothysProductTests(Base):
         row = self.pc().data["results"][0]
         self.assertEqual(row["status"], "not_activated")
         mail.outbox.clear()
-        r = self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 45, "password": "Temp#Pass9"})
+        r = self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 45, "paid": True, "password": "Temp#Pass9"})
         self.assertEqual(r.status_code, 200, r.data)
         self.assertEqual(r.data["customer"]["license_type"], "CUSTOM")
         self.assertIn(r.data["welcome_email"], ("accepted", "not_delivered", "failed"))
@@ -428,6 +428,42 @@ class MothysProductTests(Base):
         self.assertEqual(bad.status_code, 422)
         legacy = self.pc(f"{row['id']}/set-license/", "post", {"license_type": "LIFETIME"})  # legacy call unchanged
         self.assertEqual(legacy.status_code, 200)
+
+    def test_paid_required_custom_date_credentials_unchanged_and_trial_extend(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import IntegrationCustomer
+        self.register(external_customer_id="P1", email="p1@example.com", customer_name="Paid One")
+        row = self.pc().data["results"][0]
+        before = IntegrationCustomer.objects.get(pk=row["id"]).password_hash
+        url = f"{row['id']}/set-license/"
+        no = self.pc(url, "post", {"activation_form": True, "license_type": "LIFETIME"})
+        self.assertEqual(no.status_code, 422); self.assertIn("PAYMENT_REQUIRED", str(no.data))
+        past = (timezone.localdate() - timedelta(days=2)).isoformat()
+        self.assertEqual(self.pc(url, "post", {"activation_form": True, "license_type": "CUSTOM", "custom_expiry_date": past, "paid": True}).status_code, 422)
+        future = (timezone.localdate() + timedelta(days=40)).isoformat()
+        ok = self.pc(url, "post", {"activation_form": True, "license_type": "CUSTOM", "custom_expiry_date": future, "paid": True})
+        self.assertEqual(ok.status_code, 200, ok.data)
+        life = self.pc(url, "post", {"activation_form": True, "license_type": "LIFETIME", "paid": True})
+        self.assertEqual(life.data["customer"]["license_type"], "LIFETIME")
+        self.assertIsNone(life.data["customer"]["expires_at"])
+        cust = IntegrationCustomer.objects.get(pk=row["id"])
+        self.assertTrue(cust.license.paid)
+        self.assertEqual(cust.password_hash, before)  # licence changes never touch credentials
+        self.pc(url, "post", {"license_type": "TRIAL", "trial_days": 3})
+        ext = self.pc(f"{row['id']}/extend-trial/", "post", {"days": 2})
+        self.assertEqual(ext.status_code, 200, ext.data)
+        self.assertEqual(IntegrationCustomer.objects.get(pk=row["id"]).password_hash, before)
+
+    def test_new_registration_trial_default_three_days_active_and_login_works(self):
+        from .models import IntegrationProject
+        self.assertEqual(IntegrationProject._meta.get_field("trial_days").default, 3)
+        user, pw, d = self.make_active()
+        self.assertEqual(d["license_state"], "ACTIVE")
+        r = self.call("auth/verify", {"user_id": user, "password": pw})
+        self.assertEqual(r.status_code, 200, r.data)
+        bad = self.call("auth/verify", {"user_id": user, "password": "wrong-password"})
+        self.assertEqual(bad.status_code, 401)
 
     def test_paid_registration_pending_then_approved_and_scoped_to_project(self):
         self.staff.patch(ADM + "projects/MOTHYS/", {"default_license_type": "ONE_YEAR"}, format="json")
