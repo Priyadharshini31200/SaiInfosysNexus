@@ -314,6 +314,7 @@ def license_payload(lic):
     return {
         "license_id": lic.pk, "customer_id": lic.customer_id, "license_type": lic.license_type, "state": license_state(lic),
         "starts_at": lic.starts_at, "expires_at": lic.expires_at, "serial_number": lic.customer.serial_number, "user_id": lic.customer.user_id,
+        "paid": lic.paid,
     }
 
 

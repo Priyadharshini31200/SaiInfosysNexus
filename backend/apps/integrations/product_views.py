@@ -1,6 +1,7 @@
 """Staff API behind the product pages (Dashboard / Customers) of an API-connected product such as Mothys.
 Everything is scoped by the project code in the URL; the customer and licence rules are the ones in `services` (the same ones the
 product's own backend triggers through /integrations/v1/). Super Admin: everything; Admin: only explicitly granted project permissions."""
+from django.utils import timezone
 from django.http import HttpResponse
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import BasePermission
@@ -186,8 +187,24 @@ class ProductCustomerActionView(ProductView):
             s.renew_license(lic, who)
         elif action == "set-license":
             form = body.get("activation_form") is True  # Activate Customer License popup: Custom days allowed, optional temporary password
+            if body.get("custom_expiry_date"):  # Custom: an explicit future expiry date, converted to whole days from today
+                from datetime import date as _d
+                try:
+                    delta = (_d.fromisoformat(str(body["custom_expiry_date"])[:10]) - timezone.localdate()).days
+                except ValueError:
+                    raise s.IntegrationError("VALIDATION_ERROR", "Enter a valid expiry date.", 422)
+                if delta < 1:
+                    raise s.IntegrationError("VALIDATION_ERROR", "The expiry date must be in the future.", 422)
+                body = {**body, "license_type": "CUSTOM", "custom_days": delta}
+            paid = body.get("paid") is True
+            if form and body.get("license_type") != "TRIAL" and not paid and not lic.paid:
+                raise s.IntegrationError("PAYMENT_REQUIRED", "Confirm payment (Paid) before activating a paid licence.", 422)
             s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"),
                                custom_days=body.get("custom_days"), allow_custom=form)
+            if paid and not lic.paid:
+                lic.paid, lic.paid_at = True, timezone.now()
+                lic.save(update_fields=["paid", "paid_at"])
+                s.audit(c.project, "license.paid_confirmed", c.user_id, actor=who)
             if form and body.get("password"):
                 from . import universe
                 if not c.must_change_password:

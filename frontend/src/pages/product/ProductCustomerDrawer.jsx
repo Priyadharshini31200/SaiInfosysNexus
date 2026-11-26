@@ -72,6 +72,8 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
   const [plan, setPlan] = useState('TRIAL');
   const [years, setYears] = useState(1);
   const [customDays, setCustomDays] = useState(30);
+  const [paid, setPaid] = useState(false);
+  const [customDate, setCustomDate] = useState('');
   const [pwd, setPwd] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const menuRef = useRef(null);
@@ -85,7 +87,7 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
     return () => document.removeEventListener('mousedown', outside);
   }, [menuOpen]);
 
-  const open = (kind) => { setMenuOpen(false); setDlgError(''); setDialog({ kind }); if (kind === 'edit' && state.data) { const c = state.data.customer; setForm({ customer_name: c.name, email: c.email, contact_number: c.contact_number }); } if (kind === 'extend') setDays(3); if (kind === 'set') setPlan('TRIAL'); if (kind === 'activate') { setPlan('TRIAL'); setDays(3); setYears(1); setCustomDays(30); setPwd(genPwd()); setShowPwd(false); } };
+  const open = (kind) => { setMenuOpen(false); setDlgError(''); setDialog({ kind }); if (kind === 'edit' && state.data) { const c = state.data.customer; setForm({ customer_name: c.name, email: c.email, contact_number: c.contact_number }); } if (kind === 'extend') setDays(3); if (kind === 'set') setPlan('TRIAL'); if (kind === 'activate') { setPlan('TRIAL'); setDays(3); setYears(1); setCustomDays(30); setPaid(Boolean(state.data?.license?.paid)); setCustomDate(''); setPwd(genPwd()); setShowPwd(false); } };
   const close = () => { if (!busy) setDialog(null); };
   async function run(name, fn, ok) {
     setBusy(name); setDlgError('');
@@ -103,7 +105,7 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
     body = (
       <>
         <Group title="Customer Details" rows={[['Customer Name', c.name], ['Email', c.email], ['Contact Number', c.contact_number], ['External Customer ID', c.external_customer_id], ['Serial Number / User ID', c.serial_number], ['Registered On', DT(c.created_at)], ['Welcome Email', EMAIL[c.welcome_email_status] ?? c.welcome_email_status], ['Last Login', DT(c.last_login)]]} />
-        <Group title="License Details" rows={[['License Type', TYPE_LABEL[type]], ['License Status', STATUS_LABEL[c.status]], ...(type === 'TRIAL' ? [['Trial Days', c.trial_days ?? '—']] : []), ['License Start Date', D(c.starts_at)], ['Activation Date', D(c.activated_at)], ['Expiry Date', type === 'LIFETIME' ? 'Never' : D(c.expires_at)], ['Active Device', c.active_device || '—'], ['Usage Category', c.usage_category || '—']]} />
+        <Group title="License Details" rows={[['License Type', TYPE_LABEL[type]], ['License Status', STATUS_LABEL[c.status]], ...(type === 'TRIAL' ? [['Trial Days', c.trial_days ?? '—']] : []), ['License Start Date', D(c.starts_at)], ['Activation Date', D(c.activated_at)], ['Expiry Date', type === 'LIFETIME' ? 'Never' : D(c.expires_at)], ['Payment Status', l?.paid ? 'Paid' : 'Unpaid'], ['Active Device', c.active_device || '—'], ['Usage Category', c.usage_category || '—']]} />
         <History title="Device Activation History" columns={['Device', 'Activated', 'Status', 'Ended']} rows={activations.map((a) => [a.device_name, DT(a.activated_at), a.status === 'ACTIVE' ? 'Active' : 'Ended', a.ended_at ? `${DT(a.ended_at)} (${a.ended_reason.replace('_', ' ')})` : '—'])} empty="No device has been activated." />
         <History title="Device Transfer History" columns={['When', 'Previous device', 'New device']} rows={transfers.map((t) => [DT(t.at), t.from_device, t.to_device])} empty="No device transfers." />
         <History title="Usage History" columns={['When', 'Event', 'Device']} rows={usage.map((u) => [DT(u.at), u.event, u.device])} empty="No usage recorded yet." />
@@ -144,12 +146,13 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
         {dialog?.kind === 'activate' && (() => {
           const n = plan === 'TRIAL' ? days : plan === 'ONE_YEAR' ? years : customDays;
           const exp = plan === 'LIFETIME' ? null : whole(n) ? new Date(Date.now() + Number(n) * (plan === 'ONE_YEAR' ? 365 : 1) * 86400000) : undefined;
-          const valid = exp !== undefined && pwd.length >= 3 && Boolean(c.serial_number);
+          const needsPaid = plan !== 'TRIAL' && !paid;
+          const valid = exp !== undefined && !needsPaid && pwd.length >= 3 && Boolean(c.serial_number);
           const set = (v) => (plan === 'TRIAL' ? setDays(v) : plan === 'ONE_YEAR' ? setYears(v) : setCustomDays(v));
           const g = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 10px' };
           return (
             <Confirm title="Activate Customer License" confirmLabel="Save & Activate" busy={busy === 'activate'} error={dlgError} onClose={close}
-              onConfirm={() => (valid ? run('activate', act('set-license', { activation_form: true, license_type: plan, trial_days: plan === 'TRIAL' ? Number(days) : undefined, years: plan === 'ONE_YEAR' ? Number(years) : undefined, custom_days: plan === 'CUSTOM' ? Number(customDays) : undefined, password: c.must_change_password === false ? undefined : pwd }), 'License activated. User ID and temporary password were emailed to the customer.') : setDlgError('Enter a valid positive whole number and a password of at least 3 characters.'))}>
+              onConfirm={() => (valid ? run('activate', act('set-license', { activation_form: true, license_type: plan, trial_days: plan === 'TRIAL' ? Number(days) : undefined, years: plan === 'ONE_YEAR' ? Number(years) : undefined, custom_days: plan === 'CUSTOM' && !customDate ? Number(customDays) : undefined, custom_expiry_date: plan === 'CUSTOM' && customDate ? customDate : undefined, paid, password: c.must_change_password === false ? undefined : pwd }), 'License activated. User ID and temporary password were emailed to the customer.') : setDlgError(needsPaid ? 'Tick "Paid — Payment Confirmed" before activating a paid licence.' : 'Enter a valid positive whole number and a password of at least 3 characters.'))}>
               <div style={g}>
                 <label style={lbl}>Customer Name<input style={field} value={c.name} readOnly /></label>
                 <label style={lbl}>Email<input style={field} value={c.email} readOnly /></label>
@@ -161,6 +164,8 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
                 <label style={lbl}>License Start Date<input style={field} value={formatDate(new Date().toISOString())} readOnly /></label>
                 <label style={lbl}>Expiry Date<input style={field} value={exp === null ? 'No expiry' : exp === undefined ? 'Enter a valid number' : formatDate(exp.toISOString())} readOnly /></label>
               </div>
+              {plan === 'CUSTOM' && <label style={lbl}>Custom Expiry Date (optional, overrides days)<input type="date" style={field} value={customDate} min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)} onChange={(e) => setCustomDate(e.target.value)} /></label>}
+              <label style={{ ...lbl, display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} />Paid — Payment Confirmed</label>
               <label style={lbl}>Auto-Generated Password (editable)
                 <span style={{ display: 'flex', gap: 6 }}>
                   <input style={{ ...field, marginTop: 3 }} type={showPwd ? 'text' : 'password'} value={pwd} onChange={(e) => setPwd(e.target.value)} autoComplete="new-password" />

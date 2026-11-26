@@ -25,7 +25,7 @@ class IntegrationProject(models.Model):
     activation_key_length = models.PositiveSmallIntegerField(default=9)
     device_limit = models.PositiveSmallIntegerField(default=1)
     default_license_type = models.CharField(max_length=10, default="TRIAL")  # TRIAL | ONE_YEAR | LIFETIME
-    trial_days = models.PositiveSmallIntegerField(default=30)
+    trial_days = models.PositiveSmallIntegerField(default=3)
     transfer_policy = models.CharField(max_length=20, default="SELF")  # SELF = customer confirms on the new device | DISABLED
     auto_sync = models.BooleanField(default=True)
     usage_tracking = models.BooleanField(default=True)
@@ -110,6 +110,8 @@ class IntegrationLicense(models.Model):
     status = models.CharField(max_length=20)
     starts_at = models.DateTimeField(null=True, blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)  # null = lifetime / not yet approved
+    paid = models.BooleanField(default=False)  # payment confirmed by an authorised admin (records payment; never changes the licence by itself)
+    paid_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
