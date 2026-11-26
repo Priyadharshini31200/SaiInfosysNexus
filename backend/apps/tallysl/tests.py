@@ -96,7 +96,7 @@ class RegistrationAndLoginTests(Base):
         self.assertEqual(r.status_code, 201, r.data)
         c = TallyCustomer.objects.get(tally_serial="700123456")
         self.assertEqual(c.user_id, "700123456")  # Tally Serial == User ID
-        self.assertEqual(c.license.status, TallyLicense.PENDING)  # no free paid licence
+        self.assertEqual((c.license.status, c.license.license_type), (TallyLicense.ACTIVE, TallyLicense.TRIAL))  # free 3-day trial starts at once
         self.assertFalse(c.must_change_password)  # no forced first-login change
         welcome = [m for m in mail.outbox if m.to == ["ravi@example.com"]]
         self.assertEqual(len(welcome), 1)
@@ -178,7 +178,7 @@ class LicenseTests(Base):
     def test_registration_alone_is_not_authorized(self):
         c = self.registered()
         payload = services.license_payload(TallyCustomer.objects.get(pk=c.pk))
-        self.assertEqual((payload["authorized"], payload["state"]), (False, "pending"))
+        self.assertEqual((payload["authorized"], payload["state"]), (False, "device_not_enrolled"))  # trial is active; device pairing is a separate step
 
     def test_trial_default_three_days_and_configurable(self):
         c = self.registered()
@@ -217,7 +217,7 @@ class LicenseTests(Base):
         c = self.registered()
         url = lambda a: f"{ADM}/products/gstr2tally/customers/{c.pk}/license/{a}/"
         s = self.staff(self.super)
-        self.assertEqual(s.post(url("extend-trial"), {"days": 2}, format="json").status_code, 409)  # not activated/trial yet
+        self.assertEqual(s.post(url("extend-trial"), {"days": 2}, format="json").status_code, 200)  # a new registration is already an active trial
         self.activate(c, "TRIAL")
         before = TallyLicense.objects.get(customer=c).expires_at
         self.assertEqual(s.post(url("extend-trial"), {"days": 2}, format="json").status_code, 200)
@@ -398,7 +398,6 @@ class ActivationAndTransferTests(Base):
         c2 = self.registered("700999999", "x@example.com")
         mail.outbox.clear()
         self.call("activate/request-code/", {"user_id": "700999999"})
-        self.assertFalse([m for m in mail.outbox if "Activation Key" in m.subject])  # licence is not active: no key issued
         r = self.call("activate/verify/", {"user_id": "700999999", "activation_key": "ABCDE2345"})
         self.assertEqual((r.status_code, r.data["code"]), (400, "invalid_activation_key"))
 

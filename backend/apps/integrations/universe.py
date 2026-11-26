@@ -261,7 +261,7 @@ def approve(reg_id, license_type, trial_days=None, years=None, actor="", app_url
             customer = IntegrationCustomer.objects.create(project=project, external_customer_id=reg.external_customer_id, name=c["customer_name"], email=c["email"],
                                                           contact_number=c["contact_number"], serial_number=serial, user_id=uid,
                                                           company_name=reg.company_name, address=reg.address, gstin=reg.gstin,
-                                                          password_hash=make_password(password), must_change_password=True)
+                                                          password_hash=make_password(password), must_change_password=False)  # the issued password stays until the customer changes it
         except IntegrityError:
             raise IntegrationError("DUPLICATE_USER_ID", "The User ID is already in use; try again.", 409)
         lic = IntegrationLicense(customer=customer, license_type=license_type, status=IntegrationLicense.PENDING)

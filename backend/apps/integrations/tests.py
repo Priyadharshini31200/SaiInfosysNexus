@@ -187,7 +187,7 @@ class AuthTests(Base):
     def test_verify_lockout_and_password_change(self):
         user, pw, _ = self.make_active()
         ok = self.call("auth/verify", {"user_id": user, "password": pw})
-        self.assertEqual((ok.status_code, ok.data["data"]["must_change_password"]), (200, True))
+        self.assertEqual((ok.status_code, ok.data["data"]["must_change_password"]), (200, False))
         for _ in range(5):
             self.call("auth/verify", {"user_id": user, "password": "bad"})
         self.assertEqual(self.call("auth/verify", {"user_id": user, "password": pw}).data["error"]["code"], "ACCOUNT_LOCKED")
@@ -417,13 +417,14 @@ class MothysProductTests(Base):
         row = self.pc().data["results"][0]
         self.assertEqual(row["status"], "not_activated")
         mail.outbox.clear()
-        r = self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 45, "paid": True, "password": "Temp#Pass9"})
+        before = IntegrationCustomer.objects.get(pk=row["id"]).password_hash
+        # the issued password is kept: an admin cannot replace it through the activation popup
+        self.assertEqual(self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 45, "paid": True, "password": "Temp#Pass9"}).status_code, 409)
+        r = self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 45, "paid": True})
         self.assertEqual(r.status_code, 200, r.data)
         self.assertEqual(r.data["customer"]["license_type"], "CUSTOM")
-        self.assertIn(r.data["welcome_email"], ("accepted", "not_delivered", "failed"))
-        self.assertTrue(any("Temp#Pass9" in m.body and row["serial_number"] in m.body for m in mail.outbox))
-        cust = IntegrationCustomer.objects.get(pk=row["id"])
-        self.assertNotEqual(cust.password_hash, "Temp#Pass9")
+        self.assertFalse(any("Temp#Pass9" in m.body for m in mail.outbox))
+        self.assertEqual(IntegrationCustomer.objects.get(pk=row["id"]).password_hash, before)
         bad = self.pc(f"{row['id']}/set-license/", "post", {"activation_form": True, "license_type": "CUSTOM", "custom_days": 0})
         self.assertEqual(bad.status_code, 422)
         legacy = self.pc(f"{row['id']}/set-license/", "post", {"license_type": "LIFETIME"})  # legacy call unchanged

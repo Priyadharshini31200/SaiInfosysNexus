@@ -64,7 +64,7 @@ class HandoffVerification(Base):
         # 4 login verification, 5 password change
         self.post("auth/verify", "auth/verify", {"user_id": user, "password": "wrong"}, "wrong password", 401)
         v = self.post("auth/verify", "auth/verify", {"user_id": user, "password": pw})["data"]
-        self.assertTrue(v["must_change_password"])
+        self.assertFalse(v["must_change_password"])  # the issued password is kept until the customer changes it
         newpw = "MyNewPass#9"
         self.post("auth/change-password", "auth/change-password", {"user_id": user, "current_password": pw, "new_password": newpw})
         self.assertFalse(self.call("auth/verify", {"user_id": user, "password": newpw}).json()["data"]["must_change_password"])

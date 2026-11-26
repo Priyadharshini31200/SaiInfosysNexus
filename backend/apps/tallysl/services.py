@@ -182,7 +182,9 @@ def register_customer(product, data, *, actor="customer", ip=""):
             )
     except IntegrityError:
         raise TallyError("An account already exists for this Tally Serial Number.", 409, "account_exists")
-    TallyLicense.objects.create(customer=customer, license_type=TallyLicense.TRIAL, status=TallyLicense.PENDING)
+    now = timezone.now()  # a normal new registration starts a free trial at once; no admin approval (paid plans are set later by an admin)
+    days = product.default_trial_days or 3
+    TallyLicense.objects.create(customer=customer, license_type=TallyLicense.TRIAL, status=TallyLicense.ACTIVE, trial_days=days, activated_at=now, expires_at=now + timedelta(days=days))
     TallyInfo.objects.create(customer=customer)
     audit("REGISTERED", f"{customer.name} <{customer.email}>", customer=customer, actor=actor, ip=ip)
     return customer, raw
