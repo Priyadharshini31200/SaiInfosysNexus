@@ -84,6 +84,11 @@ class RegisterView(V1View):
             except IntegrationError as exc:  # a rejected registration is visible in Sync Logs (code only - no personal data, no secrets)
                 s.audit(project, "registration.rejected", str(data.get("external_customer_id") or "")[:60], ok=False, ip=client_ip(request), detail=exc.code)
                 raise
+            if reg.status == universe.Reg.PENDING_REVIEW:  # verified (or no Tally needed): a normal new registration starts the free trial at once
+                out = universe.approve(reg.pk, "TRIAL", None, None, actor="auto-trial")  # emails the credentials once, AFTER the commit
+                return 201, {"status": "REGISTERED", "customer_id": out["customer_id"], "user_id": out["user_id"], "serial_number": out["serial_number"],
+                             "license_type": "TRIAL", "license_state": out["license"]["state"], "expires_at": out["license"]["expires_at"],
+                             "welcome_email": out["setup_email"], "license_issued": True}
             return universe.ingest_response(reg)
         if project.tally_serial_required:  # Tally-integrated project: Tally verification first (isolated service)
             from . import tally

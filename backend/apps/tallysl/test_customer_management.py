@@ -24,8 +24,8 @@ class CustomerManagementTests(Base):
         for k in ("name", "company_name", "contact_number", "email", "tally_serial", "license_plan", "state", "expires_at", "password_status", "credentials_email_status"):
             self.assertIn(k, rows[0])
         self.assertEqual([r["tally_serial"] for r in s.get(P + "?license_plan=LIFETIME").json()["results"]], ["700000002"])
-        self.assertEqual([r["tally_serial"] for r in s.get(P + "?state=pending").json()["results"]], ["700000001"])
-        self.assertEqual(s.get(P + "?state=active&license_plan=TRIAL").json()["total"], 0)
+        self.assertEqual([r["tally_serial"] for r in s.get(P + "?state=active").json()["results"]], ["700000002", "700000001"])
+        self.assertEqual(s.get(P + "?state=active&license_plan=TRIAL").json()["total"], 1)
         self.assertEqual(s.get(P + "?search=700000002").json()["total"], 1)
 
     def test_exports_follow_filters_and_permission(self):

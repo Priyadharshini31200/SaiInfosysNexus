@@ -151,9 +151,9 @@ class RegistrationToCustomerListTests(Base):
         self.assertEqual(data["total"], 1)
         r = data["results"][0]
         self.assertEqual((r["tally_serial"], r["user_id"], r["email"], r["contact_number"], r["license_status"], r["license_type"], r["active_device"]),
-                         ("700123456", "700123456", "ravi@example.com", "9876543210", "PENDING", "TRIAL", ""))
+                         ("700123456", "700123456", "ravi@example.com", "9876543210", "ACTIVE", "TRIAL", ""))
         dash = s.get("/api/v1/tally-sl-admin/dashboard/").json()
-        self.assertEqual((dash["registrations"]["total"], dash["registrations"]["last_7_days"], dash["registrations"]["pending_license"]), (1, 1, 1))
+        self.assertEqual((dash["registrations"]["total"], dash["registrations"]["last_7_days"], dash["registrations"]["pending_license"]), (1, 1, 0))
         # device activation: the active device appears in the list
         self.enroll(TallyCustomer.objects.get(), self.activate(TallyCustomer.objects.get()))
         self.assertEqual(s.get(list_url).json()["results"][0]["active_device"], "Old Laptop")

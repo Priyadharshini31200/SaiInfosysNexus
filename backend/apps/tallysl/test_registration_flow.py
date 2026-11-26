@@ -28,7 +28,7 @@ class FullRegistrationFlowTests(Base):
         self.assertNotIn(temp, c.password_hash)  # hashed, never plain text
         self.assertTrue(c.welcome_email_status)
         row = self.staff(self.super).get(f"{ADM}/products/gstr2tally/customers/").json()["results"][0]
-        self.assertEqual((row["tally_serial"], row["license_status"], bool(row["welcome_email_status"])), ("700123456", "PENDING", True))
+        self.assertEqual((row["tally_serial"], row["license_status"], bool(row["welcome_email_status"])), ("700123456", "ACTIVE", True))
         self.assertEqual(self.staff(self.super).get(f"{ADM}/dashboard/").json()["registrations"]["total"], 1)
 
         login = self.call("auth/login/", {"user_id": "700123456", "password": temp, "device": DEV_A})

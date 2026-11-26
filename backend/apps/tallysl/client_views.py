@@ -160,8 +160,8 @@ class RegisterView(ClientView):
         mail = emails.send_welcome(customer, raw)
         emails.notify_superadmins_new_customer(customer)
         return Response({
-            "user_id": customer.tally_serial, "status": "registered", "license_status": "pending",
-            "message": f"Registered. A temporary password has been emailed to {emails.mask_email(customer.email)}. Your license will be activated by Sai Infosys.",
+            "user_id": customer.tally_serial, "status": "registered", "license_status": "active",
+            "message": f"Registered. A temporary password has been emailed to {emails.mask_email(customer.email)}. Your 3-day free trial is active; sign in with the emailed User ID and password.",
             "welcome_email": "submitted" if mail == "accepted" else mail,
             "email_sent_to": emails.mask_email(customer.email),
         }, status=status.HTTP_201_CREATED)

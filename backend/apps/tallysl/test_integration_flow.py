@@ -84,7 +84,7 @@ class RegistrationToReportsFlow(TestCase):
         lst = self.staff.get(f"{ADM}/products/gstr2tally/customers/").data
         row = lst["results"][0]
         self.assertEqual((lst["total"], row["tally_serial"], row["name"], row["email"], row["contact_number"], row["state"]),
-                         (1, serial, "Ravi Kumar", "ravi@example.com", "9876543210", "pending"))
+                         (1, serial, "Ravi Kumar", "ravi@example.com", "9876543210", "active"))
         # 3. login with temporary password -> must change password
         login = self.call("login_first", "post", "auth/login/", {"user_id": serial, "password": temp, "device": DEVICE})
         self.assertEqual(login.status_code, 200)

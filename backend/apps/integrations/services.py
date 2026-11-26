@@ -469,7 +469,7 @@ def register_customer(project, data, idem_key="", send_email=True, actor="", ser
                 customer = IntegrationCustomer.objects.create(
                     project=project, external_customer_id=c["external_customer_id"], name=c["customer_name"], email=c["email"],
                     contact_number=c["contact_number"], serial_number=(serial := serial_override or generate_serial(project)), user_id=serial,
-                    password_hash=make_password(password), must_change_password=True)
+                    password_hash=make_password(password), must_change_password=False)  # the issued password stays until the customer changes it
                 lic = IntegrationLicense(customer=customer, license_type=project.default_license_type, status=IntegrationLicense.PENDING)
                 if project.default_license_type == IntegrationLicense.TRIAL:  # a trial needs no payment: usable at once
                     now = timezone.now()
