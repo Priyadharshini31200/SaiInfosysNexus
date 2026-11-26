@@ -136,7 +136,7 @@ class PullSyncTests(Base):
         self.assertEqual(self.staff.post(f"{ADM}projects/MOTHYS/send-docs/", {"to": "nope"}, format="json").status_code, 400)
         hist = self.staff.get(f"{ADM}projects/MOTHYS/send-docs/").data["history"]
         self.assertEqual([h["to"] for h in hist], ["dev@example.com"])
-        sent = [m for m in mail.outbox if "API documentation" in m.subject]
+        sent = [m for m in mail.outbox if "API integration" in m.subject]
         self.assertTrue(sent)
         self.assertNotIn(self.secret, sent[0].body)
         self.assertIn("MOTHYS", sent[0].body)

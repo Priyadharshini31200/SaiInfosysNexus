@@ -40,7 +40,7 @@ class CredentialEmailContentTests(CredentialsBase):
     def test_trial_email_lists_every_field_but_never_the_trial_length(self):
         r = self.approve("TRIAL", trial_days=9).json()
         msg = mail.outbox[-1]
-        for label in ("Product Name: Barcode Auto Print", "Customer Name: Meena", f"User ID: {r['user_id']}", "Temporary Password: ", f"Serial Number: {r['serial_number']}",
+        for label in ("Product Name: Barcode AutoPrint", "Customer Name: Meena", f"User ID: {r['user_id']}", "Temporary Password: ", f"Serial Number: {r['serial_number']}",
                       "Activation Key: ", "License Plan: Trial", "Activation Date: "):
             self.assertIn(label, msg.body)
         self.assertNotIn("Expiry Date", msg.body)

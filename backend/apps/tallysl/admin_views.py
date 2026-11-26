@@ -560,7 +560,12 @@ def tally_rows(request):
         info = getattr(c, "tally_info", None)
         out.append({"id": c.pk, "product": c.product.code, "product_name": c.product.name, "tally_serial": c.tally_serial,
                     "tally_email": (info.registered_email or None) if info else None,
-                    "tally_expiry_date": info.tss_expiry_date.isoformat() if info and info.tss_expiry_date else None})
+                    "tally_expiry_date": info.tss_expiry_date.isoformat() if info and info.tss_expiry_date else None,
+                    "edition": (info.edition or None) if info else None,
+                    "license_administrator": (info.license_administrator or None) if info else None,
+                    "virtual_user_limit": info.virtual_user_limit if info else None,
+                    "tss_remaining_days": (info.tss_expiry_date - timezone.localdate()).days if info and info.tss_expiry_date else None,
+                    "reported_at": info.reported_at.isoformat() if info and info.reported_at else None})
     return out
 
 
@@ -596,9 +601,15 @@ def _fmt_iso(value):
 
 
 def _tally_table(rows):
-    body = [[str(i), r["tally_serial"], r["tally_email"] or "Not available", _fmt_plain(r["tally_expiry_date"]) or "Not available"] for i, r in enumerate(rows, 1)]
+    NA = "Not available"
+    body = [[str(i), r["tally_serial"], r["tally_email"] or NA, r["edition"] or NA, r["license_administrator"] or NA,
+             str(r["virtual_user_limit"]) if r["virtual_user_limit"] is not None else NA,
+             _fmt_plain(r["tally_expiry_date"]) or NA,
+             NA if r["tss_remaining_days"] is None else (str(r["tss_remaining_days"]) if r["tss_remaining_days"] >= 0 else "Expired")]
+            for i, r in enumerate(rows, 1)]
     return exports.Table("Tally SL Tally Details Report", exports._subtitle(len(body), ""),
-                         ["S.No", "Tally Serial No.", "Tally Email ID", "Tally Expiry Date"], body, [3, 10, 16, 9])
+                         ["S.No", "Tally Serial No.", "Tally Email ID", "Edition", "License Administrator", "Virtual Users", "Tally Expiry Date", "Days Left"],
+                         body, [3, 9, 14, 7, 12, 6, 9, 6])
 
 
 def _fmt_plain(iso):
