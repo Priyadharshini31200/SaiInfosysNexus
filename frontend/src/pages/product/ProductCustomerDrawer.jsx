@@ -144,22 +144,24 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
           </Confirm>
         )}
         {dialog?.kind === 'activate' && (() => {
-          const n = plan === 'TRIAL' ? days : plan === 'ONE_YEAR' ? years : customDays;
-          const exp = plan === 'LIFETIME' ? null : whole(n) ? new Date(Date.now() + Number(n) * (plan === 'ONE_YEAR' ? 365 : 1) * 86400000) : undefined;
-          const needsPaid = plan !== 'TRIAL' && !paid;
+          const n = plan === 'TRIAL' || plan === 'EXTEND' ? days : plan === 'ONE_YEAR' ? years : customDays;
+          const baseMs = plan === 'EXTEND' && c.expires_at && new Date(c.expires_at) > new Date() ? new Date(c.expires_at).getTime() : Date.now();
+          const exp = plan === 'LIFETIME' ? null : whole(n) ? new Date(baseMs + Number(n) * (plan === 'ONE_YEAR' ? 365 : 1) * 86400000) : undefined;
+          const needsPaid = !['TRIAL', 'EXTEND'].includes(plan) && !paid;
           const valid = exp !== undefined && !needsPaid && pwd.length >= 3 && Boolean(c.serial_number);
-          const set = (v) => (plan === 'TRIAL' ? setDays(v) : plan === 'ONE_YEAR' ? setYears(v) : setCustomDays(v));
+          const set = (v) => (plan === 'TRIAL' || plan === 'EXTEND' ? setDays(v) : plan === 'ONE_YEAR' ? setYears(v) : setCustomDays(v));
           const g = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 10px' };
           return (
             <Confirm title="Activate Customer License" confirmLabel="Save & Activate" busy={busy === 'activate'} error={dlgError} onClose={close}
-              onConfirm={() => (valid ? run('activate', act('set-license', { activation_form: true, license_type: plan, trial_days: plan === 'TRIAL' ? Number(days) : undefined, years: plan === 'ONE_YEAR' ? Number(years) : undefined, custom_days: plan === 'CUSTOM' && !customDate ? Number(customDays) : undefined, custom_expiry_date: plan === 'CUSTOM' && customDate ? customDate : undefined, paid, password: c.must_change_password === false ? undefined : pwd }), 'License activated. User ID and temporary password were emailed to the customer.') : setDlgError(needsPaid ? 'Tick "Paid — Payment Confirmed" before activating a paid licence.' : 'Enter a valid positive whole number and a password of at least 3 characters.'))}>
+              onConfirm={() => (valid ? run('activate', plan === 'EXTEND' ? act('extend-trial', { days: Number(days) }) : act('set-license', { activation_form: true, license_type: plan, trial_days: plan === 'TRIAL' ? Number(days) : undefined, years: plan === 'ONE_YEAR' ? Number(years) : undefined, custom_days: plan === 'CUSTOM' && !customDate ? Number(customDays) : undefined, custom_expiry_date: plan === 'CUSTOM' && customDate ? customDate : undefined, paid, password: c.must_change_password === false ? undefined : pwd }), 'License activated. User ID and temporary password were emailed to the customer.') : setDlgError(needsPaid ? 'Tick "Paid — Payment Confirmed" before activating a paid licence.' : 'Enter a valid positive whole number and a password of at least 3 characters.'))}>
               <div style={g}>
                 <label style={lbl}>Customer Name<input style={field} value={c.name} readOnly /></label>
                 <label style={lbl}>Email<input style={field} value={c.email} readOnly /></label>
                 <label style={lbl}>Serial Number / User ID<input style={field} value={c.serial_number || 'Unavailable'} readOnly /></label>
                 <label style={lbl}>Activation Key<input style={field} value="Existing key kept; generated internally" readOnly /></label>
-                <label style={lbl}>License Type<select style={field} value={plan} onChange={(e) => setPlan(e.target.value)}><option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="ONE_YEAR">Years</option><option value="CUSTOM">Custom</option></select></label>
-                {plan === 'LIFETIME' ? <label style={lbl}>Validity<input style={field} value="No expiry" readOnly /></label>
+                <label style={lbl}>License Type<select style={field} value={plan} onChange={(e) => setPlan(e.target.value)}><option value="TRIAL">Trial</option><option value="EXTEND">Trial Extend</option><option value="LIFETIME">Lifetime</option><option value="ONE_YEAR">Years</option><option value="CUSTOM">Custom</option></select></label>
+                {plan === 'EXTEND' ? <label style={lbl}>Additional days<input type="number" min="1" step="1" style={field} value={days} onChange={(e) => setDays(e.target.value)} /></label>
+                : plan === 'LIFETIME' ? <label style={lbl}>Validity<input style={field} value="No expiry" readOnly /></label>
                   : <label style={lbl}>{plan === 'ONE_YEAR' ? 'Validity (years)' : 'Validity (days)'}<input type="number" min="1" step="1" style={field} value={n} onChange={(e) => set(e.target.value)} /></label>}
                 <label style={lbl}>License Start Date<input style={field} value={formatDate(new Date().toISOString())} readOnly /></label>
                 <label style={lbl}>Expiry Date<input style={field} value={exp === null ? 'No expiry' : exp === undefined ? 'Enter a valid number' : formatDate(exp.toISOString())} readOnly /></label>
