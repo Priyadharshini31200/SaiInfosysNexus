@@ -479,6 +479,67 @@ class MothysProductTests(Base):
         self.assertEqual(ex.status_code, 200, ex.data)
         self.assertEqual(self.call("auth/verify", {"user_id": user, "password": pw}).status_code, 200)
 
+    def test_emailed_password_matches_stored_hash_and_error_codes_are_distinct(self):
+        from datetime import timedelta
+        from django.contrib.auth.hashers import check_password
+        from django.utils import timezone
+        from .models import IntegrationAudit, IntegrationCustomer
+        mail.outbox.clear()
+        r = self.register(external_customer_id="RG1", email="rg1@example.com", customer_name="Reg One")
+        self.assertEqual(r.status_code, 201, r.data)
+        user, pw = r.data["data"]["user_id"], self.password()  # the password actually emailed, not a test-made one
+        cust = IntegrationCustomer.objects.get(user_id=user, project=self.project)
+        self.assertTrue(check_password(pw, cust.password_hash))
+        self.assertNotIn(pw, str(r.data))  # never in the API response
+        ok = self.call("auth/verify", {"user_id": user, "password": pw})
+        self.assertEqual(ok.status_code, 200, ok.data)
+        self.assertEqual((ok.data["data"]["authorized"], ok.data["data"]["license"]["state"]), (True, "ACTIVE"))  # trial usable before device pairing
+        self.assertEqual(ok.data["data"]["active_devices"], 0)
+        # wrong password / unknown user = INVALID_CREDENTIALS; wrong app secret = UNAUTHENTICATED (different problem)
+        self.assertEqual(self.call("auth/verify", {"user_id": user, "password": pw + "x"}).data["error"]["code"], "INVALID_CREDENTIALS")
+        self.assertEqual(self.call("auth/verify", {"user_id": "000000000", "password": pw}).data["error"]["code"], "INVALID_CREDENTIALS")
+        self.assertEqual(self.call("auth/verify", {"user_id": user, "password": pw}, secret="wrong-secret").data["error"]["code"], "UNAUTHENTICATED")
+        # duplicate registration keeps the original credentials
+        self.assertEqual(self.register(external_customer_id="RG1", email="rg1@example.com", customer_name="Reg One").status_code, 409)
+        self.assertEqual(self.call("auth/verify", {"user_id": user, "password": pw}).status_code, 200)
+        # expiry is separate: credentials stay valid, the licence is reported expired and not authorised
+        cust.license.expires_at = timezone.now() - timedelta(days=1)
+        cust.license.save()
+        ex = self.call("auth/verify", {"user_id": user, "password": pw})
+        self.assertEqual((ex.status_code, ex.data["data"]["authorized"], ex.data["data"]["denial_reason"]), (200, False, "EXPIRED"))
+        # no plaintext password in audit records
+        self.assertFalse(any(pw in (a.detail or "") for a in IntegrationAudit.objects.all()))
+
+    def test_ten_customers_each_get_unique_id_one_email_active_trial_and_working_login(self):
+        from django.contrib.auth.hashers import check_password
+        from .models import IntegrationCustomer
+        seen, pws = set(), {}
+        for i in range(10):
+            mail.outbox.clear()
+            r = self.register(external_customer_id=f"BULK{i}", email=f"bulk{i}@example.com", customer_name=f"Bulk Customer {i}")
+            self.assertEqual(r.status_code, 201, r.data)
+            d = r.data["data"]
+            self.assertNotIn(d["user_id"], seen)
+            seen.add(d["user_id"])
+            welcome = [m for m in mail.outbox if "Your Login Details" in m.subject]
+            self.assertEqual(len(welcome), 1)
+            self.assertEqual(welcome[0].to, [f"bulk{i}@example.com"])
+            pw = self.password()
+            pws[d["user_id"]] = pw
+            c = IntegrationCustomer.objects.get(user_id=d["user_id"])
+            self.assertTrue(check_password(pw, c.password_hash))
+            self.assertEqual((c.license.license_type, c.license.status, c.license.paid), ("TRIAL", "ACTIVE", False))
+            self.assertEqual(round((c.license.expires_at - c.license.starts_at).total_seconds() / 86400), 3)
+            # a retry must not email again or change the password
+            mail.outbox.clear()
+            self.assertEqual(self.register(external_customer_id=f"BULK{i}", email=f"bulk{i}@example.com", customer_name=f"Bulk Customer {i}").status_code, 409)
+            self.assertEqual(len(mail.outbox), 0)
+        for user, pw in pws.items():
+            ok = self.call("auth/verify", {"user_id": user, "password": pw})
+            self.assertEqual((ok.status_code, ok.data["data"]["authorized"]), (200, True))
+            self.assertEqual(self.call("auth/verify", {"user_id": user, "password": pw + "!"}).status_code, 401)
+        self.assertEqual(IntegrationCustomer.objects.count(), 10)
+
     def test_paid_required_custom_date_credentials_unchanged_and_trial_extend(self):
         from datetime import timedelta
         from django.utils import timezone
