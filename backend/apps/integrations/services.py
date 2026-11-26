@@ -335,7 +335,7 @@ def _years_expiry(lic, base, years=None):
     project = lic.customer.project
     if project.license_policy == "CALENDAR":
         return add_calendar_years(base, years or project.validity_years)
-    return base + timedelta(days=365)  # LEGACY projects (Mothys): the existing rule, unchanged
+    return base + timedelta(days=365 * (years or 1))  # LEGACY projects (Mothys): 365-day years; one year unless the admin picked more
 
 
 def grant(lic, license_type, now=None, days=None, years=None, actor=""):

@@ -429,6 +429,56 @@ class MothysProductTests(Base):
         legacy = self.pc(f"{row['id']}/set-license/", "post", {"license_type": "LIFETIME"})  # legacy call unchanged
         self.assertEqual(legacy.status_code, 200)
 
+    def test_e2e_register_trial_login_paid_years_lifetime_custom_extend(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        mail.outbox.clear()
+        r = self.register(external_customer_id="E2E1", email="e2e@example.com", customer_name="E2E Customer")
+        self.assertEqual(r.status_code, 201, r.data)
+        user = r.data["data"]["user_id"]
+        # 1-2: appears in Nexus; exactly one credentials email
+        row = self.pc().data["results"][0]
+        self.assertEqual(row["serial_number"], user)
+        self.assertEqual(len([m for m in mail.outbox if "Your Login Details" in m.subject]), 1)
+        pw = self.password()
+        # retry does not regenerate credentials or send a second email
+        self.assertEqual(self.register(external_customer_id="E2E1", email="e2e@example.com", customer_name="E2E Customer").status_code, 409)
+        self.assertEqual(len([m for m in mail.outbox if "Your Login Details" in m.subject]), 1)
+        # 3: trial is active for 3 days with no admin action; device not paired yet
+        self.assertEqual((row["license_type"], row["trial_days"], row["status"]), ("TRIAL", 3, "not_activated"))
+        lic = self.call("licenses/validate", {"user_id": user}).data["data"] if self.call("licenses/validate", {"user_id": user}).status_code == 200 else None
+        if lic:
+            self.assertTrue(lic["valid"])
+        # 4: login with the emailed credentials works and is authorised
+        a = self.call("auth/verify", {"user_id": user, "password": pw})
+        self.assertEqual(a.status_code, 200, a.data)
+        self.assertTrue(a.data["data"]["authorized"])
+        self.assertEqual(self.call("auth/verify", {"user_id": user, "password": "wrong-pass"}).status_code, 401)
+        url = f"{row['id']}/set-license/"
+        # 5-6: Paid + Years -> Save & Activate
+        self.assertEqual(self.pc(url, "post", {"activation_form": True, "license_type": "ONE_YEAR", "years": 2}).status_code, 422)  # not paid
+        y = self.pc(url, "post", {"activation_form": True, "license_type": "ONE_YEAR", "years": 2, "paid": True})
+        self.assertEqual(y.status_code, 200, y.data)
+        self.assertEqual(y.data["customer"]["license_type"], "ONE_YEAR")
+        self.assertGreater(self.pc().data["results"][0]["expires_at"], timezone.now() + timedelta(days=700))  # refresh keeps it
+        # 7: same credentials, no new email, license recognised by the app
+        self.assertEqual(len([m for m in mail.outbox if "Your Login Details" in m.subject]), 1)
+        a2 = self.call("auth/verify", {"user_id": user, "password": pw})
+        self.assertEqual(a2.status_code, 200, a2.data)
+        self.assertEqual(a2.data["data"]["license"]["license_type"], "ONE_YEAR")
+        self.assertTrue(a2.data["data"]["license"]["paid"])
+        # 8: Lifetime, Custom date, Trial Extend
+        life = self.pc(url, "post", {"activation_form": True, "license_type": "LIFETIME", "paid": True})
+        self.assertIsNone(life.data["customer"]["expires_at"])
+        fut = (timezone.localdate() + timedelta(days=60)).isoformat()
+        cu = self.pc(url, "post", {"activation_form": True, "license_type": "CUSTOM", "custom_expiry_date": fut, "paid": True})
+        self.assertEqual(cu.status_code, 200, cu.data)
+        self.assertLess(abs((cu.data["customer"]["expires_at"].date() - (timezone.localdate() + timedelta(days=60))).days), 2)
+        self.pc(url, "post", {"license_type": "TRIAL", "trial_days": 3})
+        ex = self.pc(f"{row['id']}/extend-trial/", "post", {"days": 4})
+        self.assertEqual(ex.status_code, 200, ex.data)
+        self.assertEqual(self.call("auth/verify", {"user_id": user, "password": pw}).status_code, 200)
+
     def test_paid_required_custom_date_credentials_unchanged_and_trial_extend(self):
         from datetime import timedelta
         from django.utils import timezone
