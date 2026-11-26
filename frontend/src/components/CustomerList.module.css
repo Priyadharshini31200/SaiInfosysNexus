@@ -732,3 +732,8 @@
   .compact .search { flex-basis: 100%; }
   .compact .tools { flex-wrap: wrap; margin-left: 0; }
 }
+
+/* Activate Customer License popup (product drawer): a moderately wider, centred dialog */
+.activateWide {
+  width: min(680px, 100%) !important;
+}
