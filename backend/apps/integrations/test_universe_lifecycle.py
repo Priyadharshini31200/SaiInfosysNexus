@@ -119,8 +119,38 @@ class NonTallyLifecycle(Lifecycle):
 
     def test_push_registration_is_queued_too(self):
         r = self.v1("customers/register", {"external_customer_id": "P1", "customer_name": "Pushed", "email": "p@example.com", "contact_number": "9876543210"})
+        # confirmed workflow: an eligible Tally-free push is REGISTERED with an ACTIVE 3-day Trial and no admin step
+        self.assertEqual((r.status_code, r.data["data"]["status"], r.data["data"]["license_issued"], r.data["data"]["license_type"], r.data["data"]["license_state"]),
+                         (201, "REGISTERED", True, "TRIAL", "ACTIVE"))
+        c = IntegrationCustomer.objects.get()
+        self.assertEqual((c.license.license_type, round((c.license.expires_at - c.license.starts_at).total_seconds() / 86400)), ("TRIAL", 3))
+        self.assertEqual(len(mail.outbox), 1)  # credentials emailed exactly once
+        self.assertIn(c.user_id, mail.outbox[0].body)
+        self.v1("customers/register", {"external_customer_id": "P1", "customer_name": "Pushed", "email": "p@example.com", "contact_number": "9876543210"})  # retried delivery
+        self.assertEqual((IntegrationCustomer.objects.count(), len(mail.outbox)), (1, 1))  # no duplicate customer, licence or email
+
+    def test_trial_customer_can_log_in_immediately_but_device_authorization_still_applies(self):
+        r = self.v1("customers/register", {"external_customer_id": "P2", "customer_name": "Pushed", "email": "p2@example.com", "contact_number": "9876543210"})
+        c = IntegrationCustomer.objects.get(external_customer_id="P2")
+        pw = re.search(r"Temporary Password: (\S+)", mail.outbox[0].body)
+        self.assertTrue(pw, mail.outbox[0].body)
+        v = self.v1("auth/verify", {"user_id": c.user_id, "password": pw.group(1)}).data["data"]
+        self.assertEqual((v["verified"], v["authorized"], v["license"]["state"], v["license"]["license_type"]), (True, True, "ACTIVE", "TRIAL"))
+        self.assertEqual(v["session_id"], None)  # login is not a device authorisation: no session yet
+        ok = self.v1("devices/authorize", {"user_id": c.user_id, "password": pw.group(1), "device_id": "A"})
+        self.assertEqual(ok.data["data"]["status"], "AUTHORIZED")
+        two = self.v1("devices/authorize", {"user_id": c.user_id, "password": pw.group(1), "device_id": "B"})
+        self.assertEqual((two.status_code, two.data["error"]["code"]), (409, "TRANSFER_CONFIRMATION_REQUIRED"))  # single-device rule intact
+
+    def test_repeated_push_never_auto_approves_a_registration_queued_by_sync_or_held(self):
+        self.put_cfg()
+        self.sync()
+        reg = IntegrationRegistration.objects.order_by("id").first()
+        body = {"external_customer_id": reg.external_customer_id, "customer_name": reg.name, "email": reg.email, "contact_number": reg.contact_number}
+        r = self.v1("customers/register", body)
         self.assertEqual((r.status_code, r.data["data"]["status"], r.data["data"]["license_issued"]), (202, "PENDING_REVIEW", False))
         self.assertFalse(IntegrationCustomer.objects.exists())
+        self.assertEqual(mail.outbox, [])
 
     def test_save_and_allow_generates_credentials_and_is_idempotent(self):
         out, reg = self.make_customer(trial_days=5)
@@ -131,7 +161,7 @@ class NonTallyLifecycle(Lifecycle):
         c = IntegrationCustomer.objects.get(user_id=out["user_id"])
         self.assertNotEqual(c.password_hash, pw)
         self.assertTrue(check_password(pw, c.password_hash))
-        self.assertTrue(c.must_change_password)
+        self.assertFalse(c.must_change_password)  # the issued password works at once (confirmed workflow); an admin reset sets it again
         key = IntegrationActivationKey.objects.get(license=c.license)
         self.assertTrue(key.internal)
         self.assertEqual(len(key.key_hash), 64)  # only a hash is stored
@@ -176,7 +206,8 @@ class NonTallyLifecycle(Lifecycle):
         out, _ = self.make_customer()
         uid, pw = out["user_id"], out["temporary_password"]
         v = self.v1("auth/verify", {"user_id": uid, "password": pw}).data["data"]
-        self.assertEqual((v["verified"], v["authorized"], v["must_change_password"]), (True, True, True))
+        self.assertEqual((v["verified"], v["authorized"], v["must_change_password"]), (True, True, False))
+        IntegrationCustomer.objects.filter(user_id=uid).update(must_change_password=True)  # e.g. after an admin password reset
         denied = self.v1("devices/authorize", {"user_id": uid, "password": pw, "device_id": "A"})
         self.assertEqual((denied.status_code, denied.data["error"]["code"]), (403, "PASSWORD_CHANGE_REQUIRED"))
         self.assertEqual(self.v1("auth/change-password", {"user_id": uid, "current_password": pw, "new_password": "Better#Pass1"}).status_code, 200)
@@ -250,23 +281,36 @@ class TallyLifecycle(Lifecycle):
             self.assertEqual(self.v1("tally/submit", {"external_customer_id": "T1", "tally": bad}).data["data"]["status"], "PENDING_TALLY_VERIFICATION", drop)
         self.assertEqual(self.v1("tally/submit", {"external_customer_id": "T1", "tally": {**GOOD_TALLY, "customer_email": "other@example.com"}}).data["data"]["status"], "PENDING_TALLY_VERIFICATION")
 
-    def test_connector_supplies_valid_tally_data_then_approval_uses_tally_serial_as_user_id(self):
-        self.v1("customers/register", {"external_customer_id": "T1", "customer_name": "Tara", "email": "t@example.com", "contact_number": "9876543210"})
+    def test_verified_tally_data_starts_the_automatic_trial_and_keeps_the_tally_serial(self):
+        r0 = self.v1("customers/register", {"external_customer_id": "T1", "customer_name": "Tara", "email": "t@example.com", "contact_number": "9876543210"})
+        self.assertEqual((r0.status_code, r0.data["data"]["license_issued"]), (202, False))  # mandatory Tally data missing: held, nothing issued
+        self.assertEqual((IntegrationCustomer.objects.count(), len(mail.outbox)), (0, 0))
         r = self.v1("tally/submit", {"external_customer_id": "T1", "tally": GOOD_TALLY})
-        self.assertEqual(r.data["data"]["status"], "PENDING_REVIEW")
-        reg = IntegrationRegistration.objects.get()
-        row = self.staff.get(f"{ADM}registrations/{reg.pk}/").data["registration"]
-        self.assertEqual((row["tally_result"], row["user_id"]), ("Verified", "Assigned on approval"))
-        out = self.approve(reg.pk, license_type="ONE_YEAR", years=1).data["result"]
-        self.assertRegex(out["user_id"], r"^9\d{8}$")  # 9-digit Nexus User ID ...
+        self.assertEqual((r.status_code, r.data["data"]["status"], r.data["data"]["license_type"], r.data["data"]["license_state"]), (201, "REGISTERED", "TRIAL", "ACTIVE"))
+        self.assertEqual(len(mail.outbox), 1)  # credentials once, only after verification
+        out_user = r.data["data"]["user_id"]
+        self.assertRegex(out_user, r"^9\d{8}$")  # 9-digit Nexus User ID ...
         c = IntegrationCustomer.objects.get()
         self.assertEqual(c.serial_number, "756123456")  # ... and the verified Tally serial is preserved separately
         self.assertNotEqual(c.user_id, c.serial_number)
         info = IntegrationTallyInfo.objects.get(customer=c)
         self.assertEqual((info.edition, info.license_admin, info.virtual_user_limit), ("Gold", "Ravi", 5))
-        pw2 = "TallyPass#1"
-        self.v1("auth/change-password", {"user_id": c.user_id, "current_password": out["temporary_password"], "new_password": pw2})
-        self.assertEqual(self.v1("devices/authorize", {"user_id": c.user_id, "password": pw2, "device_id": "A"}).data["data"]["status"], "AUTHORIZED")
+        self.assertEqual(round((c.license.expires_at - c.license.starts_at).total_seconds() / 86400), 3)
+        pw = re.search(r"Temporary Password: (\S+)", mail.outbox[0].body).group(1)
+        self.assertEqual(self.v1("devices/authorize", {"user_id": c.user_id, "password": pw, "device_id": "A"}).data["data"]["status"], "AUTHORIZED")  # device auth still required and works
+        again = self.v1("tally/submit", {"external_customer_id": "T1", "tally": GOOD_TALLY})
+        self.assertEqual(again.status_code, 409)  # no duplicate customer / licence / email
+        self.assertEqual((IntegrationCustomer.objects.count(), len(mail.outbox)), (1, 1))
+
+    def test_admin_approval_of_a_synced_tally_registration_still_works(self):
+        self.v1("customers/register", {"external_customer_id": "T1", "customer_name": "Tara", "email": "t@example.com", "contact_number": "9876543210"})
+        reg = IntegrationRegistration.objects.get()
+        IntegrationRegistration.objects.filter(pk=reg.pk).update(source="API SYNC")  # queued by sync, not by push
+        r = self.v1("tally/submit", {"external_customer_id": "T1", "tally": GOOD_TALLY})
+        self.assertEqual(r.data["data"]["status"], "PENDING_REVIEW")  # admin review preserved for non-push registrations
+        out = self.approve(reg.pk, license_type="ONE_YEAR", years=1).data["result"]
+        self.assertRegex(out["user_id"], r"^9\d{8}$")
+        self.assertEqual(IntegrationCustomer.objects.get().serial_number, "756123456")
 
     def test_retry_verification_through_the_configured_tally_api(self):
         self.put_cfg(tally_path="/tally")

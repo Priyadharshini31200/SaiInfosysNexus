@@ -306,7 +306,7 @@ def customer_detail(c):
         },
         "license": {
             "plan": services.plan_of(lic), "type": lic.license_type, "type_label": lic.get_license_type_display(), "status": lic.status, "state": services.license_state(lic),
-            "trial_days": lic.trial_days, "activated_at": _dt(lic.activated_at),
+            "trial_days": lic.trial_days, "paid": lic.paid, "activated_at": _dt(lic.activated_at),
             "expires_at": _dt(None if lic.license_type == "LIFETIME" else lic.expires_at),
             "activation_key_suffix": lic.activation_key_suffix, "activation_key_issued_at": _dt(lic.activation_key_issued_at),
         },
@@ -356,9 +356,13 @@ class LicenseActionView(StaffView):
         c = self.customer_or_404(self.product_or_404(product), pk, self.ACTIONS[action])
         ip, user, body = self.ip(), request.user, request.data
         key = None
+        if action in ("activate", "change") and str(body.get("license_plan") or body.get("license_type") or "").upper() not in ("", "TRIAL") \
+                and "paid" in body and body.get("paid") is not True and not c.license.paid:
+            raise services.TallyError("Confirm payment (Paid) before activating a paid license.", 422, "payment_required")
         if action == "activate":
             c, key = services.activate_license(c, body.get("license_plan") or body.get("license_type"), body.get("trial_days"), user, ip,
-                                               years=body.get("years"), custom_days=body.get("custom_days"), password=body.get("password") or None)
+                                               years=body.get("years"), custom_days=body.get("custom_days"), password=body.get("password") or None,
+                                               keep_key="paid" in body)  # the shared popup never regenerates an existing key
         elif action == "extend-trial":
             c = services.extend_trial(c, body.get("days"), user, ip, body.get("reason") or "")
         elif action == "change":
@@ -372,6 +376,9 @@ class LicenseActionView(StaffView):
             c = services.inactivate_license(c, user, ip)
         else:
             c, key = services.reissue_key(c, user, ip)
+        if body.get("paid") is True and action in ("activate", "change") and not c.license.paid:
+            TallyLicense.objects.filter(customer=c).update(paid=True, paid_at=timezone.now())
+            services.audit("PAYMENT_CONFIRMED", "Paid confirmed at license activation", customer=c, actor=services.actor_name(user), ip=ip)
         # Activation Keys are emailed ONLY when the customer requests activation (Activate User), never by a staff action.
         if key:
             TallyLicense.objects.filter(customer=c).update(activation_key_email_status="on_request")

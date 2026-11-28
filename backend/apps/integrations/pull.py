@@ -446,7 +446,7 @@ def detect_fields(project, sample=None):
     cfg = IntegrationApiConfig.objects.filter(project=project).first()
     if cfg is None:
         return {"ok": False, "message": "Save the API configuration first."}
-    if cfg.sync_mode == "PUSH" or sample not in (None, ""):
+    if cfg.sync_mode in PUSH_MODES or sample not in (None, ""):
         record, error = parse_sample(sample)
         source = "sample"
         if error:
@@ -531,7 +531,7 @@ def probe(project, kind, sample_id="", sample=None):
     cfg = IntegrationApiConfig.objects.filter(project=project).first()
     if cfg is None:
         return {"ok": False, "message": "Save the API configuration first."}
-    if cfg.sync_mode == "PUSH" and kind in ("customer", "preview", "mapping"):
+    if cfg.sync_mode in PUSH_MODES and kind in ("customer", "preview", "mapping"):
         return _push_probe(project, cfg, kind, sample)
     try:
         if kind in ("customer", "preview", "mapping"):
@@ -577,6 +577,9 @@ def probe(project, kind, sample_id="", sample=None):
     return {"ok": False, "message": "Unknown check."}
 
 
+PUSH_MODES = ("PUSH", "REALTIME")  # PUSH = Authenticated Webhook; REALTIME = Real-time Push to Nexus (project backend calls customers/register)
+
+
 def _int_or(value, default, low, high):
     try:
         v = int(value)
@@ -588,7 +591,7 @@ def _int_or(value, default, low, high):
 def validate_config(data):
     errors, out = {}, {}
     sync_mode = data.get("sync_mode", "POLL")
-    poll = sync_mode != "PUSH"  # Authenticated Webhook: the project calls Nexus, so the polling-only settings are not validated
+    poll = sync_mode not in PUSH_MODES  # Authenticated Webhook: the project calls Nexus, so the polling-only settings are not validated
     outbound = any(str(data.get(k) or "").strip() for k in ("product_path", "identity_path", "usage_path", "tally_path"))
     method = str(data.get("customer_method", "GET")).upper()
     if method not in ("GET", "POST"):
@@ -632,8 +635,8 @@ def validate_config(data):
     else:  # not used in webhook mode: keep any sensible value, otherwise the defaults - never a validation error
         size = _int_or(pag.get("page_size"), 100, 1, 1000)
         interval = _int_or(data.get("sync_interval_minutes"), 60, 5, 1440)
-    if sync_mode not in ("POLL", "PUSH"):
-        errors["sync_mode"] = ["Choose Polling or Push (the project calls Nexus)."]
+    if sync_mode not in ("POLL", *PUSH_MODES):
+        errors["sync_mode"] = ["Choose Scheduled Polling, Authenticated Webhook or Real-time Push to Nexus."]
     paths = {}
     for key in ("product_path", "identity_path", "usage_path"):
         v = str(data.get(key, "")).strip()
@@ -662,7 +665,7 @@ def pull_sync(project, actor="", max_pages=50):
         cfg = IntegrationApiConfig.objects.filter(project=project).first()
         if cfg is None:
             raise IntegrationError("NOT_CONFIGURED", "The customer registration API is not configured.", 409)
-        if cfg.sync_mode == "PUSH":  # webhook projects have no Customer List API to read: never call one (that produced the HTTP 404)
+        if cfg.sync_mode in PUSH_MODES:  # webhook projects have no Customer List API to read: never call one (that produced the HTTP 404)
             # wording deliberately avoids words the UI maps to other messages (auth, credential, url, host, connect)
             raise IntegrationError("PUSH_MODE_NO_PULL", "This project uses Webhook (push) delivery: customers arrive when the project's backend sends them "
                                    "to Nexus (POST /integrations/v1/customers/register), so there is nothing for Sync Now to fetch. "

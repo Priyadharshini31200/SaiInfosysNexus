@@ -236,7 +236,7 @@ function LogsTab({ code, allowSync, apiBase, onBack }) {
     try { const r = await integrationsApi.syncCustomers(code); notify(`Sync finished: ${r.result.created} new, ${r.result.existing} existing, ${r.result.failed} failed.`); } catch (e) { notify(friendly(e.message), 'error'); } finally { setBusy(false); load(); }
   };
   const cp = cfg?.checkpoint;
-  const push = cfg?.config?.sync_mode === 'PUSH';
+  const push = ['PUSH', 'REALTIME'].includes(cfg?.config?.sync_mode);
   const regs = audit.filter((a) => /^(registration\.received|registration\.rejected|customer\.registered)$/.test(a.action || '')); // inbound events only, not staff approvals
   const lastReg = regs.find((a) => a.ok && a.action === 'registration.received') || regs.find((a) => a.ok);
   const lastEvent = audit.find((a) => /^(registration\.received|registration\.rejected|api\.unauthenticated|api\.project_mismatch)$/.test(a.action || '')); // newest real inbound attempt
@@ -273,7 +273,7 @@ const STEP_LABELS = [['config', 'API Setup'], ['mapping', 'Test & Mapping'], ['d
 /** Four-step guided workflow. Badges come only from saved backend state, never from a click alone. */
 function Stepper({ tab, isSuper, project, steps, onGo }) {
   const v = steps?.cfg?.validation || {};
-  const push = steps?.cfg?.sync_mode === 'PUSH';
+  const push = ['PUSH', 'REALTIME'].includes(steps?.cfg?.sync_mode);
   const failed = (v.customer && !v.customer.ok) || (v.mapping && !v.mapping.ok);
   const state = {
     config: !steps ? 'Loading' : steps.cfg ? 'Saved' : 'Not Started',

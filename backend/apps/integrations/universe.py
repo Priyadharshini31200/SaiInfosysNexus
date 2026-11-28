@@ -133,6 +133,15 @@ def ingest_response(reg):
                  "message": "Registration received. Credentials and the licence are issued only after approval in Nexus."}
 
 
+def auto_trial_response(reg):
+    """Automatic Trial for an eligible (verified, or Tally-free) PUSH registration: REGISTERED -> ACTIVE Trial, credentials emailed once.
+    Tally-incomplete and HELD/REJECTED registrations never reach here, so verification and admin decisions are never bypassed."""
+    out = approve(reg.pk, "TRIAL", None, None, actor="auto-trial")
+    return 201, {"status": "REGISTERED", "customer_id": out["customer_id"], "user_id": out["user_id"], "serial_number": out["serial_number"],
+                 "license_type": "TRIAL", "license_state": out["license"]["state"], "expires_at": out["license"]["expires_at"],
+                 "welcome_email": out["setup_email"], "license_issued": True}
+
+
 def submit_tally(project, data, actor="connector"):
     """Secure connector / agent path: the project backend submits the customer's Tally details for a pending registration."""
     reg = Reg.objects.filter(project=project, external_customer_id=str(data.get("external_customer_id") or "")).first()
@@ -146,6 +155,8 @@ def submit_tally(project, data, actor="connector"):
     _evaluate(reg, c, data.get("tally") or {})
     reg.save()
     s.audit(project, "tally.submitted", reg.external_customer_id, ok=reg.status != Reg.PENDING_TALLY, actor=actor, detail=reg.tally_error[:200])
+    if reg.status == Reg.PENDING_REVIEW and reg.source == "PUSH":  # verification just succeeded for a pushed registration: start the Trial
+        return auto_trial_response(reg)
     return ingest_response(reg)
 
 

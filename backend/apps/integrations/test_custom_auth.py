@@ -287,12 +287,15 @@ class PushModeSyncTests(Base):
         body = {"project_code": "PSH001", "external_customer_id": "EXT-9", "customer_name": "Webhook Customer", "email": "wh@example.com", "contact_number": "9876500009"}
         r = self.call("customers/register", body, cid=cid, secret=secret)
         self.assertIn(r.status_code, (200, 201, 202), r.data)
-        self.assertEqual(r.data["data"]["status"], "PENDING_REVIEW")  # new projects: approval first, nothing issued yet
+        self.assertEqual((r.status_code, r.data["data"]["status"], r.data["data"]["license_type"], r.data["data"]["license_state"]), (201, "REGISTERED", "TRIAL", "ACTIVE"))  # automatic Trial
         reg = IntegrationRegistration.objects.get(project__code="PSH001", external_customer_id="EXT-9")
-        self.assertEqual((reg.name, reg.email, reg.contact_number), ("Webhook Customer", "wh@example.com", "9876500009"))
-        self.assertFalse(IntegrationCustomer.objects.filter(project__code="PSH001").exists())  # no customer / licence before approval
-        self.call("customers/register", body, cid=cid, secret=secret)  # the same event delivered again
+        self.assertEqual((reg.name, reg.email, reg.contact_number, reg.status), ("Webhook Customer", "wh@example.com", "9876500009", "APPROVED"))
+        cust = IntegrationCustomer.objects.get(project__code="PSH001", external_customer_id="EXT-9")
+        self.assertEqual((cust.license.license_type, round((cust.license.expires_at - cust.license.starts_at).total_seconds() / 86400)), ("TRIAL", 3))
+        dup = self.call("customers/register", body, cid=cid, secret=secret)  # the same event delivered again
+        self.assertEqual(dup.status_code, 409)
         self.assertEqual(IntegrationRegistration.objects.filter(project__code="PSH001", external_customer_id="EXT-9").count(), 1)  # no duplicate
+        self.assertEqual(IntegrationCustomer.objects.filter(project__code="PSH001").count(), 1)
         self.assertTrue(IntegrationAudit.objects.filter(project__code="PSH001").exists())
         self.assertEqual(self.call("customers/register", {**body, "project_code": "MOTHYS"}, cid=cid, secret=secret).status_code, 403)  # credentials are project-scoped
         self.assertEqual(self.call("customers/register", body, cid=cid, secret="wrong").status_code, 401)
@@ -369,29 +372,37 @@ class PushModeSyncTests(Base):
                 "contact_number": "9876500077", "company_name": "Kavya Traders"}
         mail.outbox.clear()
         r = self.call("customers/register", body, cid=cid, secret=secret, HTTP_IDEMPOTENCY_KEY="evt-77")
-        self.assertEqual(r.data["data"]["status"], "PENDING_REVIEW")
-        self.assertEqual(len(mail.outbox), 0)  # approval first: no credentials before Save & Allow
+        self.assertEqual(r.data["data"]["status"], "REGISTERED")  # automatic Trial
+        self.assertEqual(len([m for m in mail.outbox if "kavya@example.com" in m.to]), 1)  # credentials once
         self.call("customers/register", body, cid=cid, secret=secret, HTTP_IDEMPOTENCY_KEY="evt-77")  # retried delivery
         self.assertEqual(IntegrationRegistration.objects.filter(project__code="PSH001", external_customer_id="C-77").count(), 1)
+        self.assertEqual(len([m for m in mail.outbox if "kavya@example.com" in m.to]), 1)  # retry: no second email
+        self.assertEqual(IntegrationCustomer.objects.filter(project__code="PSH001").count(), 1)
+        # admin-queued registrations (polling / manual) still use Pending Review -> Save & Allow, exactly once
+        from . import universe
+        from .models import IntegrationProject
+        mail.outbox.clear()
+        universe.ingest(IntegrationProject.objects.get(code="PSH001"), {**body, "external_customer_id": "C-78", "email": "kavya2@example.com", "contact_number": "9876500078"}, {}, actor="sync")
+        self.assertEqual(len(mail.outbox), 0)  # approval first: no credentials before Save & Allow
         rows = self.staff.get(base).data["results"]
-        row = next(x for x in rows if x.get("email") == "kavya@example.com")  # appears automatically, no re-entry
+        row = next(x for x in rows if x.get("email") == "kavya2@example.com")  # appears automatically, no re-entry
         self.assertEqual(row["kind"], "registration")
         self.assertIn("Pending", row["status"])
-        reg = IntegrationRegistration.objects.get(project__code="PSH001", external_customer_id="C-77")
+        reg = IntegrationRegistration.objects.get(project__code="PSH001", external_customer_id="C-78")
         popup = self.staff.get(f"{base}registration/{reg.pk}/?license_type=ONE_YEAR&years=1").data["record"]
         self.assertEqual(popup["registration"]["company_name"], "Kavya Traders")
         out = self.staff.post(f"{base}registration/{reg.pk}/approve/", {"license_type": "ONE_YEAR", "years": 1}, format="json").data["result"]
         self.assertRegex(out["user_id"], r"^9\d{8}$")
-        cust = IntegrationCustomer.objects.get(project__code="PSH001", external_customer_id="C-77")
-        self.assertEqual((cust.name, cust.email, cust.license.license_type), ("Kavya", "kavya@example.com", "ONE_YEAR"))
-        sent = [m for m in mail.outbox if "kavya@example.com" in m.to]
+        cust = IntegrationCustomer.objects.get(project__code="PSH001", external_customer_id="C-78")
+        self.assertEqual((cust.name, cust.email, cust.license.license_type), ("Kavya", "kavya2@example.com", "ONE_YEAR"))
+        sent = [m for m in mail.outbox if "kavya2@example.com" in m.to]
         self.assertEqual(len(sent), 1)  # the welcome email, once
         self.assertIn(out["user_id"], sent[0].body)
         self.assertNotIn(secret, sent[0].body)  # never the Nexus API secret
         again = self.staff.post(f"{base}registration/{reg.pk}/approve/", {"license_type": "ONE_YEAR"}, format="json").data["result"]
         self.assertTrue(again["already_approved"])
-        self.assertEqual(len([m for m in mail.outbox if "kavya@example.com" in m.to]), 1)  # repeated Save & Allow: no duplicate email
-        self.assertEqual(IntegrationCustomer.objects.filter(project__code="PSH001").count(), 1)
+        self.assertEqual(len([m for m in mail.outbox if "kavya2@example.com" in m.to]), 1)  # repeated Save & Allow: no duplicate email
+        self.assertEqual(IntegrationCustomer.objects.filter(project__code="PSH001").count(), 2)
         self.assertFalse(IntegrationCustomer.objects.filter(project__code="MOTHYS", email="kavya@example.com").exists())
 
 
@@ -455,10 +466,12 @@ class SyncModeValidationTests(Base):
         bad = self.call("customers/register", body, cid=cid, secret="wrong-secret")
         self.assertEqual(bad.status_code, 401)
         # 1, 3: correct credentials accepted, saved under the project
-        ok = self.call("customers/register", body, cid=cid, secret=secret)
-        self.assertEqual((ok.status_code in (200, 201, 202), ok.data["data"]["status"]), (True, "PENDING_REVIEW"))
-        # 4-5: in the Customer List as pending; 6: nothing issued yet; 7: no duplicate
-        self.call("customers/register", body, cid=cid, secret=secret)
+        from . import universe
+        from .models import IntegrationProject
+        universe.ingest(IntegrationProject.objects.get(code="PSH001"), body, {}, actor="sync")  # queued for review (polling / manual path)
+        # 4-5: in the Customer List as pending; 6: nothing issued yet; 7: no duplicate (a repeated push never auto-approves it)
+        again = self.call("customers/register", body, cid=cid, secret=secret)
+        self.assertEqual((again.status_code, again.data["data"]["status"], again.data["data"]["license_issued"]), (202, "PENDING_REVIEW", False))
         rows = [r for r in self.staff.get(base).data["results"] if r["email"] == "test-inbox@example.com"]
         self.assertEqual(len(rows), 1)
         self.assertEqual((rows[0]["kind"], rows[0]["status"]), ("registration", "Pending Review"))
@@ -509,11 +522,12 @@ class SyncModeValidationTests(Base):
         self.assertTrue(IntegrationCredential.objects.filter(project__code="MOTHYS", active=True).exists())  # other projects untouched
 
     def _pending(self, ext="AP1", email="ap1@example.com"):
-        from .models import IntegrationRegistration
+        """A registration queued for admin review (Scheduled Polling / manual entry). Real-time pushes of eligible customers start the automatic Trial instead."""
+        from . import universe
+        from .models import IntegrationProject, IntegrationRegistration
         if not hasattr(self, "_creds"):
             self._creds = PushModeSyncTests.new_project(self)
-        cid, secret = self._creds
-        self.call("customers/register", {"project_code": "PSH001", "external_customer_id": ext, "customer_name": "Approve Test", "email": email, "contact_number": "9876500031"}, cid=cid, secret=secret)
+        universe.ingest(IntegrationProject.objects.get(code="PSH001"), {"external_customer_id": ext, "customer_name": "Approve Test", "email": email, "contact_number": "9876500031"}, {}, actor="sync")
         return IntegrationRegistration.objects.get(project__code="PSH001", external_customer_id=ext)
 
     def test_approval_user_id_password_overrides_and_custom_license(self, _dns):
@@ -536,7 +550,7 @@ class SyncModeValidationTests(Base):
         c = IntegrationCustomer.objects.get(user_id="912340001")
         self.assertTrue(hash_ok("Welcome2Nexus", c.password_hash))  # stored only as a hash
         self.assertNotEqual(c.password_hash, "Welcome2Nexus")
-        self.assertTrue(c.must_change_password)
+        self.assertFalse(c.must_change_password)  # the issued password works immediately (confirmed workflow)
         self.assertEqual((c.license.license_type, (c.license.expires_at - c.license.starts_at).days), ("CUSTOM", 45))
         key = IntegrationActivationKey.objects.get(license=c.license, internal=True)  # internal activation reference: hash only
         self.assertEqual(len(key.key_hash), 64)
@@ -572,7 +586,7 @@ class SyncModeValidationTests(Base):
         self.assertNotIn("localhost", body)  # no dev setup link in a customer email
         self.assertNotIn("setup-customer-password", body)
         c = IntegrationCustomer.objects.get(user_id=r["user_id"])
-        self.assertTrue(hash_ok("Edited7Pass", c.password_hash) and c.must_change_password)
+        self.assertTrue(hash_ok("Edited7Pass", c.password_hash) and not c.must_change_password)
         self.staff.post(url, {"license_type": "ONE_YEAR"}, format="json")  # repeated Save & Allow
         self.assertEqual(len([m for m in mail.outbox if "em1@example.com" in m.to]), 1)  # one welcome email only
         # approved account: authorised Reset Temporary Password (new hash, shown once to staff, not emailed, sessions revoked)
@@ -647,9 +661,7 @@ class SyncModeValidationTests(Base):
         cid, secret = PushModeSyncTests.new_project(self)
         base = f"{ADM}projects/PSH001/universe-customers/"
         body = {"project_code": "PSH001", "external_customer_id": "DEL-1", "customer_name": "Delete Me", "email": "del@example.com", "contact_number": "9876500051"}
-        self.assertEqual(self.call("customers/register", body, cid=cid, secret=secret).status_code, 202)
-        reg = IntegrationRegistration.objects.get(project__code="PSH001", external_customer_id="DEL-1")
-        self.staff.post(f"{base}registration/{reg.pk}/approve/", {"license_type": "TRIAL"}, format="json")
+        self.assertEqual(self.call("customers/register", body, cid=cid, secret=secret).status_code, 201)  # automatic Trial
         cust = IntegrationCustomer.objects.get(project__code="PSH001", external_customer_id="DEL-1")
         dup = self.call("customers/register", body, cid=cid, secret=secret)  # while approved: a clear conflict, not a fake success
         self.assertEqual(dup.status_code, 409)
@@ -657,9 +669,9 @@ class SyncModeValidationTests(Base):
         self.assertEqual(self.staff.delete(f"{base}customer/{cust.pk}/").status_code in (200, 204), True)  # permanent delete of the TEST customer
         self.assertFalse(IntegrationRegistration.objects.filter(project__code="PSH001", external_customer_id="DEL-1").exists())
         again = self.call("customers/register", body, cid=cid, secret=secret)
-        self.assertEqual((again.status_code, again.data["data"]["status"]), (202, "PENDING_REVIEW"))  # a genuinely new pending record
+        self.assertEqual((again.status_code, again.data["data"]["status"]), (201, "REGISTERED"))  # a genuinely new registration (new automatic Trial)
         rows = [x for x in self.staff.get(base).data["results"] if x["email"] == "del@example.com"]
-        self.assertEqual((len(rows), rows[0]["kind"], rows[0]["status"]), (1, "registration", "Pending Review"))  # visible again, exactly once
+        self.assertEqual((len(rows), rows[0]["kind"], rows[0]["status"]), (1, "customer", "Pending Activation"))  # visible again, exactly once, with a new automatic Trial
 
     def test_local_environment_is_labelled(self, _dns):
         from django.core import mail

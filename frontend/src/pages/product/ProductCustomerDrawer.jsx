@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { integrationsApi } from '../../api/integrations';
 import Alert from '../../components/Alert';
 import Drawer from '../../components/Drawer';
+import ActivateLicenseDialog from '../../components/ActivateLicenseDialog';
 import Modal from '../../components/Modal';
 import { formatDate, formatDateTime } from '../../utils/date';
 import { STATUS_LABEL, TYPE_LABEL } from './ProductCustomersPage';
@@ -139,56 +140,13 @@ export default function ProductCustomerDrawer({ code, id, onClose, onChanged, on
             <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>The licence becomes active immediately, starting now.</p>
           </Confirm>
         )}
-        {dialog?.kind === 'activate' && (() => {
-          const isTrial = plan === 'TRIAL';
-          const extending = isTrial && type === 'TRIAL' && ['active', 'not_activated', 'expired'].includes(c.status); // an existing trial: days are ADDED
-          const addUnit = (base, k, unit) => { const d = new Date(base); if (unit === 'years') d.setFullYear(d.getFullYear() + k); else if (unit === 'months') d.setMonth(d.getMonth() + k); else d.setDate(d.getDate() + k); return d; };
-          const n = isTrial ? days : plan === 'ONE_YEAR' ? years : customDays;
-          const k = whole(n) ? Number(n) : null;
-          const baseDate = extending && c.expires_at && new Date(c.expires_at) > new Date() ? new Date(c.expires_at) : new Date();
-          let exp;
-          if (plan === 'LIFETIME') exp = null;
-          else if (k === null) exp = undefined;
-          else if (isTrial) exp = addUnit(baseDate, k, 'days');
-          else if (plan === 'ONE_YEAR') exp = addUnit(new Date(), k, 'years');
-          else exp = addUnit(new Date(), k, customUnit);
-          const needsPaid = !isTrial && !paid;
-          const valid = exp !== undefined && !needsPaid && Boolean(c.serial_number);
-          const g = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' };
-          const submit = () => {
-            if (!valid) return setDlgError(needsPaid ? 'Tick "Paid — Payment Confirmed" before activating a paid license.' : 'Enter a valid positive whole number.');
-            if (extending) return run('activate', act('extend-trial', { days: k }), `Trial extended by ${k} day(s).`);
-            const body = { activation_form: true, license_type: plan, paid,
-              trial_days: isTrial ? k : undefined, years: plan === 'ONE_YEAR' ? k : undefined,
-              ...(plan === 'CUSTOM' ? { custom_expiry_date: exp.toISOString().slice(0, 10) } : {}) }; // no password is ever sent: credentials never change here
-            return run('activate', act('set-license', body), 'License activated. The customer keeps the same User ID and password.');
-          };
-          return (
-            <Confirm wide title="Activate Customer License" confirmLabel="Save & Activate" busy={busy === 'activate'} error={dlgError} onClose={close} onConfirm={submit}>
-              <div style={g}>
-                <label style={lbl}>Customer Name<input style={field} value={c.name} readOnly /></label>
-                <label style={lbl}>Email<input style={field} value={c.email} readOnly /></label>
-                <label style={lbl}>Serial Number / User ID<input style={field} value={c.serial_number || 'Unavailable'} readOnly /></label>
-                <label style={lbl}>Activation Key<input style={field} value="Existing key kept; generated internally" readOnly /></label>
-              </div>
-              <label style={{ ...lbl, display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} />Paid — Payment Confirmed</label>
-              <div style={g}>
-                <label style={lbl}>License Type<select style={field} value={plan} onChange={(e) => setPlan(e.target.value)}><option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="ONE_YEAR">Years</option><option value="CUSTOM">Custom</option></select></label>
-                {plan === 'LIFETIME' ? <label style={lbl}>Validity<input style={field} value="No expiry" readOnly /></label>
-                  : plan === 'CUSTOM' ? (
-                    <label style={lbl}>Duration
-                      <span style={{ display: 'flex', gap: 6 }}>
-                        <input type="number" min="1" step="1" style={{ ...field, flex: 1 }} value={customDays} onChange={(e) => setCustomDays(e.target.value)} />
-                        <select style={{ ...field, width: 100 }} value={customUnit} onChange={(e) => setCustomUnit(e.target.value)} aria-label="Duration unit"><option value="days">Days</option><option value="months">Months</option><option value="years">Years</option></select>
-                      </span>
-                    </label>
-                  ) : <label style={lbl}>{isTrial ? (extending ? 'Additional Trial Days' : 'Trial Days') : 'Number of Years'}<input type="number" min="1" step="1" style={field} value={n} onChange={(e) => (isTrial ? setDays(e.target.value) : setYears(e.target.value))} /></label>}
-                <label style={lbl}>License Start Date<input style={field} value={formatDate(new Date().toISOString())} readOnly /></label>
-                <label style={lbl}>Expiry Date<input style={field} value={exp === null ? 'No expiry' : exp === undefined ? 'Enter a valid number' : formatDate(exp.toISOString())} readOnly /></label>
-              </div>
-            </Confirm>
-          );
-        })()}
+        {dialog?.kind === 'activate' && (
+          <ActivateLicenseDialog customer={{ name: c.name, email: c.email, serial: c.serial_number }} extending={type === 'TRIAL' && ['active', 'not_activated', 'expired'].includes(c.status)}
+            currentExpiry={c.expires_at} initialPaid={Boolean(state.data?.license?.paid)} busy={busy === 'activate'} error={dlgError} onClose={close}
+            onSave={(v) => (v.extending
+              ? run('activate', act('extend-trial', { days: v.days }), `Trial extended by ${v.days} day(s).`)
+              : run('activate', act('set-license', { activation_form: true, license_type: v.plan === 'YEARS' ? 'ONE_YEAR' : v.plan, paid: v.paid, trial_days: v.days, years: v.years, ...(v.plan === 'CUSTOM' ? { custom_expiry_date: v.customDate } : {}) }), 'License activated. The customer keeps the same User ID and password.'))} />
+        )}
         {dialog?.kind === 'inactivate' && (
           <Confirm title="Inactivate" danger confirmLabel="Yes, inactivate" busy={busy === 'inactivate'} error={dlgError} onClose={close} onConfirm={() => run('inactivate', act('inactivate'), 'Customer inactivated.')}>
             <p className={styles.message}>Inactivate {c.name}? Access stops immediately and the device session is revoked.</p>

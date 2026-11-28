@@ -835,3 +835,40 @@ class ActivationFormTests(Base):
         self.assertEqual(self.act(c, license_plan="YEARS", years=1.5).status_code, 400)
         self.assertEqual(self.act(c, license_plan="TRIAL", trial_days=3).status_code, 200)  # legacy call still works (issues a key)
         self.assertTrue(TallyCustomer.objects.get(pk=c.pk).password_hash != "Temp#Set1")
+
+
+class ActivationPopupAdapterTests(Base):
+    def test_gstr_popup_paid_enforced_plans_and_credentials_unchanged(self):
+        c = self.registered()
+        before = TallyCustomer.objects.get(pk=c.pk).password_hash
+        s = self.staff(self.super)
+        url = f"{ADM}/products/gstr2tally/customers/{c.pk}/license/activate/"
+        no = s.post(url, {"license_plan": "LIFETIME", "paid": False}, format="json")
+        self.assertEqual((no.status_code, no.data["code"]), (422, "payment_required"))
+        yrs = s.post(url, {"license_plan": "YEARS", "years": 2, "paid": True}, format="json")
+        self.assertEqual(yrs.status_code, 200, yrs.data)
+        c.license.refresh_from_db()
+        self.assertTrue(c.license.paid)
+        self.assertEqual(round((c.license.expires_at - timezone.now()).days / 365, 1), 2.0)
+        cu = s.post(url, {"license_plan": "CUSTOM", "custom_days": 45, "paid": True}, format="json")
+        self.assertEqual(cu.status_code, 200, cu.data)
+        key_before = TallyLicense.objects.get(customer=c).activation_key_hash
+        life = s.post(url, {"license_plan": "LIFETIME", "paid": True}, format="json")
+        self.assertEqual(life.status_code, 200, life.data)
+        self.assertNotIn("activation_key", life.data)  # the popup never regenerates the activation key
+        self.assertEqual(TallyLicense.objects.get(customer=c).activation_key_hash, key_before)
+        c.license.refresh_from_db()
+        self.assertIsNone(c.license.expires_at)
+        self.assertEqual(TallyCustomer.objects.get(pk=c.pk).password_hash, before)
+        mail.outbox.clear()
+        self.assertEqual(len([m for m in mail.outbox if "Temporary Password" in m.body]), 0)  # no credentials email at activation
+
+    def test_gstr_expired_trial_blocks_protected_access_and_extend_restores(self):
+        c = self.registered()
+        c.license.expires_at = timezone.now() - timedelta(days=1)
+        c.license.save()
+        self.assertEqual(services.license_payload(TallyCustomer.objects.get(pk=c.pk))["authorized"], False)
+        s = self.staff(self.super)
+        r = s.post(f"{ADM}/products/gstr2tally/customers/{c.pk}/license/extend-trial/", {"days": 5}, format="json")
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertGreater(TallyCustomer.objects.get(pk=c.pk).license.expires_at, timezone.now() + timedelta(days=4))
