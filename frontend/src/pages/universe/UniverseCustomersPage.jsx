@@ -84,7 +84,7 @@ export default function UniverseCustomersPage() {
         {msg && <p role="status" className={styles.note}>{msg}</p>}
         <div className={styles.tableWrap}>
           <table className={`${styles.table} ${data.project?.manual ? '' : styles.compactTable}`}>
-            <thead>{data.project?.manual ? <tr><th>S.No</th><th>Name</th><th>Company Name</th><th>Contact No.</th><th>License Type</th><th>Serial No.</th><th>Expiry Date</th></tr> : <tr><th>Customer Name</th><th>Company</th><th>Email</th><th>Contact</th><th>Project</th><th>User ID / Serial</th><th>License</th><th>Expiry</th><th>Status</th></tr>}</thead>
+            <thead>{data.project?.manual ? <tr><th>S.No</th><th>Name</th><th>Company Name</th><th>Contact No.</th><th>License Type</th><th>Serial No.</th><th>Expiry Date</th></tr> : <tr><th>Customer Name</th><th>Company</th><th>Email</th><th>Contact</th><th>Project</th><th>User ID / Serial</th><th>License</th><th>Expiry</th><th>Status</th><th>Source</th><th>Last Sync</th></tr>}</thead>
             <tbody>
               {data.project?.manual && data.results.map((r, i) => (
                 <tr key={`${r.kind}-${r.id}`} tabIndex={0} onClick={() => setOpen(r.kind, r.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setOpen(r.kind, r.id)} style={{ cursor: 'pointer' }} aria-label={`Open ${r.name}`}>
@@ -93,14 +93,16 @@ export default function UniverseCustomersPage() {
                 </tr>
               ))}
               {!data.project?.manual && data.results.map((r) => (
-                <tr key={`${r.kind}-${r.id}`} tabIndex={0} onClick={() => setOpen(r.kind, r.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setOpen(r.kind, r.id)} style={{ cursor: 'pointer' }} aria-label={`Open ${r.name}`}>
+                <tr key={`${r.kind}-${r.id}`} tabIndex={r.read_only ? undefined : 0} onClick={() => !r.read_only && setOpen(r.kind, r.id)} onKeyDown={(e) => !r.read_only && (e.key === 'Enter' || e.key === ' ') && setOpen(r.kind, r.id)} style={{ cursor: r.read_only ? 'default' : 'pointer' }} aria-label={r.read_only ? `${r.name} (legacy, read-only)` : `Open ${r.name}`} title={r.read_only ? 'Legacy customer - managed in the legacy product screen (read-only here)' : undefined}>
                   <td title={r.name}><b>{r.name}</b>{r.usage_category && r.kind === 'customer' && <small className={styles.usageTag}>{USAGE[r.usage_category]}</small>}</td>
                   <td title={r.company_name || ''}>{r.company_name || '—'}</td><td title={r.email}>{r.email}</td><td>{r.contact_number}</td><td title={r.project}>{r.project}</td><td className={styles.mono}>{r.user_id || '—'}</td>
                   <td>{r.license_type || '—'}</td><td>{r.kind === 'customer' ? (r.expires_at ? formatDateTime(r.expires_at) : r.license_type === 'Lifetime' ? 'No expiry' : '—') : '—'}</td>
                   <td><span className={`${styles.badge} ${TONE[r.status] || styles.pending}`}>{LABEL[r.status] || r.status}</span></td>
+                  <td><span className={`${styles.badge} ${r.source === 'Legacy' ? styles.pending : styles.ok}`}>{r.source || 'Universal'}</span></td>
+                  <td>{r.last_sync_at ? formatDateTime(r.last_sync_at) : '—'}</td>
                 </tr>
               ))}
-              {data.results.length === 0 && <tr><td colSpan={9}>{data.project?.manual ? 'No customers yet. Click + Add Customer.' : push && !filters.search && filters.status === 'all' ? 'Waiting for the first authenticated customer registration from the external application.' : push ? 'No customers match the selected filters.' : 'No customers match. New registrations appear here after the next synchronisation.'}</td></tr>}
+              {data.results.length === 0 && <tr><td colSpan={11}>{data.project?.manual ? 'No customers yet. Click + Add Customer.' : push && !filters.search && filters.status === 'all' ? 'Waiting for the first authenticated customer registration from the external application.' : push ? 'No customers match the selected filters.' : 'No customers match. New registrations appear here after the next synchronisation.'}</td></tr>}
             </tbody>
           </table>
         </div>

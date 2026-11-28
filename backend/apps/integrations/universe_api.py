@@ -181,6 +181,37 @@ def _reg_row(reg):
             "registered_at": reg.created_at}
 
 
+LEGACY_TYPE = {"TRIAL": "Trial", "ONE_YEAR": "Yearly", "LICENSED": "Lifetime"}
+
+
+def legacy_rows(project, now):
+    """READ-ONLY rows for the legacy product mapped to this UNIVERSE project (settings.UNIVERSE_LEGACY_PROJECT_MAP). Nothing is copied or changed.
+    Legacy customers whose e-mail or User ID already exists as a Universal customer of the project are not repeated."""
+    from django.conf import settings
+    from apps.registrations.models import ProjectCustomer
+    legacy_code = (getattr(settings, "UNIVERSE_LEGACY_PROJECT_MAP", {}) or {}).get(project.code)
+    if not legacy_code:
+        return []
+    known_email = {e.lower() for e in IntegrationCustomer.objects.filter(project=project).values_list("email", flat=True)}
+    known_uid = set(IntegrationCustomer.objects.filter(project=project).values_list("user_id", flat=True))
+    out = []
+    for c in ProjectCustomer.objects.filter(project=legacy_code):
+        if (c.email and c.email.lower() in known_email) or c.user_id in known_uid:
+            continue
+        if c.status == ProjectCustomer.TRIAL_CANCELLED:
+            status = "Cancelled"
+        elif c.status == ProjectCustomer.INACTIVE:
+            status = "Suspended"
+        elif c.expires_at and c.expires_at <= now:
+            status = "Expired"
+        else:
+            status = "Active"
+        out.append({"kind": "legacy", "id": c.pk, "name": c.name, "company_name": c.company_name, "email": c.email, "contact_number": c.contact_number, "project": project.name,
+                    "user_id": c.serial_number or c.user_id, "license_type": LEGACY_TYPE.get(c.license_type, c.license_type), "expires_at": c.expires_at, "status": status,
+                    "status_key": status.lower(), "usage_category": None, "used": False, "registered_at": c.created_at, "source": "Legacy", "last_sync_at": None, "read_only": True})
+    return out
+
+
 class UniverseCustomerListView(ProductView):
     def required(self, request, code):
         return [(code, "view")]
@@ -196,6 +227,10 @@ class UniverseCustomerListView(ProductView):
                          "project": p.name, "user_id": r["user_id"], "license_type": TYPE_LABEL.get(r["license_type"], r["license_type"]), "expires_at": r["expires_at"],
                          "status": STATUS_LABEL.get(r["status"], r["status"]), "status_key": r["status"], "usage_category": r["usage_category"] or ("not_used" if not r["used"] else None),
                          "used": bool(r["used"]), "registered_at": r["created_at"]})
+        for r in rows:
+            r.setdefault("source", "Universal")
+            r.setdefault("last_sync_at", p.last_sync_at)
+        rows += legacy_rows(p, now)
         needle = (q.get("search") or "").strip().lower()
         if needle:
             rows = [r for r in rows if needle in " ".join(str(r.get(k) or "") for k in ("name", "company_name", "email", "contact_number", "user_id")).lower()]

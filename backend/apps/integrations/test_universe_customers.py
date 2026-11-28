@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.test import override_settings
 from unittest import mock
 
 from django.contrib.auth.hashers import check_password
@@ -494,3 +495,42 @@ class UniverseActivationPopupAdapter(CustomerCentric):
         cust.refresh_from_db()
         self.assertIsNone(cust.license.expires_at)
         self.assertEqual(cust.password_hash, before)  # credentials never change through license activation
+
+
+class LegacyConsolidatedView(CustomerCentric):
+    """UNIVERSE shows the mapped legacy product's customers read-only beside Universal ones; nothing is copied, changed or duplicated."""
+
+    def _legacy(self, **kw):
+        from apps.registrations.models import ProjectCustomer
+        now = timezone.now()
+        base = dict(project="gstr2tally", name="Old Gstr", company_name="Old Co", license_type="ONE_YEAR", user_id="L-1", password_hash="hash", contact_number="9000000001",
+                    email="old@example.com", address="x", serial_number="756000001", status="ACTIVE", activation_key_hash="k" * 63 + "1", activation_key_suffix="0001",
+                    activated_at=now, expires_at=now + timedelta(days=100))
+        return ProjectCustomer.objects.create(**{**base, **kw})
+
+    @override_settings(UNIVERSE_LEGACY_PROJECT_MAP={"PMP": "gstr2tally"})
+    def test_legacy_rows_are_labelled_read_only_and_unchanged(self):
+        from apps.registrations.models import ProjectCustomer
+        old = self._legacy()
+        self._legacy(name="Gone", user_id="L-2", email="gone@example.com", serial_number="756000002", activation_key_hash="k" * 63 + "2", activation_key_suffix="0002", expires_at=timezone.now() - timedelta(days=1))
+        before = list(ProjectCustomer.objects.values())
+        rows = self.staff.get(self.base + "?page_size=100").data["results"]
+        legacy = {r["name"]: r for r in rows if r["source"] == "Legacy"}
+        self.assertEqual(set(legacy), {"Old Gstr", "Gone"})
+        self.assertEqual((legacy["Old Gstr"]["user_id"], legacy["Old Gstr"]["license_type"], legacy["Old Gstr"]["status"], legacy["Old Gstr"]["read_only"]), ("756000001", "Yearly", "Active", True))
+        self.assertEqual(legacy["Gone"]["status"], "Expired")
+        self.assertTrue(all(r["source"] == "Universal" for r in rows if r["kind"] != "legacy"))
+        self.assertEqual(list(ProjectCustomer.objects.values()), before)  # no legacy record modified
+        self.assertFalse(IntegrationCustomer.objects.filter(email=old.email).exists())  # no duplicate account created
+
+    @override_settings(UNIVERSE_LEGACY_PROJECT_MAP={"PMP": "gstr2tally"})
+    def test_legacy_customer_already_present_as_universal_is_not_repeated(self):
+        self.approve(self.reg().pk)
+        c = IntegrationCustomer.objects.get(project=self.project)
+        self._legacy(email=c.email, user_id="L-9", serial_number="756000009", activation_key_hash="k" * 63 + "9", activation_key_suffix="0009")
+        rows = self.staff.get(self.base + "?page_size=100").data["results"]
+        self.assertEqual([r for r in rows if r["source"] == "Legacy"], [])
+
+    def test_unmapped_projects_show_no_legacy_rows(self):  # project isolation: only the configured project sees the legacy product
+        self._legacy()
+        self.assertEqual([r for r in self.staff.get(self.base + "?page_size=100").data["results"] if r["source"] == "Legacy"], [])

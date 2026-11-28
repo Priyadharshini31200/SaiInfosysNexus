@@ -245,3 +245,15 @@ LOGGING = {
 # Public Nexus API base used in developer API documentation (e.g. https://saitallyexpert.in/nexus/api).
 # When unset, the request host is used - which is the Vite dev server (localhost:5173) for requests sent through it.
 NEXUS_PUBLIC_API_BASE = env("NEXUS_PUBLIC_API_BASE", "")
+
+
+# --- Public Nexus frontend address (shared-domain deployment: the SPA lives under a path such as /nexus/, never the domain root) ---
+# Preferred: NEXUS_PUBLIC_FRONTEND_URL=https://saiinfosysmdu.in/nexus/  (the older NEXUS_PUBLIC_APP_URL is still honoured).
+# NEXUS_FRONTEND_BASE_PATH is appended when the configured/Origin address has no path (must match the Vite build base).
+NEXUS_PUBLIC_FRONTEND_URL = env("NEXUS_PUBLIC_FRONTEND_URL", env("NEXUS_PUBLIC_APP_URL", ""))
+NEXUS_FRONTEND_BASE_PATH = env("NEXUS_FRONTEND_BASE_PATH", "/nexus")
+
+
+# --- UNIVERSE <-> legacy product bridge (read-only consolidated customer view; no data is copied or migrated) ---
+# "UNIVERSE_CODE:legacy_registry_code" pairs, comma separated. Example: GSTR001:gstr2tally
+UNIVERSE_LEGACY_PROJECT_MAP = {k.strip().upper(): v.strip() for k, _, v in (x.partition(":") for x in env("UNIVERSE_LEGACY_PROJECT_MAP", "GSTR001:gstr2tally").split(",")) if k.strip() and v.strip()}
