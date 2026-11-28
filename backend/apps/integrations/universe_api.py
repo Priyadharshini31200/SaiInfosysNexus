@@ -331,7 +331,7 @@ def customer_detail(p, customer, user):
                     "activation_key_status": "Generated (internal, hashed)" if key else "Pending", "account_status": "Active" if customer.active else "Suspended",
                     "locked": bool(customer.locked_until and customer.locked_until > now)},
         "license": {"license_type": lic.license_type, "type_label": TYPE_LABEL.get(lic.license_type), "trial_days": s.trial_days(lic), "years": years if lic.license_type == "ONE_YEAR" else None,
-                    "starts_at": lic.starts_at, "expires_at": lic.expires_at, "remaining_days": _remaining(lic.expires_at, now), "state": s.license_state(lic, now),
+                    "starts_at": lic.starts_at, "expires_at": lic.expires_at, "paid": lic.paid, "remaining_days": _remaining(lic.expires_at, now), "state": s.license_state(lic, now),
                     "status": STATUS_LABEL.get(row.get("status"), row.get("status")), "renewal_required": s.license_state(lic, now) == "EXPIRED",
                     "last_renewal_at": next((r.created_at for r in renewals if r.action == "RENEWED"), None), "last_term_change_at": last_term.created_at if last_term else None},
         "usage": {"last_login": row.get("last_login"), "last_used": cust.get("last_used") or row.get("last_opened"), "total_logins": row.get("login_count", 0), "total_opens": row.get("opens", 0),
@@ -494,7 +494,14 @@ class UniverseCustomerActionView(UniverseCustomerView):
         elif action == "set-license":
             if lic.license_type == "LIFETIME" and s.license_state(lic) == "ACTIVE" and body.get("license_type") != "LIFETIME" and not body.get("confirm"):
                 raise IntegrationError("CONFIRMATION_REQUIRED", "Changing an active Lifetime license to a time-limited one restricts access. Confirm to continue.", 409)
+            if body.get("activation_form") is True and body.get("license_type") != "TRIAL" and body.get("paid") is not True and not lic.paid:
+                raise IntegrationError("PAYMENT_REQUIRED", "Confirm payment (Paid) before activating a paid license.", 422)
             s.set_license_type(lic, body.get("license_type"), body.get("trial_days"), who, years=body.get("years"), custom_days=body.get("custom_days"), allow_custom=True)
+            if body.get("paid") is True and not lic.paid:
+                from django.utils import timezone as _tz
+                lic.paid, lic.paid_at = True, _tz.now()
+                lic.save(update_fields=["paid", "paid_at"])
+                s.audit(c.project, "license.paid_confirmed", c.user_id, actor=who)
         elif action == "inactivate":
             s.set_customer_active(c, False, who)
         elif action == "reactivate":

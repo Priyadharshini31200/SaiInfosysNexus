@@ -102,6 +102,8 @@ class TallyLicense(models.Model):
     activation_key_issued_at = models.DateTimeField(null=True, blank=True)
     activation_key_email_status = models.CharField(max_length=20, blank=True, default="")
     activated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    paid = models.BooleanField(default=False)  # payment confirmed by an authorised admin
+    paid_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 

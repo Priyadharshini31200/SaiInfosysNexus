@@ -570,7 +570,7 @@ class ActivateIntegrationView(AdminView):
                 raise IntegrationError("PROJECT_ARCHIVED", "Restore this project before activation.", 409)
             if cfg and not pull.protocol_supported(cfg):
                 raise IntegrationError("PROTOCOL_NOT_SUPPORTED", "Protocol Not Supported Yet: only REST API (JSON) integrations can be activated.", 409)
-            if cfg and cfg.sync_mode == "PUSH" and not (project.registrations.exists() or project.customers.exists()):
+            if cfg and cfg.sync_mode in pull.PUSH_MODES and not (project.registrations.exists() or project.customers.exists()):
                 raise IntegrationError("AWAITING_LIVE_WEBHOOK", "Awaiting Live Webhook Verification: configuration and mapping are saved, but the external application "
                                        "has not yet sent its first authenticated customer registration. A sample payload does not prove live delivery.", 409)
             v = json.loads(cfg.validation or "{}") if cfg else {}

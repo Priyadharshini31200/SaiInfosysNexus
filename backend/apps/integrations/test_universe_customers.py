@@ -70,7 +70,7 @@ class CustomersListAndPopup(CustomerCentric):
         res, rec = out["result"], out["record"]
         self.assertRegex(res["user_id"], r"^9\d{8}$")
         self.assertEqual(len(res["temporary_password"]), 9)
-        self.assertEqual((rec["kind"], rec["registration"]["company_name"], rec["account"]["password_status"].split(" ")[0], rec["account"]["activation_key_status"].split(" ")[0]), ("customer", "Alpha Pvt Ltd", "Setup", "Generated"))
+        self.assertEqual((rec["kind"], rec["registration"]["company_name"], rec["account"]["password_status"].split(" ")[0], rec["account"]["activation_key_status"].split(" ")[0]), ("customer", "Alpha Pvt Ltd", "Active", "Generated"))
         self.assertEqual((rec["license"]["type_label"], rec["license"]["years"]), ("Yearly", 2))
         again = self.approve(reg.pk).data["result"]
         self.assertEqual((again["already_approved"], again["temporary_password"]), (True, None))
@@ -213,7 +213,7 @@ class ProjectDashboard(CustomerCentric):
         for k in ("speed", "normal", "one_time"):
             self.assertEqual((cards[k]["count"], cards[k]["available"]), (None, False))  # Data Unavailable - never a misleading 0
         self.assertEqual((cards["new"]["count"], cards["new"]["available"]), (1, True))
-        self.assertEqual(d["stats"], {"total_customers": 2, "last_7_days": 2, "pending_activation": 1, "recent_device_transfers": 0})
+        self.assertEqual({k: d["stats"][k] for k in ("total_customers", "last_7_days", "pending_activation", "recent_device_transfers")}, {"total_customers": 2, "last_7_days": 2, "pending_activation": 1, "recent_device_transfers": 0})  # stats also carry additive usage keys
         # real telemetry makes the other classes real
         cust = IntegrationCustomer.objects.get(user_id=out["user_id"])
         IntegrationCustomer.objects.filter(pk=cust.pk).update(created_at=timezone.now() - timedelta(days=60))
@@ -343,6 +343,7 @@ class TallyPopup(Lifecycle):
         self.assertEqual(sorted(d["tally"]["missing"]), sorted(["Tally Serial Number", "Tally Edition", "Tally Software Services (TSS)", "License Administrator"]))
         self.assertEqual(self.staff.post(f"{base}registration/{reg.pk}/approve/", {"license_type": "TRIAL"}, format="json").status_code, 409)
         self.assertEqual(self.staff.get(base).data["results"][0]["status"], "Pending Tally Verification")
+        IntegrationRegistration.objects.filter(pk=reg.pk).update(source="API SYNC")  # queued by polling: admin review is preserved (a pushed one starts the Trial automatically)
         self.v1("tally/submit", {"external_customer_id": "T1", "tally": GOOD_TALLY})
         d = self.staff.get(f"{base}registration/{reg.pk}/").data["record"]
         self.assertTrue(d["tally"]["verified"] and not d["tally"]["missing"])
@@ -380,7 +381,8 @@ class ProjectHub(CustomerCentric):
 
     def test_row_shape_customer_count_and_last_sync(self):
         row = next(r for r in self.staff.get(self.hub + "?search=PMP").data["results"] if r["code"] == self.code)
-        self.assertEqual((row["customer_count"], row["api_status"]["sync"], row["can"]), (2, "OK", {"open": True, "configure": True}))
+        self.assertEqual((row["customer_count"], row["api_status"]["sync"]), (2, "OK"))
+        self.assertTrue(row["can"]["dashboard"] and row["can"]["customers"])  # capability keys are dashboard/customers (+ project actions)
         self.assertIsNotNone(row["last_sync_at"])
         self.assertNotIn("MOTHYS", [r["code"] for r in self.staff.get(self.hub + "?page_size=100").data["results"]])  # legacy products are never listed
 
@@ -428,7 +430,7 @@ class SimpleTemporaryPassword(CustomerCentric):
         self.assertFalse(IntegrationCustomer.objects.filter(project=self.project).exists())
         self.assertEqual(self.approve(self.reg("C1").pk, password="123").status_code, 200)
         c = IntegrationCustomer.objects.get(project=self.project, external_customer_id="C1")
-        self.assertTrue(check_password("123", c.password_hash) and c.password_hash != "123" and c.must_change_password)
+        self.assertTrue(check_password("123", c.password_hash) and c.password_hash != "123" and not c.must_change_password)  # issued password is kept; no forced change
         self.assertTrue(any("123" in m.body for m in mail.outbox))
 
 
@@ -466,3 +468,29 @@ class CustomDaysLicenseChange(CustomerCentric):
         self.assertEqual(self.staff.post(url, {"license_type": "ONE_YEAR", "years": "2"}, format="json").status_code, 200)
         self.assertEqual(self.staff.post(url, {"license_type": "LIFETIME"}, format="json").status_code, 200)
         self.assertIsNone(IntegrationLicense.objects.get(customer=c).expires_at)
+
+
+class UniverseActivationPopupAdapter(CustomerCentric):
+    def test_paid_enforced_years_custom_lifetime_extend_and_credentials_unchanged(self):
+        from django.contrib.auth.hashers import check_password  # noqa: F401
+        out = self.approve(self.reg().pk)
+        self.assertEqual(out.status_code, 200, out.data)
+        from .models import IntegrationCustomer
+        cust = IntegrationCustomer.objects.get(pk=out.data["result"]["customer_id"] if "result" in out.data and out.data["result"] else IntegrationCustomer.objects.filter(project=self.project).first().pk)
+        before = cust.password_hash
+        url = f"{self.base}customer/{cust.pk}/set-license/"
+        no = self.staff.post(url, {"activation_form": True, "license_type": "LIFETIME"}, format="json")
+        self.assertEqual(no.status_code, 422)
+        self.assertIn("PAYMENT_REQUIRED", str(no.data))
+        yrs = self.staff.post(url, {"activation_form": True, "license_type": "ONE_YEAR", "years": 3, "paid": True, "confirm": True}, format="json")
+        self.assertEqual(yrs.status_code, 200, yrs.data)
+        cust.refresh_from_db()
+        self.assertTrue(cust.license.paid)
+        self.assertGreater((cust.license.expires_at - cust.license.starts_at).days, 1090)
+        cu = self.staff.post(url, {"activation_form": True, "license_type": "CUSTOM", "custom_days": 45, "paid": True, "confirm": True}, format="json")
+        self.assertEqual(cu.status_code, 200, cu.data)
+        life = self.staff.post(url, {"activation_form": True, "license_type": "LIFETIME", "paid": True, "confirm": True}, format="json")
+        self.assertEqual(life.status_code, 200, life.data)
+        cust.refresh_from_db()
+        self.assertIsNone(cust.license.expires_at)
+        self.assertEqual(cust.password_hash, before)  # credentials never change through license activation

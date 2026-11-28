@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ActivateLicenseDialog from '../../components/ActivateLicenseDialog';
 import Alert from '../../components/Alert';
 import Modal from '../../components/Modal';
 import { integrationsApi } from '../../api/integrations';
@@ -45,6 +46,8 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
   const [msg, setMsg] = useState('');
   const [resetPw, setResetPw] = useState(null); // one-time temporary password from an explicit reset; memory only, gone on close/refresh
   const [extOpen, setExtOpen] = useState(false);
+  const [actOpen, setActOpen] = useState(false);
+  const [actError, setActError] = useState('');
   const [suspendOpen, setSuspendOpen] = useState(false);
   const [toast, setToast] = useState('');
   const showToast = (t) => { setToast(t); setTimeout(() => setToast(''), 1800); };
@@ -248,6 +251,7 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
                       {can.inactivate && (r.account.account_status === 'Active'
                         ? <button title="Suspend this customer's license" className={`${styles.btn} ${styles.danger}`} disabled={!!busy} onClick={() => setSuspendOpen(true)}>Suspend License</button>
                         : <button className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={run('react', async () => { const res = await act('reactivate'); setRec(res.record); }, 'License reactivated.')}>Reactivate License</button>)}
+                      {can.set_license && <button type="button" className={`${styles.btn} ${styles.ghost}`} disabled={!!busy} onClick={() => { setActError(''); setActOpen(true); }}>Activate License</button>}
                       {can.set_license && <>
                         <label className={`${styles.field} ${styles.fLic}`}>License Type<select value={lic.license_type} onChange={(e) => setLic({ ...lic, license_type: e.target.value })}><option value="TRIAL">Trial</option><option value="LIFETIME">Lifetime</option><option value="ONE_YEAR">Yearly</option><option value="CUSTOM">Custom (Days)</option></select></label>
                         {lic.license_type === 'TRIAL' && <label className={`${styles.field} ${styles.fDur}`} title="Trial duration in days">Trial Days<input type="number" min="1" value={lic.trial_days} onChange={(e) => setLic({ ...lic, trial_days: e.target.value })} /></label>}
@@ -343,6 +347,19 @@ export default function UniverseCustomerDrawer({ code, kind, id, onClose, onChan
       )}
     </Drawer>
       {toast && <div role="status" aria-live="polite" className={styles.toast}>{toast}</div>}
+      {actOpen && r && !isReg && (
+        <ActivateLicenseDialog customer={{ name: r.registration.name, email: r.registration.email, serial: r.account?.user_id }}
+          extending={r.license?.type_label === 'Trial' && ['Active', 'Expired'].includes(r.account?.account_status)} currentExpiry={r.license?.expires_at}
+          initialPaid={Boolean(r.license?.paid)} busy={busy === 'activate'} error={actError} onClose={() => setActOpen(false)}
+          onSave={async (v) => {
+            setBusy('activate'); setActError('');
+            try {
+              const res = v.extending ? await act('extend-trial', { days: v.days })
+                : await act('set-license', { activation_form: true, confirm: true, license_type: v.plan === 'YEARS' ? 'ONE_YEAR' : v.plan, paid: v.paid, trial_days: v.days, years: v.years, custom_days: v.customDays });
+              setRec(res.record); setActOpen(false); setMsg('License activated. The customer keeps the same User ID and password.'); await onChanged();
+            } catch (e) { setActError(e.message); } finally { setBusy(''); }
+          }} />
+      )}
       {suspendOpen && (
         <Modal title="Suspend Customer License" onClose={busy === 'sus' ? () => {} : () => setSuspendOpen(false)}>
           <p>Are you sure you want to suspend this customer&apos;s license? The customer will lose access to the software while the license is suspended. You can reactivate the license later.</p>

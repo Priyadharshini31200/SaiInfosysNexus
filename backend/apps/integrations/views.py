@@ -79,16 +79,16 @@ class RegisterView(V1View):
     def process(self, project, data, request):
         key = (request.headers.get("Idempotency-Key") or str(data.get("idempotency_key") or ""))[:100]
         if universe.is_universe(project):  # UNIVERSE: queue for review; nothing is issued before Save & Allow
+            prior = universe.Reg.objects.filter(project=project, external_customer_id=str(data.get("external_customer_id") or "").strip()).values_list("status", flat=True).first()
             try:
-                reg, _ = universe.ingest(project, data, data.get("tally") or {}, actor="push")
+                reg, created = universe.ingest(project, data, data.get("tally") or {}, actor="push")
             except IntegrationError as exc:  # a rejected registration is visible in Sync Logs (code only - no personal data, no secrets)
                 s.audit(project, "registration.rejected", str(data.get("external_customer_id") or "")[:60], ok=False, ip=client_ip(request), detail=exc.code)
                 raise
-            if reg.status == universe.Reg.PENDING_REVIEW:  # verified (or no Tally needed): a normal new registration starts the free trial at once
-                out = universe.approve(reg.pk, "TRIAL", None, None, actor="auto-trial")  # emails the credentials once, AFTER the commit
-                return 201, {"status": "REGISTERED", "customer_id": out["customer_id"], "user_id": out["user_id"], "serial_number": out["serial_number"],
-                             "license_type": "TRIAL", "license_state": out["license"]["state"], "expires_at": out["license"]["expires_at"],
-                             "welcome_email": out["setup_email"], "license_issued": True}
+            # Automatic 3-day Trial only for a NEW push registration, or one whose Tally verification has just completed. A registration an admin
+            # already holds / queued (sync, manual) is never auto-approved by a repeated push.
+            if reg.status == universe.Reg.PENDING_REVIEW and (created or prior == universe.Reg.PENDING_TALLY):
+                return universe.auto_trial_response(reg)
             return universe.ingest_response(reg)
         if project.tally_serial_required:  # Tally-integrated project: Tally verification first (isolated service)
             from . import tally

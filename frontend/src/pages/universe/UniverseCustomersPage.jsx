@@ -36,7 +36,7 @@ export default function UniverseCustomersPage() {
   useEffect(() => { setPage(1); }, [filters, code]);
   const [mode, setMode] = useState(null); // POLL | PUSH, from the saved API configuration
   useEffect(() => { integrationsApi.apiConfig(code).then((c) => setMode(c.config?.sync_mode || 'POLL'), () => setMode('POLL')); }, [code]);
-  const push = mode === 'PUSH';
+  const push = mode === 'PUSH' || mode === 'REALTIME';
   useEffect(() => { // webhook projects: new registrations arrive by themselves - refresh quietly every 30 s while the tab is visible
     if (!push) return undefined;
     const t = setInterval(() => { if (document.visibilityState === 'visible') load(); }, 30000);
