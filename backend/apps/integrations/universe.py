@@ -316,7 +316,7 @@ def send_setup_email(customer, app_url="", actor="", temporary_password=None):
     from apps.registrations import mailer
     project, lic = customer.project, customer.license
     from urllib.parse import urlparse
-    base = (app_url or getattr(settings, "NEXUS_PUBLIC_APP_URL", "") or "").rstrip("/")
+    base = s.public_frontend_url(app_url)
     local = (urlparse(base).hostname or "").lower() in ("localhost", "127.0.0.1", "::1", "0.0.0.0") or (urlparse(base).hostname or "").endswith(".local")
     # The first Save & Allow emails the temporary password, so no setup link is needed; a link is never built from a local/dev address.
     link = f"{base}/setup-customer-password?token={setup_token(customer)}" if base and not local and not temporary_password else ""

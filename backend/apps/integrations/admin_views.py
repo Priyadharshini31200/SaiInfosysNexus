@@ -347,7 +347,7 @@ class SendDocsView(AdminView):
         if not cache.add(f"int:docs:lock:{project.pk}", 1, 30):  # double clicks / duplicate requests
             raise IntegrationError("DUPLICATE_REQUEST", "Documentation for this project was just sent. Wait 30 seconds before sending again.", 409)
         base_api = spec.base_url(api_base(request))
-        app = (getattr(dj, "NEXUS_PUBLIC_APP_URL", "") or request.headers.get("Origin", "") or "").rstrip("/")
+        app = s.public_frontend_url(request.headers.get("Origin", ""))
         is_local = lambda u: (urlparse(u).hostname or "").lower() in ("localhost", "127.0.0.1", "::1", "0.0.0.0")  # noqa: E731
         local = is_local(base_api) or is_local(app)
         env_label = "LOCAL DEVELOPMENT - not valid against production" if local else "PRODUCTION"
@@ -355,7 +355,7 @@ class SendDocsView(AdminView):
         link = ""
         if provision:
             cred, token = s.issue_handoff(project)
-            link = f"{app}/developer-credentials?token={token}" if app else ""
+            link = s.developer_credentials_link(token, request.headers.get("Origin", ""))
         lines = ["Hello,", "", f"Here are the Nexus integration details for {project.name}.", "",
                  f"Environment        : {env_label}", f"Project            : {project.name} ({project.code})", f"Nexus API Base URL : {base_api}",
                  f"Client ID          : {cred.client_id if cred else '(not issued yet)'}"]

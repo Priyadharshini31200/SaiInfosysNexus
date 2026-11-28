@@ -621,6 +621,7 @@ class SyncModeValidationTests(Base):
             self.assertIn(expected, body)
         self.assertLess(len(body), 4000)  # concise - the full manual is a separate download
         self.assertNotIn(old_secret, body)
+        self.assertRegex(body, r"https?://[^/\s]+/nexus/developer-credentials\?token=")  # SPA lives under /nexus/ on the shared domain
         token = _re.search(r"developer-credentials\?token=(\S+)", body).group(1)
         redeem = lambda t: self.client.post("/api/integrations/developer-credentials/redeem/", {"token": t}, content_type="application/json")  # noqa: E731
         ok = redeem(token)
