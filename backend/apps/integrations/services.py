@@ -84,6 +84,28 @@ def issue_credential(project):
 HANDOFF_SALT, HANDOFF_HOURS = "nexus.int.dev-credential-handoff", 24
 
 
+def public_frontend_url(origin=""):
+    """Public Nexus SPA base WITHOUT a trailing slash, e.g. https://saiinfosysmdu.in/nexus. Source: NEXUS_PUBLIC_FRONTEND_URL, else the request Origin.
+    The deployment base path (NEXUS_FRONTEND_BASE_PATH, default /nexus) is added only if the address has no path - never removed, never doubled.
+    Never touches the Universal API base. Returns "" when no usable http(s) address exists."""
+    from urllib.parse import urlsplit, urlunsplit
+    raw = str(getattr(settings, "NEXUS_PUBLIC_FRONTEND_URL", "") or getattr(settings, "NEXUS_PUBLIC_APP_URL", "") or origin or "").strip()
+    parts = urlsplit(raw)
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        return ""
+    path = "/" + "/".join(x for x in parts.path.split("/") if x)  # collapses // and trailing /
+    base = "/" + str(getattr(settings, "NEXUS_FRONTEND_BASE_PATH", "/nexus") or "").strip("/")
+    if path == "/" and base != "/":
+        path = base
+    return urlunsplit((parts.scheme, parts.netloc, "" if path == "/" else path, "", ""))
+
+
+def developer_credentials_link(token, origin=""):
+    """https://host/nexus/developer-credentials?token=<token> (token is URL-safe signing output; quoted anyway)."""
+    base = public_frontend_url(origin)
+    return f"{base}/developer-credentials?token={token}" if base else ""  # token left exactly as signed (URL-safe chars plus ':')
+
+
 def issue_handoff(project):
     """ONE short-lived, single-use, signed link bound to the project's CURRENT credential (and the tail of its secret hash, so it dies after use or
     after any rotation). No separate code. Nothing is stored; no secret is recovered or created here."""

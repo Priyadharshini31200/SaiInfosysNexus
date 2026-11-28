@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { API_BASE } from '../api/client';
 import styles from './integrations/Integrations.module.css';
@@ -12,6 +12,12 @@ export default function DeveloperCredentialsPage() {
   const [error, setError] = useState('');
   const [creds, setCreds] = useState(null);
   const [copied, setCopied] = useState('');
+  useEffect(() => { // the token must not leak through Referer headers or search indexing
+    const m = document.createElement('meta'); m.name = 'referrer'; m.content = 'no-referrer';
+    const r = document.createElement('meta'); r.name = 'robots'; r.content = 'noindex,nofollow';
+    document.head.append(m, r);
+    return () => { m.remove(); r.remove(); };
+  }, []);
 
   const redeem = async (e) => {
     e.preventDefault();
